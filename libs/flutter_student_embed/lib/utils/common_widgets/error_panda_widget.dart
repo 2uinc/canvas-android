@@ -44,15 +44,18 @@ class ErrorPandaWidget extends StatelessWidget {
             style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16),
           ),
         ),
-        FlatButton(
+        TextButton(
           onPressed: () {
             callback();
           },
-          child: Text(L10n(context).retry, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16)),
-          shape: RoundedRectangleBorder(
+          child: Text(L10n(context).retry,
+              style:
+                  Theme.of(context).textTheme.caption.copyWith(fontSize: 16)),
+          style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
             borderRadius: new BorderRadius.circular(4.0),
             side: BorderSide(color: StudentColors.tiara),
-          ),
+          )),
         )
       ],
     );

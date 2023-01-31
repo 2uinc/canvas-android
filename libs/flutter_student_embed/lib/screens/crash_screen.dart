@@ -14,7 +14,6 @@
 
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_student_embed/utils/design/student_theme.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:package_info/package_info.dart';
@@ -79,7 +78,7 @@ class CrashScreen extends StatelessWidget {
         if (!snapshot.hasData) return Container();
         PackageInfo packageInfo = snapshot.data[0];
         AndroidDeviceInfo deviceInfo = snapshot.data[1];
-        return FlatButton(
+        return TextButton(
           onPressed: () => _showDetailsDialog(context, packageInfo, deviceInfo),
           child: Text(
             L10n(context).crashScreenViewDetails,
@@ -146,7 +145,7 @@ class CrashScreen extends StatelessWidget {
           ),
         ),
         actions: <Widget>[
-          FlatButton(
+          TextButton(
             child: Text(L10n(context).done.toUpperCase()),
             onPressed: () => Navigator.of(context).pop(),
           ),

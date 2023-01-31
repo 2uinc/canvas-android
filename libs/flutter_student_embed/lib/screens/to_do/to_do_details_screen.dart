@@ -176,7 +176,7 @@ class ToDoDetailsScreenState extends State<ToDoDetailsScreen> {
         setState(() {
           _deleting = false;
         });
-        _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(L10n(context).errorDeletingToDo)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L10n(context).errorDeletingToDo)));
       }
     }
   }

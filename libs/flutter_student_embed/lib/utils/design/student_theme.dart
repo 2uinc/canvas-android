@@ -116,7 +116,9 @@ class _StudentThemeState extends State<StudentTheme> {
       brightness: Brightness.light,
       primarySwatch: primarySwatch,
       accentColor: accentColor,
-      textSelectionHandleColor: primarySwatch[300],
+      textSelectionTheme: TextSelectionThemeData(
+        selectionColor: primarySwatch[300],
+      ),
       scaffoldBackgroundColor: StudentColors.backgroundLightest,
       canvasColor: StudentColors.backgroundLightest,
       accentColorBrightness: Brightness.dark,

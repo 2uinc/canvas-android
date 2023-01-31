@@ -328,7 +328,7 @@ class _CreateUpdateToDoScreenState extends State<CreateUpdateToDoScreen> {
     DateTime date = _date;
 
     if (title.isNullOrBlank()) {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(L10n(context).titleEmptyErrorMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L10n(context).titleEmptyErrorMessage)));
       return;
     }
 
@@ -344,7 +344,7 @@ class _CreateUpdateToDoScreenState extends State<CreateUpdateToDoScreen> {
       }
     } catch (e, s) {
       setState(() => _saving = false);
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(L10n(context).errorSavingToDo)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L10n(context).errorSavingToDo)));
     }
   }
 

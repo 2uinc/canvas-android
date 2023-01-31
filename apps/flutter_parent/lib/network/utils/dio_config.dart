@@ -16,7 +16,7 @@ import 'dart:io';
 
 import 'package:dio/adapter.dart';
 import 'package:dio/dio.dart';
-import 'package:dio_http_cache/dio_http_cache.dart';
+import 'package:dio_http_cache_lts/dio_http_cache_lts.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_parent/network/utils/api_prefs.dart';

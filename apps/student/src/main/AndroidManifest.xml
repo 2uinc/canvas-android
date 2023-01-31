@@ -73,6 +73,10 @@
         tools:replace="android:supportsRtl"
         tools:overrideLibrary="com.instructure.canvasapi">
 
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
+
         <!--Fun fact. LoginActivity is called that because activity-alias are not supported by pspdfkit, should be InitLoginActivity-->
         <activity
             android:name=".activity.LoginActivity"
