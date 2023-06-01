@@ -18,12 +18,13 @@
 package com.instructure.student.util
 
 import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
 import androidx.work.WorkerFactory
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.tasks.StudentLogoutTask
+import com.instructure.student.offline.util.OfflineDownloaderCreator
+import com.twou.offline.Offline
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -39,6 +40,8 @@ class AppManager : BaseAppManager() {
     override fun onCreate() {
         super.onCreate()
         MasqueradeHelper.masqueradeLogoutTask = Runnable { StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior).execute() }
+
+        Offline.init(this) { OfflineDownloaderCreator(it) }
     }
 
     override fun performLogoutOnAuthError() {

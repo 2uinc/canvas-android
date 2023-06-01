@@ -64,6 +64,13 @@
                     tools:srcCompat="@drawable/ic_lock"
                     android:layout_marginStart="12dp"/>
 
+                <com.twou.offline.view.DownloadItemView
+                    android:id="@+id/downloadItemView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"/>
             </LinearLayout>
 
             <TextView

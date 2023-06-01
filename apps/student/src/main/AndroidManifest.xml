@@ -114,6 +114,19 @@
         </activity>
 
         <activity
+            android:name=".offline.activity.DownloadsContentActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsCoursesActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsModulesActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+
+        <activity
             android:name=".activity.CandroidPSPDFActivity"
             android:theme="@style/PSPDFKitTheme"
             android:windowSoftInputMode="adjustNothing" />

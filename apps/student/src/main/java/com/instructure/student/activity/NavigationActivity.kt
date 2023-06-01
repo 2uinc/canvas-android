@@ -84,6 +84,7 @@ import com.instructure.student.navigation.AccountMenuItem
 import com.instructure.student.navigation.NavigationBehavior
 import com.instructure.student.navigation.NavigationMenuItem
 import com.instructure.student.navigation.OptionsMenuItem
+import com.instructure.student.offline.activity.DownloadsCoursesActivity
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.router.RouteResolver
 import com.instructure.student.tasks.StudentLogoutTask
@@ -145,6 +146,9 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                 }
                 R.id.navigationDrawerItem_files -> {
                     ApiPrefs.user?.let { handleRoute(FileListFragment.makeRoute(it)) }
+                }
+                R.id.navigationDrawerItem_downloads -> {
+                    startActivity(DownloadsCoursesActivity.newIntent(this@NavigationActivity))
                 }
                 R.id.navigationDrawerItem_gauge, R.id.navigationDrawerItem_studio -> {
                     val launchDefinition = v.tag as? LaunchDefinition ?: return@weave
@@ -435,6 +439,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         navigationDrawerItem_bookmarks.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerItem_changeUser.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerItem_help.setOnClickListener(mNavigationDrawerItemClickListener)
+        navigationDrawerItem_downloads.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerItem_logout.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerSettings.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerItem_startMasquerading.setOnClickListener(mNavigationDrawerItemClickListener)

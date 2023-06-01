@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/moduleTextView"
+            style="@style/AdapterItemTitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/textDarkest"
+            tools:text="Module Item Header" />
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height=".5dp"
+            android:layout_gravity="bottom"
+            android:background="@color/backgroundMedium" />
+    </FrameLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/iconImageView"
+            style="@style/AdapterItemIcon"
+            android:layout_marginBottom="12dp"
+            android:importantForAccessibility="no"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@drawable/ic_assignment" />
+
+        <TextView
+            android:id="@+id/moduleItemTextView"
+            style="@style/AdapterItemTitleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:paddingLeft="@dimen/card_header_margins"
+            android:paddingRight="@dimen/card_header_margins"
+            app:layout_constraintBottom_toBottomOf="@+id/iconImageView"
+            app:layout_constraintEnd_toEndOf="@+id/downloadItemView"
+            app:layout_constraintStart_toEndOf="@+id/iconImageView"
+            app:layout_constraintTop_toTopOf="@+id/iconImageView"
+            tools:text="Module Name" />
+
+        <com.twou.offline.view.DownloadItemView
+            android:id="@+id/downloadItemView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
+            android:padding="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/iconImageView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/iconImageView" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

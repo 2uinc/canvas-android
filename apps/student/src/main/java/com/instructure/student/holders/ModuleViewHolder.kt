@@ -28,6 +28,7 @@ import com.instructure.canvasapi2.utils.NumberHelper
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.pandautils.utils.*
 import com.instructure.student.R
+import com.instructure.student.offline.initWithModuleData
 import com.instructure.student.util.BinderUtils
 import com.instructure.student.interfaces.ModuleAdapterToFragmentCallback
 import com.instructure.student.util.ModuleUtility
@@ -166,6 +167,8 @@ class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             points.setGone()
         }
         BinderUtils.updateShadows(isFirstItem, isLastItem, shadowTop, shadowBottom)
+
+        downloadItemView.initWithModuleData(moduleObject, moduleItem)
     }
 
     companion object {

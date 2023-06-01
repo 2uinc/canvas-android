@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="customPlayerColor">#263238</color>
+    <color name="customPlayerColorDark">#141B1E</color>
+
+    <color name="opacity70">#B3000000</color>
+
+</resources>

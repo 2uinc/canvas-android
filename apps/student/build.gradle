@@ -237,11 +237,18 @@ android {
 
     buildFeatures {
         dataBinding true
+        viewBinding true
     }
 
     hilt {
         enableTransformForLocalTests = true
         enableAggregatingTask = false
+    }
+
+    sourceSets {
+        main {
+            res.srcDirs("src/main/res-offline", "src/main/res")
+        }
     }
 }
 
@@ -353,6 +360,12 @@ dependencies {
     kapt Libs.ROOM_COMPILER
     implementation Libs.ROOM_COROUTINES
     testImplementation Libs.ROOM_TEST
+
+    implementation project(path: ':mobile-offline-downloader-android')
+    implementation "org.jsoup:jsoup:1.13.1"
+    implementation("com.google.android.exoplayer:exoplayer-core:2.17.1")
+    implementation("com.google.android.exoplayer:exoplayer-ui:2.17.1")
+    implementation "com.google.android.exoplayer:extension-cast:2.17.1"
 }
 
 // Comment out this line if the reporting logic starts going wonky.
