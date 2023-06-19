@@ -1,51 +1,52 @@
 package com.instructure.student.offline
 
-import android.net.Uri
+import android.content.Context
+import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import androidx.appcompat.widget.Toolbar
 import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.models.ModuleObject
+import com.instructure.canvasapi2.models.Page
+import com.instructure.interactions.router.Route
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.ModuleUtility
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.view.DownloadItemView
 
-fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem: ModuleItem) {
+fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem: ModuleItem?) {
     val isLocked = ModuleUtility.isGroupLocked(moduleObject)
 
-    visibility = if (!isLocked && (moduleItem.type == "Page" || moduleItem.type == "File")) {
+    if (moduleItem == null) {
+        visibility = View.GONE
+        return
+    }
+
+    val type = OfflineUtils.getContentType(moduleItem.type ?: "")
+    visibility = if (!isLocked && type != -1) {
         val url = moduleItem.url ?: moduleObject?.itemsUrl ?: moduleItem.htmlUrl
-        var courseId = -1L
-
-        run job@{
-            var isNextCourseId = false
-            Uri.parse(url).pathSegments.forEach { segment ->
-                if (isNextCourseId) {
-                    try {
-                        courseId = segment.toLong()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    return@job
-
-                } else if (segment == "courses") {
-                    isNextCourseId = true
-                }
-            }
-        }
+        val courseId = OfflineUtils.getCourseIdFromUrl(url ?: "")
 
         if (courseId == -1L) {
             View.GONE
 
         } else {
             val extras = mutableMapOf<String, Any>()
+            extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = OfflineConst.MODULE_TYPE_MODULES
+
             extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleObject?.name ?: ""
+            extras[OfflineConst.KEY_EXTRA_MODULE_ID] = moduleItem.moduleId
+            extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItem.id
+            extras[OfflineConst.KEY_EXTRA_URL] = moduleItem.url ?: ""
 
             setWithRemoveAbility()
             setKeyItem(
                 KeyOfflineItem(
-                    OfflineUtils.getKey(courseId, moduleItem.moduleId, moduleItem.id),
-                    moduleItem.title ?: "", extras
+                    OfflineUtils.getModuleKey(
+                        type, courseId, moduleItem.moduleId, moduleItem.id
+                    ), moduleItem.title ?: "", extras
                 )
             )
 
@@ -53,4 +54,114 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
         }
 
     } else View.GONE
+}
+
+fun DownloadItemView.initWithPageData(page: Page) {
+    val url = page.htmlUrl
+    val courseId = OfflineUtils.getCourseIdFromUrl(url ?: "")
+
+    visibility = if (courseId == -1L) {
+        View.GONE
+
+    } else {
+        val extras = mutableMapOf<String, Any>()
+        extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = OfflineConst.MODULE_TYPE_PAGES
+
+        extras[OfflineConst.KEY_EXTRA_PAGE_ID] = page.id
+        extras[OfflineConst.KEY_EXTRA_URL] = page.url ?: ""
+
+        setWithRemoveAbility()
+        setKeyItem(
+            KeyOfflineItem(
+                OfflineUtils.getPageKey(courseId, page.id), page.title ?: "", extras
+            )
+        )
+
+        View.VISIBLE
+    }
+}
+
+fun Route.addOfflineDataForModule(
+    moduleItem: ModuleItem, moduleObject: ModuleObject? = null
+): Route {
+    arguments.putInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, OfflineConst.MODULE_TYPE_MODULES)
+
+    arguments.putString(OfflineConst.KEY_EXTRA_MODULE_NAME, moduleObject?.name ?: "")
+    arguments.putLong(OfflineConst.KEY_EXTRA_MODULE_ID, moduleItem.moduleId)
+    arguments.putLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID, moduleItem.id)
+    arguments.putString(OfflineConst.KEY_EXTRA_URL, moduleItem.url ?: "")
+    return this
+}
+
+fun Route.addOfflineDataForPage(page: Page): Route {
+    arguments.putInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, OfflineConst.MODULE_TYPE_PAGES)
+
+    arguments.putLong(OfflineConst.KEY_EXTRA_PAGE_ID, page.id)
+    arguments.putString(OfflineConst.KEY_EXTRA_URL, page.url ?: "")
+    return this
+}
+
+fun Toolbar.initWithOfflineData(
+    context: Context, courseId: Long, title: String, arguments: Bundle?, type: Int = -1,
+    endPadding: Int = 0
+) {
+    if (arguments == null) return
+
+    if (findViewWithTag<DownloadItemView>("DownloadItemView") != null) return
+
+    val moduleType = arguments.getInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, -1)
+    if (moduleType == -1) return
+
+    addView(DownloadItemView(context).apply {
+        layoutParams = Toolbar.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.END
+            setPadding(0, 0, endPadding, 0)
+        }
+
+        val extras = getOfflineExtras(arguments)
+
+        setWithRemoveAbility()
+
+        val key = if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
+            val moduleId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ID)
+            val moduleItemId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID)
+
+            OfflineUtils.getModuleKey(type, courseId, moduleId, moduleItemId)
+
+        } else {
+            val pageId = arguments.getLong(OfflineConst.KEY_EXTRA_PAGE_ID)
+
+            OfflineUtils.getPageKey(courseId, pageId)
+        }
+        setKeyItem(KeyOfflineItem(key, title, extras))
+        tag = "DownloadItemView"
+    })
+}
+
+private fun getOfflineExtras(arguments: Bundle): MutableMap<String, Any> {
+    val moduleType = arguments.getInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, -1)
+
+    val extras = mutableMapOf<String, Any>()
+    extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = moduleType
+
+    if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
+        val moduleName = arguments.getString(OfflineConst.KEY_EXTRA_MODULE_NAME) ?: ""
+        val moduleId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ID)
+        val moduleItemId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID)
+
+        extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleName
+        extras[OfflineConst.KEY_EXTRA_MODULE_ID] = moduleId
+        extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItemId
+
+    } else if (moduleType == OfflineConst.MODULE_TYPE_PAGES) {
+        val pageId = arguments.getLong(OfflineConst.KEY_EXTRA_PAGE_ID)
+
+        extras[OfflineConst.KEY_EXTRA_PAGE_ID] = pageId
+    }
+
+    extras[OfflineConst.KEY_EXTRA_URL] = arguments.getString(OfflineConst.KEY_EXTRA_URL) ?: ""
+
+    return extras
 }

@@ -33,11 +33,12 @@ import com.instructure.student.fragment.MasteryPathSelectionFragment.Companion.m
 import com.instructure.student.fragment.PageDetailsFragment.Companion.makeRoute
 import com.instructure.student.mobius.assignmentDetails.ui.AssignmentDetailsFragment
 import com.instructure.student.mobius.assignmentDetails.ui.AssignmentDetailsFragment.Companion.makeRoute
+import com.instructure.student.offline.addOfflineDataForModule
 import java.util.*
 
 object ModuleUtility {
     fun getFragment(item: ModuleItem, course: Course, moduleObject: ModuleObject?, isDiscussionRedesignEnabled: Boolean): Fragment? = when (item.type) {
-        "Page" -> PageDetailsFragment.newInstance(makeRoute(course, item.title, item.pageUrl))
+        "Page" -> PageDetailsFragment.newInstance(makeRoute(course, item.title, item.pageUrl).addOfflineDataForModule(item, moduleObject))
         "Assignment" -> AssignmentDetailsFragment.newInstance(makeRoute(course, getAssignmentId(item)))
         "Discussion" -> {
             if (isDiscussionRedesignEnabled) {
@@ -66,7 +67,7 @@ object ModuleUtility {
             if (moduleObject == null) {
                 FileDetailsFragment.newInstance(FileDetailsFragment.makeRoute(course, url!!))
             } else {
-                FileDetailsFragment.newInstance(FileDetailsFragment.makeRoute(course, moduleObject, item.id, url!!))
+                FileDetailsFragment.newInstance(FileDetailsFragment.makeRoute(course, moduleObject, item.id, url!!).addOfflineDataForModule(item, moduleObject))
             }
         }
         else -> null

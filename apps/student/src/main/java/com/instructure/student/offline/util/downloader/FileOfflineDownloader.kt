@@ -4,7 +4,6 @@ import android.net.Uri
 import com.google.gson.Gson
 import com.instructure.canvasapi2.managers.FileFolderManager
 import com.instructure.canvasapi2.models.FileFolder
-import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApiResponse
 import com.instructure.canvasapi2.utils.weave.catch
@@ -17,7 +16,7 @@ import com.twou.offline.item.OfflineModule
 import kotlinx.coroutines.Job
 
 class FileOfflineDownloader(
-    private val mModuleItem: ModuleItem, private val mKeyItem: KeyOfflineItem
+    private val mUrl: String?, private val mKeyItem: KeyOfflineItem
 ) : BaseOfflineDownloader(mKeyItem) {
 
     private var mFetchDataJob: WeaveJob? = null
@@ -25,7 +24,7 @@ class FileOfflineDownloader(
 
     override fun startPreparation() {
         mFetchDataJob = tryWeave(background = true) {
-            val fileUrl = mModuleItem.url?.substringAfter("/api/v1/")
+            val fileUrl = mUrl?.substringAfter("/api/v1/")
                 ?: throw Exception("Page url/name null!")
             val response = awaitApiResponse<FileFolder> {
                 FileFolderManager.getFileFolderFromURL(fileUrl, true, it)

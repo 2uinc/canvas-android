@@ -4,12 +4,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.student.R
 import com.instructure.student.databinding.ItemDownloadsModuleBinding
 import com.instructure.student.offline.item.DownloadsModuleItem
 import com.instructure.student.offline.util.OfflineConst
-import com.instructure.student.offline.util.OfflineUtils
 import com.twou.offline.item.KeyOfflineItem
 
 class DownloadsModuleAdapter(
@@ -43,20 +41,12 @@ class DownloadsModuleAdapter(
 
             moduleItemTextView.text = item.moduleItemName
 
-            val extras = mutableMapOf<String, Any>()
-            extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = item.moduleName
-
             downloadItemView.setWithRemoveAbility()
-            downloadItemView.setKeyItem(
-                KeyOfflineItem(
-                    OfflineUtils.getKey(item.courseId, item.moduleId, item.moduleItemId),
-                    item.moduleItemName, extras
-                )
-            )
+            downloadItemView.setKeyItem(KeyOfflineItem(item.key, item.moduleItemName))
 
             val resId = when (item.type) {
-                ModuleItem.Type.Page.toString() -> R.drawable.ic_pages
-                ModuleItem.Type.File.toString() -> R.drawable.ic_download
+                OfflineConst.TYPE_PAGE -> R.drawable.ic_pages
+                OfflineConst.TYPE_FILE -> R.drawable.ic_download
                 else -> 0
             }
 

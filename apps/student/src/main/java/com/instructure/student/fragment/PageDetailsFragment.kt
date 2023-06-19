@@ -45,6 +45,9 @@ import com.instructure.pandautils.utils.*
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.student.R
 import com.instructure.student.events.PageUpdatedEvent
+import com.instructure.student.offline.initWithOfflineData
+import com.instructure.student.offline.util.OfflineConst
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.LockInfoHTMLHelper
 import kotlinx.android.synthetic.main.fragment_webview.*
@@ -216,6 +219,8 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
         toolbar.title = title()
 
         checkCanEdit()
+
+        toolbar.initWithOfflineData(requireContext(), OfflineUtils.getCourseIdFromUrl(page.htmlUrl ?: ""), title(), arguments, OfflineConst.TYPE_PAGE)
     }
 
     /**

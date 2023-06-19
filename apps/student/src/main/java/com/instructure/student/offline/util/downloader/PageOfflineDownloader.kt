@@ -4,7 +4,6 @@ import android.view.View
 import android.webkit.WebView
 import com.instructure.canvasapi2.managers.PageManager
 import com.instructure.canvasapi2.models.CanvasContext
-import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.models.Page
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.weave.WeaveJob
@@ -22,7 +21,7 @@ import kotlinx.coroutines.Job
 import org.jsoup.Jsoup
 
 class PageOfflineDownloader(
-    private val mCanvasContext: CanvasContext, private val mModuleItem: ModuleItem,
+    private val mCanvasContext: CanvasContext, private val mUrl: String,
     keyItem: KeyOfflineItem
 ) : BaseHtmlOnePageDownloader(keyItem) {
 
@@ -41,9 +40,8 @@ class PageOfflineDownloader(
 
     override fun startPreparation() {
         mFetchDataJob = tryWeave {
-            val pageUrl = mModuleItem.pageUrl ?: throw Exception("Page url/name null!")
             val response = awaitApiResponse<Page> {
-                PageManager.getPageDetails(mCanvasContext, pageUrl, true, it)
+                PageManager.getPageDetails(mCanvasContext, mUrl, true, it)
             }
 
             response.body()?.let { loadPage(it) }

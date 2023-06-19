@@ -14,6 +14,7 @@ import com.instructure.student.databinding.ActivityDownloadsContentBinding
 import com.instructure.student.offline.fragment.DownloadsFileFragment
 import com.instructure.student.offline.fragment.DownloadsPageFragment
 import com.instructure.student.offline.util.DownloadsRepository
+import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 
 class DownloadsContentActivity : AppCompatActivity() {
@@ -36,9 +37,7 @@ class DownloadsContentActivity : AppCompatActivity() {
     private fun initView() {
         binding.toolbar.setupAsBackButton { finish() }
 
-        val parsedKey = OfflineUtils.parseKey(mKey)
-        val courseId = OfflineUtils.getCourseId(parsedKey)
-        val moduleItemId = OfflineUtils.getModuleItemId(parsedKey)
+        val courseId = OfflineUtils.getCourseId(mKey)
 
         ColorKeeper.cachedThemedColors["course_$courseId"]?.let { themedColor ->
             ViewStyler.themeToolbarColored(
@@ -46,24 +45,42 @@ class DownloadsContentActivity : AppCompatActivity() {
             )
         }
 
-        DownloadsRepository.getModuleItems(courseId)?.let { moduleItems ->
-            moduleItems.find { it.moduleItemId == moduleItemId }?.let { moduleItem ->
-                binding.toolbar.title = moduleItem.moduleName
+        when (OfflineUtils.getModuleType(mKey)) {
+            OfflineConst.MODULE_TYPE_MODULES -> {
+                DownloadsRepository.getModuleItems(courseId)?.let { moduleItems ->
+                    moduleItems.find { it.key == mKey }?.let { moduleItem ->
+                        binding.toolbar.title = moduleItem.moduleName
 
-                supportFragmentManager.commit {
-                    when (moduleItem.type) {
-                        "Page" -> {
-                            val fragment = DownloadsPageFragment()
-                            fragment.arguments = DownloadsPageFragment.newArgs(mKey)
-                            replace(R.id.containerLayout, fragment, DownloadsPageFragment.TAG)
-                        }
-
-                        "File" -> {
-                            val fragment = DownloadsFileFragment()
-                            fragment.arguments = DownloadsFileFragment.newArgs(mKey)
-                            replace(R.id.containerLayout, fragment, DownloadsFileFragment.TAG)
-                        }
+                        showContent(moduleItem.type)
                     }
+                }
+            }
+
+            OfflineConst.MODULE_TYPE_PAGES -> {
+                DownloadsRepository.getPageItems(courseId)?.let { pageItems ->
+                    pageItems.find { it.key == mKey }?.let { pageItem ->
+                        binding.toolbar.title = pageItem.pageName
+
+                        showContent(OfflineConst.TYPE_PAGE)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showContent(type: Int) {
+        supportFragmentManager.commit {
+            when (type) {
+                OfflineConst.TYPE_PAGE -> {
+                    val fragment = DownloadsPageFragment()
+                    fragment.arguments = DownloadsPageFragment.newArgs(mKey)
+                    replace(R.id.containerLayout, fragment, DownloadsPageFragment.TAG)
+                }
+
+                OfflineConst.TYPE_FILE -> {
+                    val fragment = DownloadsFileFragment()
+                    fragment.arguments = DownloadsFileFragment.newArgs(mKey)
+                    replace(R.id.containerLayout, fragment, DownloadsFileFragment.TAG)
                 }
             }
         }

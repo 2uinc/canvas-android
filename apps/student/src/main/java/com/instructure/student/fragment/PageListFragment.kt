@@ -37,6 +37,7 @@ import com.instructure.student.R
 import com.instructure.student.adapter.PageListRecyclerAdapter
 import com.instructure.student.events.PageUpdatedEvent
 import com.instructure.student.interfaces.AdapterToFragmentCallback
+import com.instructure.student.offline.addOfflineDataForPage
 import com.instructure.student.router.RouteMatcher
 import kotlinx.android.synthetic.main.fragment_course_pages.*
 import kotlinx.android.synthetic.main.panda_recycler_refresh_layout.*
@@ -88,7 +89,7 @@ class PageListFragment : ParentFragment(), Bookmarkable {
         rootView = layoutInflater.inflate(R.layout.fragment_course_pages, container, false)
         recyclerAdapter = PageListRecyclerAdapter(requireContext(), canvasContext, object : AdapterToFragmentCallback<Page> {
             override fun onRowClicked(page: Page, position: Int, isOpenDetail: Boolean) {
-                RouteMatcher.route(requireContext(), PageDetailsFragment.makeRoute(canvasContext, page))
+                RouteMatcher.route(requireContext(), PageDetailsFragment.makeRoute(canvasContext, page).addOfflineDataForPage(page))
             }
 
             override fun onRefreshFinished() {

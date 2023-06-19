@@ -44,6 +44,9 @@ import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.events.ModuleUpdatedEvent
 import com.instructure.student.events.post
+import com.instructure.student.offline.initWithOfflineData
+import com.instructure.student.offline.util.OfflineConst
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.FileDownloadJobIntentService
 import com.instructure.student.util.StringUtilities
 import kotlinx.android.synthetic.main.fragment_file_details.*
@@ -110,6 +113,8 @@ class FileDetailsFragment : ParentFragment() {
     private fun setupTextViews() {
         fileName.text = file?.displayName
         fileType.text = file?.contentType
+
+        toolbar.initWithOfflineData(requireContext(), OfflineUtils.getCourseIdFromUrl(fileUrl), title(), arguments, OfflineConst.TYPE_FILE, 16.toPx)
     }
 
     private fun setupClickListeners() {

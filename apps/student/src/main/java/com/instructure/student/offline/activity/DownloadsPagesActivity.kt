@@ -9,14 +9,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.pandautils.utils.ViewStyler
 import com.instructure.pandautils.utils.setupAsBackButton
-import com.instructure.student.databinding.ActivityDownloadsModulesBinding
-import com.instructure.student.offline.adapter.DownloadsModuleAdapter
-import com.instructure.student.offline.item.DownloadsModuleItem
+import com.instructure.student.databinding.ActivityDownloadsPagesBinding
+import com.instructure.student.offline.adapter.DownloadsPagesAdapter
+import com.instructure.student.offline.item.DownloadsPageItem
 import com.instructure.student.offline.util.DownloadsRepository
 
-class DownloadsModulesActivity : AppCompatActivity() {
+class DownloadsPagesActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityDownloadsModulesBinding
+    private lateinit var binding: ActivityDownloadsPagesBinding
 
     private var mCourseId = -1L
     private var mCourseName = ""
@@ -24,7 +24,7 @@ class DownloadsModulesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityDownloadsModulesBinding.inflate(layoutInflater)
+        binding = ActivityDownloadsPagesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         mCourseId = intent.getLongExtra(EXTRA_COURSE_ID, -1L)
@@ -45,13 +45,13 @@ class DownloadsModulesActivity : AppCompatActivity() {
 
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-        DownloadsRepository.getModuleItems(mCourseId)?.let {
-            binding.recyclerView.adapter = DownloadsModuleAdapter(it,
-                object : DownloadsModuleAdapter.OnDownloadsModuleListener {
-                    override fun onModuleItemClick(item: DownloadsModuleItem) {
+        DownloadsRepository.getPageItems(mCourseId)?.let {
+            binding.recyclerView.adapter = DownloadsPagesAdapter(
+                it, object : DownloadsPagesAdapter.OnDownloadsPagesListener {
+                    override fun onPageClick(pageItem: DownloadsPageItem) {
                         startActivity(
                             DownloadsContentActivity.newIntent(
-                                this@DownloadsModulesActivity, item.key
+                                this@DownloadsPagesActivity, pageItem.key
                             )
                         )
                     }
@@ -66,7 +66,7 @@ class DownloadsModulesActivity : AppCompatActivity() {
 
         @JvmStatic
         fun newIntent(context: Context, courseId: Long, courseName: String): Intent {
-            return Intent(context, DownloadsModulesActivity::class.java)
+            return Intent(context, DownloadsPagesActivity::class.java)
                 .putExtra(EXTRA_COURSE_ID, courseId)
                 .putExtra(EXTRA_COURSE_NAME, courseName)
         }
