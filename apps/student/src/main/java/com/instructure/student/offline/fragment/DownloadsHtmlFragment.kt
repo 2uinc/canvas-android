@@ -6,14 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.instructure.student.databinding.FragmentDownloadsPageBinding
+import com.instructure.student.databinding.FragmentDownloadsHtmlBinding
 import com.instructure.student.offline.util.DownloadsUtils
 import com.twou.offline.Offline
 import com.twou.offline.util.OfflineDownloaderUtils
 
-class DownloadsPageFragment : DownloadsBaseFragment() {
+class DownloadsHtmlFragment : DownloadsBaseFragment() {
 
-    private lateinit var binding: FragmentDownloadsPageBinding
+    private lateinit var binding: FragmentDownloadsHtmlBinding
 
     private var mKey = ""
     private var mWebView: WebView? = null
@@ -28,7 +28,7 @@ class DownloadsPageFragment : DownloadsBaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        binding = FragmentDownloadsPageBinding.inflate(inflater, container, false)
+        binding = FragmentDownloadsHtmlBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -64,7 +64,7 @@ class DownloadsPageFragment : DownloadsBaseFragment() {
 
     companion object {
 
-        const val TAG = "DownloadsPageFragment"
+        const val TAG = "DownloadsHtmlFragment"
 
         private const val ARG_KEY = "ARG_KEY"
 

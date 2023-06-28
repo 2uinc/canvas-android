@@ -47,6 +47,7 @@ class DownloadsModuleAdapter(
             val resId = when (item.type) {
                 OfflineConst.TYPE_PAGE -> R.drawable.ic_pages
                 OfflineConst.TYPE_FILE -> R.drawable.ic_download
+                OfflineConst.TYPE_LTI -> R.drawable.ic_lti
                 else -> 0
             }
 

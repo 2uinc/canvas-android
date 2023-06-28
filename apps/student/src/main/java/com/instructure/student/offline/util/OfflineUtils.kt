@@ -56,6 +56,7 @@ object OfflineUtils {
         return when (type) {
             "Page" -> OfflineConst.TYPE_PAGE
             "File" -> OfflineConst.TYPE_FILE
+            "ExternalTool" -> OfflineConst.TYPE_LTI
             else -> -1
         }
     }

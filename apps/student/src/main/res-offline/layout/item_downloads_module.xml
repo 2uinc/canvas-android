@@ -56,7 +56,7 @@
             android:paddingLeft="@dimen/card_header_margins"
             android:paddingRight="@dimen/card_header_margins"
             app:layout_constraintBottom_toBottomOf="@+id/iconImageView"
-            app:layout_constraintEnd_toEndOf="@+id/downloadItemView"
+            app:layout_constraintEnd_toStartOf="@+id/downloadItemView"
             app:layout_constraintStart_toEndOf="@+id/iconImageView"
             app:layout_constraintTop_toTopOf="@+id/iconImageView"
             tools:text="Module Name" />

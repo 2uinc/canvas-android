@@ -12,7 +12,7 @@ import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
 import com.instructure.student.databinding.ActivityDownloadsContentBinding
 import com.instructure.student.offline.fragment.DownloadsFileFragment
-import com.instructure.student.offline.fragment.DownloadsPageFragment
+import com.instructure.student.offline.fragment.DownloadsHtmlFragment
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
@@ -71,10 +71,10 @@ class DownloadsContentActivity : AppCompatActivity() {
     private fun showContent(type: Int) {
         supportFragmentManager.commit {
             when (type) {
-                OfflineConst.TYPE_PAGE -> {
-                    val fragment = DownloadsPageFragment()
-                    fragment.arguments = DownloadsPageFragment.newArgs(mKey)
-                    replace(R.id.containerLayout, fragment, DownloadsPageFragment.TAG)
+                OfflineConst.TYPE_PAGE, OfflineConst.TYPE_LTI -> {
+                    val fragment = DownloadsHtmlFragment()
+                    fragment.arguments = DownloadsHtmlFragment.newArgs(mKey)
+                    replace(R.id.containerLayout, fragment, DownloadsHtmlFragment.TAG)
                 }
 
                 OfflineConst.TYPE_FILE -> {

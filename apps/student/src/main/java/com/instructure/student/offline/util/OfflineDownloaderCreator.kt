@@ -12,6 +12,7 @@ import com.instructure.student.offline.item.DownloadsCourseItem
 import com.instructure.student.offline.item.DownloadsModuleItem
 import com.instructure.student.offline.item.DownloadsPageItem
 import com.instructure.student.offline.util.downloader.FileOfflineDownloader
+import com.instructure.student.offline.util.downloader.LTIOfflineDownloader
 import com.instructure.student.offline.util.downloader.PageOfflineDownloader
 import com.twou.offline.base.downloader.BaseOfflineDownloader
 import com.twou.offline.base.downloader.BaseOfflineDownloaderCreator
@@ -128,7 +129,28 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
             OfflineConst.TYPE_FILE -> {
                 val url =
                     getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
-                mOfflineDownloader = FileOfflineDownloader(url, getKeyOfflineItem())
+                if (url.isNullOrEmpty()) {
+                    unit(
+                        null,
+                        OfflineDownloadException(message = "Failed to create Offline Downloader")
+                    )
+
+                } else {
+                    mOfflineDownloader = FileOfflineDownloader(url, getKeyOfflineItem())
+                }
+            }
+            OfflineConst.TYPE_LTI -> {
+                val url =
+                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
+                if (url.isNullOrEmpty()) {
+                    unit(
+                        null,
+                        OfflineDownloadException(message = "Failed to create Offline Downloader")
+                    )
+
+                } else {
+                    mOfflineDownloader = LTIOfflineDownloader(url, getKeyOfflineItem())
+                }
             }
         }
 

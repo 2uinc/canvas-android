@@ -20,5 +20,6 @@ class OfflineConst {
 
         const val TYPE_PAGE = 0
         const val TYPE_FILE = 1
+        const val TYPE_LTI = 2
     }
 }
