@@ -17,19 +17,7 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
     protected fun setInitialDocument(document: Document) {
         mInitHtmlDocument = document
 
-        getAllVideosAndDownload(
-            document, object : OfflineHtmlVideoChecker.OnVideoProcessListener() {
-                override fun onVideoLoaded(videoLinks: List<OfflineHtmlVideoChecker.VideoLink>) {
-                    if (isDestroyed.get()) return
-
-                    launch { checkForIFrames() }
-                }
-
-                override fun onError(e: Exception) {
-                    processError(e)
-                }
-            }, isNeedReplaceIframes = false
-        )
+        launch { checkForIFrames() }
     }
 
     private fun checkForIFrames(isWithVideoCheck: Boolean = true) {
@@ -41,7 +29,9 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
             if (iframeLink.isNotBlank() && (iframeLink.startsWith("http://") ||
                         iframeLink.startsWith("https://"))
             ) {
-                mIframeLinks.add(LTIOfflineDownloader.IframeElement(iframeLink, element))
+                supportedIframes.find { iframeLink.contains(it) }?.let {
+                    mIframeLinks.add(LTIOfflineDownloader.IframeElement(iframeLink, element))
+                }
             }
         }
 
@@ -51,16 +41,16 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
                     getAllVideosAndDownload(document, object :
                         OfflineHtmlVideoChecker.OnVideoProcessListener() {
                         override fun onVideoLoaded(videoLinks: List<OfflineHtmlVideoChecker.VideoLink>) {
-                            mInitHtmlDocument?.let { document -> finishPreparation(document) }
+                            mInitHtmlDocument?.let { document -> removeUnusedIframes(document) }
                         }
 
                         override fun onError(e: Exception) {
                             processError(e)
                         }
-                    })
+                    }, isNeedReplaceIframes = false)
 
                 } else {
-                    finishPreparation(document)
+                    removeUnusedIframes(document)
                 }
             }
 
@@ -94,6 +84,18 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
                 override fun onError(e: Exception) {
                     processError(e)
                 }
-            })
+            }, isNeedReplaceIframes = false
+        )
+    }
+
+    private fun removeUnusedIframes(document: Document) {
+        document.getElementsByTag("iframe")?.forEach { element -> element.remove() }
+
+        finishPreparation(document)
+    }
+
+    companion object {
+
+        private val supportedIframes = listOf<String>()
     }
 }

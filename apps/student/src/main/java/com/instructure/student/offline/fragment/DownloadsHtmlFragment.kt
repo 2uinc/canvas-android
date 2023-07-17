@@ -38,6 +38,15 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
         initWebViewForOffline()
     }
 
+    override fun onBackPressed(): Boolean {
+        if (mWebView?.canGoBack() == true) {
+            mWebView?.goBack()
+            return true
+        }
+
+        return false
+    }
+
     private fun initWebViewForOffline() {
         mOfflineRepository.getOfflineModule(mKey)?.let {
             val url = OfflineDownloaderUtils.getStartPagePath(mKey)

@@ -133,26 +133,26 @@ open class DownloadsBaseFragment : Fragment() {
     protected fun addResizeObserverToWebView(webView: WebView) {
         webView.evaluateJavascript(
             """
-                var pageContentId = "content";
-                
                 window.resizeObserver = new ResizeObserver(entries => {
-                    var height = document.getElementById(pageContentId).offsetHeight;
-                    javascript:window.offline.onContentHeightChanged(height);
+                    if (document.children.length > 0) {
+                        var height = document.children[0].offsetHeight;
+                        javascript:window.offline.onContentHeightChanged(height);
+                    }
                 });                    
                     
                 var isResizeObserverAdded = false;
                 window.mutationObserver = new MutationObserver(mutationRecords => {
                     if (isResizeObserverAdded) return;
                     
-                    if (document.getElementById(pageContentId) != undefined) {
+                    if (document.body != undefined) {
                         isResizeObserverAdded = true;
-                        window.resizeObserver.observe(document.getElementById(pageContentId));
+                        window.resizeObserver.observe(document.body);
                     }
                 });
                 
-                if (document.getElementById(pageContentId) != undefined) {
+                if (document.body != undefined) {
                     isResizeObserverAdded = true;    
-                    window.resizeObserver.observe(document.getElementById(pageContentId));
+                    window.resizeObserver.observe(document.body);
                         
                 } else {
                     window.mutationObserver.observe(document, { childList: true, subtree: true });
@@ -167,6 +167,10 @@ open class DownloadsBaseFragment : Fragment() {
 
     open fun onVideoPlaying(videoId: String, isPlaying: Boolean) {
 
+    }
+
+    open fun onBackPressed(): Boolean {
+        return false
     }
 
     private fun pauseAllOtherVideosExceptTheCurrentOne(videoId: String) {

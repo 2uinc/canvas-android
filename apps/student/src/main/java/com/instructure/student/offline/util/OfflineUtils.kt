@@ -8,20 +8,26 @@ import com.twou.offline.item.OfflineModule
 
 object OfflineUtils {
 
+    fun getSchoolId() : String {
+        return ApiPrefs.domain.substringBefore(".")
+    }
+
     fun getModuleKey(type: Int, courseId: Long, moduleId: Long, moduleItemId: Long): String {
+        val schoolId = getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
-        return "${userId}_${type}_${courseId}_${moduleId}_${moduleItemId}"
+        return "${schoolId}_${userId}_${type}_${courseId}_${moduleId}_${moduleItemId}"
     }
 
     fun getPageKey(courseId: Long, pageId: Long): String {
+        val schoolId = getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
-        return "${userId}_${OfflineConst.TYPE_PAGE}_${courseId}_${pageId}"
+        return "${schoolId}_${userId}_${OfflineConst.TYPE_PAGE}_${courseId}_${pageId}"
     }
 
     fun getModuleType(key: String): Int {
         val parsedKey = parseKey(key)
-        return if (parsedKey.size == 4) {
-            val type = parsedKey[1].toInt()
+        return if (parsedKey.size == 5) {
+            val type = parsedKey[2].toInt()
             if (type == OfflineConst.TYPE_PAGE) {
                 OfflineConst.MODULE_TYPE_PAGES
 
@@ -36,11 +42,11 @@ object OfflineUtils {
 
     fun getKeyType(key: String): Int {
         val data = key.split("_")
-        return data[1].toInt()
+        return data[2].toInt()
     }
 
     fun getCourseId(key: String): Long {
-        return parseKey(key)[2].toLong()
+        return parseKey(key)[3].toLong()
     }
 
     private fun parseKey(key: String): ArrayList<String> {
@@ -77,5 +83,9 @@ object OfflineUtils {
         }
 
         return -1L
+    }
+
+    fun logout() {
+        DownloadsRepository.logout()
     }
 }

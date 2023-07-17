@@ -118,7 +118,7 @@
 
                 <androidx.appcompat.widget.AppCompatImageView
                     style="@style/NavigationDrawerIcon"
-                    app:srcCompat="@drawable/ic_download" />
+                    app:srcCompat="@drawable/ic_checkmark_icloud" />
 
                 <TextView
                     android:layout_width="wrap_content"

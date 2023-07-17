@@ -13,7 +13,6 @@ import com.instructure.canvasapi2.utils.weave.tryWeave
 import com.instructure.pandautils.utils.loadHtmlWithIframes
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.student.R
-import com.twou.offline.base.downloader.BaseHtmlOnePageDownloader
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.util.OfflineHtmlVideoChecker
@@ -21,9 +20,8 @@ import kotlinx.coroutines.Job
 import org.jsoup.Jsoup
 
 class PageOfflineDownloader(
-    private val mCanvasContext: CanvasContext, private val mUrl: String,
-    keyItem: KeyOfflineItem
-) : BaseHtmlOnePageDownloader(keyItem) {
+    private val mCanvasContext: CanvasContext, private val mUrl: String, keyItem: KeyOfflineItem
+) : BaseIframeDownloader(keyItem) {
 
     private var mFetchDataJob: WeaveJob? = null
     private var mLoadHtmlJob: Job? = null
@@ -91,13 +89,13 @@ class PageOfflineDownloader(
                     override fun onVideoLoaded(videoLinks: List<OfflineHtmlVideoChecker.VideoLink>) {
                         if (isDestroyed.get()) return
 
-                        finishPreparation(document)
+                        setInitialDocument(document)
                     }
 
                     override fun onError(e: Exception) {
                         processError(e)
                     }
-                })
+                }, isNeedReplaceIframes = false)
             })
 
         } else if (page.body == null || page.body?.endsWith("") == true) {

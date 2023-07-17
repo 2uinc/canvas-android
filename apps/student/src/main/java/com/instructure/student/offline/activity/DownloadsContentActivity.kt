@@ -11,6 +11,7 @@ import com.instructure.pandautils.utils.ViewStyler
 import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
 import com.instructure.student.databinding.ActivityDownloadsContentBinding
+import com.instructure.student.offline.fragment.DownloadsBaseFragment
 import com.instructure.student.offline.fragment.DownloadsFileFragment
 import com.instructure.student.offline.fragment.DownloadsHtmlFragment
 import com.instructure.student.offline.util.DownloadsRepository
@@ -22,6 +23,7 @@ class DownloadsContentActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDownloadsContentBinding
 
     private var mKey = ""
+    private var mCurrentFragment: DownloadsBaseFragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +36,14 @@ class DownloadsContentActivity : AppCompatActivity() {
         initView()
     }
 
+    override fun onBackPressed() {
+        if (mCurrentFragment?.onBackPressed() == false) {
+            super.onBackPressed()
+        }
+    }
+
     private fun initView() {
-        binding.toolbar.setupAsBackButton { finish() }
+        binding.toolbar.setupAsBackButton { onBackPressed() }
 
         val courseId = OfflineUtils.getCourseId(mKey)
 
@@ -75,12 +83,14 @@ class DownloadsContentActivity : AppCompatActivity() {
                     val fragment = DownloadsHtmlFragment()
                     fragment.arguments = DownloadsHtmlFragment.newArgs(mKey)
                     replace(R.id.containerLayout, fragment, DownloadsHtmlFragment.TAG)
+                    mCurrentFragment = fragment
                 }
 
                 OfflineConst.TYPE_FILE -> {
                     val fragment = DownloadsFileFragment()
                     fragment.arguments = DownloadsFileFragment.newArgs(mKey)
                     replace(R.id.containerLayout, fragment, DownloadsFileFragment.TAG)
+                    mCurrentFragment = fragment
                 }
             }
         }

@@ -26,6 +26,7 @@ import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.activity.LoginActivity
 import com.instructure.student.flutterChannels.FlutterComm
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.StudentPrefs
 import com.instructure.student.widget.WidgetUpdater
 
@@ -37,6 +38,7 @@ class StudentLogoutTask(
 ) : LogoutTask(type, uri, canvasForElementaryFeatureFlag, typefaceBehavior) {
 
     override fun onCleanup() {
+        OfflineUtils.logout()
         FlutterComm.reset()
         StudentPrefs.safeClearPrefs()
         WidgetUpdater.updateWidgets()

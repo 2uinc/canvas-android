@@ -55,6 +55,7 @@ import com.instructure.student.events.CourseColorOverlayToggledEvent
 import com.instructure.student.events.ShowGradesToggledEvent
 import com.instructure.student.flutterChannels.FlutterComm
 import com.instructure.student.interfaces.CourseAdapterToFragmentCallback
+import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.StudentPrefs
 import kotlinx.android.synthetic.main.course_grid_recycler_refresh_layout.*
@@ -134,6 +135,7 @@ class DashboardFragment : ParentFragment() {
                             course.name = response.nickname!!
                             course.originalName = response.name
                         }
+                        DownloadsRepository.changeCourseName(course.id, course.name)
                         recyclerAdapter?.notifyDataSetChanged()
                     } catch {
                         toast(R.string.courseNicknameError)

@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.instructure.pandautils.utils.DP
@@ -21,7 +20,7 @@ import com.twou.offline.Offline
 import kotlinx.android.synthetic.main.fragment_file_details.*
 import java.io.File
 
-class DownloadsFileFragment : Fragment() {
+class DownloadsFileFragment : DownloadsBaseFragment() {
 
     private lateinit var binding: FragmentFileDetailsBinding
 

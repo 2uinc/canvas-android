@@ -1,6 +1,7 @@
 package com.instructure.student.offline.util
 
 import android.net.Uri
+import android.webkit.CookieManager
 import com.instructure.canvasapi2.managers.CourseManager
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Course
@@ -20,6 +21,13 @@ import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineQueueItem
+import com.twou.offline.util.OfflineDownloaderUtils
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.TimeUnit
 
 /***
 Each KeyOfflineItem should contain in extras next fields:
@@ -52,7 +60,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
     override fun prepareOfflineDownloader(unit: (error: Throwable?) -> Unit) {
         super.prepareOfflineDownloader(unit)
 
-        mOfflineJob = tryWeave {
+        mOfflineJob = tryWeave(true) {
             val courseId = OfflineUtils.getCourseId(getKeyOfflineItem().key)
 
             val canvasContext = awaitApi<Course> {
@@ -60,6 +68,9 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
             }
 
             mCanvasContext = canvasContext
+
+            var logoPath = ""
+            canvasContext.imageUrl?.let { logoPath = downloadCourseImage(it) }
 
             val moduleType =
                 getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE)
@@ -77,7 +88,10 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                         ?: -1L
 
                 DownloadsRepository.addModuleItem(
-                    DownloadsCourseItem(courseId, canvasContext.name),
+                    DownloadsCourseItem(
+                        courseId, canvasContext.name, canvasContext.courseCode ?: "", logoPath,
+                        canvasContext.term?.name ?: ""
+                    ),
                     DownloadsModuleItem(
                         getKeyOfflineItem().key, courseId, moduleId, moduleName, moduleItemId,
                         offlineQueueItem.keyItem.title, type
@@ -88,7 +102,10 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
 
             } else if (moduleType == OfflineConst.MODULE_TYPE_PAGES) {
                 DownloadsRepository.addPageItem(
-                    DownloadsCourseItem(courseId, canvasContext.name),
+                    DownloadsCourseItem(
+                        courseId, canvasContext.name, canvasContext.courseCode ?: "", logoPath,
+                        canvasContext.term?.name ?: ""
+                    ),
                     DownloadsPageItem(
                         getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title
                     )
@@ -167,5 +184,58 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
     override fun destroy() {
         mOfflineJob?.cancel()
         mOfflineDownloader?.destroy()
+    }
+
+    private fun downloadCourseImage(url: String): String {
+        val client = OkHttpClient.Builder()
+            .readTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .build()
+        val requestBuilder = Request.Builder().url(url)
+
+        try {
+            val uri = Uri.parse(url)
+            val cookies = CookieManager.getInstance().getCookie(uri.scheme + "://" + uri.host)
+            requestBuilder.addHeader("Cookie", cookies ?: "")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        val call = client.newCall(requestBuilder.build())
+        val response = call.execute()
+
+        val body = response.body
+
+        val schoolId = OfflineUtils.getSchoolId()
+        val schoolDir = File(OfflineDownloaderUtils.getGeneralDirPath() + "/${schoolId}")
+        if (!schoolDir.exists()) schoolDir.mkdirs()
+
+        val downloadFile =
+            File(OfflineDownloaderUtils.getGeneralDirPath() + "/${schoolId}/logo.png")
+        if (downloadFile.exists()) {
+            body?.close()
+            return downloadFile.path
+        }
+
+        val outputStream = FileOutputStream(downloadFile)
+
+        body?.let { responseBody ->
+            BufferedInputStream(responseBody.byteStream()).use { inputStream ->
+                val data = ByteArray(1024)
+
+                var count: Int
+
+                while (inputStream.read(data).also { count = it } != -1) {
+                    outputStream.write(data, 0, count)
+                }
+            }
+
+            responseBody.close()
+        }
+
+        outputStream.flush()
+        outputStream.close()
+
+        return downloadFile.path
     }
 }

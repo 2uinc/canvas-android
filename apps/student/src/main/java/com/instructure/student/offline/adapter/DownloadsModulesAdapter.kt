@@ -1,20 +1,23 @@
 package com.instructure.student.offline.adapter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.student.R
 import com.instructure.student.databinding.ItemDownloadsModuleBinding
 import com.instructure.student.offline.item.DownloadsModuleItem
 import com.instructure.student.offline.util.OfflineConst
 import com.twou.offline.item.KeyOfflineItem
 
-class DownloadsModuleAdapter(
-    private val mModules: List<DownloadsModuleItem>,
+class DownloadsModulesAdapter(
+    private val mContext: Context, private val mTextAndIconColor: Int,
+    private val mModules: MutableList<DownloadsModuleItem>,
     private val mOnDownloadsModuleListener: OnDownloadsModuleListener
 ) :
-    RecyclerView.Adapter<DownloadsModuleAdapter.ViewHolder>() {
+    RecyclerView.Adapter<DownloadsModulesAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(
@@ -51,9 +54,12 @@ class DownloadsModuleAdapter(
                 else -> 0
             }
 
-            iconImageView.setImageResource(resId)
+            val drawable = ColorKeeper.getColoredDrawable(mContext, resId, mTextAndIconColor)
+            iconImageView.setImageDrawable(drawable)
         }
     }
+
+    fun getItems() = mModules
 
     inner class ViewHolder(val binding: ItemDownloadsModuleBinding) :
         RecyclerView.ViewHolder(binding.root) {

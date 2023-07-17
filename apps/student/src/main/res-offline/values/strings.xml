@@ -16,4 +16,12 @@
 
     <string name="download_no_intent_msg">There is no app installed to open this</string>
 
+    <string name="download_no_courses">No Courses</string>
+    <string name="download_no_courses_subtext">It looks like there aren\'t any contents downloaded yet.</string>
+
+    <string name="download_course_modules">Modules</string>
+    <string name="download_course_pages">Pages</string>
+
+    <string name="download_content_not_downloaded">This content is not downloaded yet</string>
+
 </resources>

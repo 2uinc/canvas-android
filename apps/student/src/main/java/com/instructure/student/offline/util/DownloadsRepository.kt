@@ -19,7 +19,7 @@ object DownloadsRepository {
 
     private var isLoaded = false
 
-    fun clearAll() {
+    fun logout() {
         mCourseItems.clear()
         mModuleItems.clear()
         mModuleItemsMap.clear()
@@ -27,9 +27,7 @@ object DownloadsRepository {
         mPageItems.clear()
         mPageItemsMap.clear()
 
-        saveCourseData()
-        saveModuleData()
-        savePageData()
+        isLoaded = false
     }
 
     fun getCourses(): List<DownloadsCourseItem> {
@@ -38,13 +36,13 @@ object DownloadsRepository {
         return mCourseItems
     }
 
-    fun getModuleItems(courseId: Long): List<DownloadsModuleItem>? {
+    fun getModuleItems(courseId: Long): ArrayList<DownloadsModuleItem>? {
         if (!isLoaded) loadData()
 
         return mModuleItemsMap[courseId]
     }
 
-    fun getPageItems(courseId: Long): List<DownloadsPageItem>? {
+    fun getPageItems(courseId: Long): ArrayList<DownloadsPageItem>? {
         if (!isLoaded) loadData()
 
         return mPageItemsMap[courseId]
@@ -53,10 +51,9 @@ object DownloadsRepository {
     fun addModuleItem(courseItem: DownloadsCourseItem, moduleItem: DownloadsModuleItem) {
         if (!isLoaded) loadData()
 
-        if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
-            mCourseItems.add(courseItem)
-            saveCourseData()
-        }
+        mCourseItems.removeIf { it.courseId == courseItem.courseId }
+        mCourseItems.add(courseItem)
+        saveCourseData()
 
         if (mModuleItems.firstOrNull { it.key == moduleItem.key } == null) {
             mModuleItems.add(moduleItem)
@@ -69,10 +66,9 @@ object DownloadsRepository {
     fun addPageItem(courseItem: DownloadsCourseItem, pageItem: DownloadsPageItem) {
         if (!isLoaded) loadData()
 
-        if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
-            mCourseItems.add(courseItem)
-            saveCourseData()
-        }
+        mCourseItems.removeIf { it.courseId == courseItem.courseId }
+        mCourseItems.add(courseItem)
+        saveCourseData()
 
         if (mPageItems.firstOrNull { it.key == pageItem.key } == null) {
             mPageItems.add(pageItem)
@@ -82,35 +78,49 @@ object DownloadsRepository {
         }
     }
 
+    fun changeCourseName(courseId: Long, name: String) {
+        if (!isLoaded) loadData()
+
+        mCourseItems.find { it.courseId == courseId }?.let {
+            it.title = name
+            saveCourseData()
+        }
+    }
+
     private fun loadData() {
+        val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
         try {
-            Paper.book("$userId").read<List<DownloadsCourseItem>>("downloads_course_items")?.let {
-                mCourseItems.addAll(it.sortedBy { courseItem -> courseItem.title })
-            }
+            Paper.book("${schoolId}_$userId")
+                .read<List<DownloadsCourseItem>>("downloads_course_items")?.let {
+                    mCourseItems.addAll(it.sortedBy { courseItem -> courseItem.title })
+                }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
         try {
-            Paper.book("$userId").read<List<DownloadsModuleItem>>("downloads_module_items")?.let {
-                mModuleItems.addAll(it)
-                mModuleItems.forEach { moduleItem ->
-                    mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }?.add(moduleItem)
+            Paper.book("${schoolId}_$userId")
+                .read<List<DownloadsModuleItem>>("downloads_module_items")?.let {
+                    mModuleItems.addAll(it)
+                    mModuleItems.forEach { moduleItem ->
+                        mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }
+                            ?.add(moduleItem)
+                    }
                 }
-            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
         try {
-            Paper.book("$userId").read<List<DownloadsPageItem>>("downloads_page_items")?.let {
-                mPageItems.addAll(it)
-                mPageItems.forEach { pageItem ->
-                    mPageItemsMap.getOrPut(pageItem.courseId) { ArrayList() }?.add(pageItem)
+            Paper.book("${schoolId}_$userId").read<List<DownloadsPageItem>>("downloads_page_items")
+                ?.let {
+                    mPageItems.addAll(it)
+                    mPageItems.forEach { pageItem ->
+                        mPageItemsMap.getOrPut(pageItem.courseId) { ArrayList() }?.add(pageItem)
+                    }
                 }
-            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -150,6 +160,13 @@ object DownloadsRepository {
                 if (isNeedSavePages) savePageData()
             }
 
+            override fun onItemError(key: String, error: Throwable) {
+                when (OfflineUtils.getModuleType(key)) {
+                    OfflineConst.MODULE_TYPE_MODULES -> removeModuleItem(key)
+                    OfflineConst.MODULE_TYPE_PAGES -> removePageItem(key)
+                }
+            }
+
             private fun removeModuleItem(key: String, isWithSave: Boolean = true) {
                 val courseId = OfflineUtils.getCourseId(key)
 
@@ -184,20 +201,23 @@ object DownloadsRepository {
     }
 
     private fun saveCourseData() {
+        val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
-        Paper.book("$userId").write("downloads_course_items", mCourseItems)
+        Paper.book("${schoolId}_$userId").write("downloads_course_items", mCourseItems)
     }
 
     private fun saveModuleData() {
+        val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
-        Paper.book("$userId").write("downloads_module_items", mModuleItems)
+        Paper.book("${schoolId}_$userId").write("downloads_module_items", mModuleItems)
     }
 
     private fun savePageData() {
+        val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
-        Paper.book("$userId").write("downloads_page_items", mPageItems)
+        Paper.book("${schoolId}_$userId").write("downloads_page_items", mPageItems)
     }
 }

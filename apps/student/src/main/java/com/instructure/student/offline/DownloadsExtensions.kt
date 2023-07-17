@@ -1,6 +1,7 @@
 package com.instructure.student.offline
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -136,6 +137,7 @@ fun Toolbar.initWithOfflineData(
             OfflineUtils.getPageKey(courseId, pageId)
         }
         setKeyItem(KeyOfflineItem(key, title, extras))
+        setViewColor(Color.WHITE)
         tag = "DownloadItemView"
     })
 }
