@@ -1,5 +1,6 @@
 package com.instructure.student.offline.util.downloader
 
+import android.net.Uri
 import com.twou.offline.base.downloader.BaseHtmlOnePageDownloader
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.util.OfflineHtmlVideoChecker
@@ -90,6 +91,20 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
 
     private fun removeUnusedIframes(document: Document) {
         document.getElementsByTag("iframe")?.forEach { element -> element.remove() }
+
+        document.getElementsByTag(HtmlLink.A)?.forEach { element ->
+            if (element.hasAttr(HtmlLink.HREF)) {
+                var href = element.attr(HtmlLink.HREF)
+                if (href.contains("/courses/") && href.contains("/files/")) {
+                    href = Uri.parse(href)
+                        .buildUpon()
+                        .appendPath("download")
+                        .build().toString()
+
+                    element.attr(HtmlLink.HREF, href)
+                }
+            }
+        }
 
         finishPreparation(document)
     }

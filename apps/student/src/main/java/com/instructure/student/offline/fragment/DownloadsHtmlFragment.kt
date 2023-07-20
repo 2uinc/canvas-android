@@ -4,10 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.instructure.student.databinding.FragmentDownloadsHtmlBinding
 import com.instructure.student.offline.util.DownloadsUtils
+import com.instructure.student.offline.util.OfflineUtils
 import com.twou.offline.Offline
 import com.twou.offline.util.OfflineDownloaderUtils
 
@@ -60,6 +62,21 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
                             addResizeObserverToWebView(webView)
                         }
                         binding.progressBar.visibility = View.GONE
+                    }
+
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?, request: WebResourceRequest?
+                    ): Boolean {
+                        val requestUrl = request?.url?.toString() ?: ""
+                        return if (requestUrl.startsWith("file://")) {
+                            val file = OfflineUtils.getFile(requestUrl)
+                            val uri = OfflineUtils.getFileUri(mContext, file)
+                            OfflineUtils.openFile(mContext, uri)
+                            true
+
+                        } else {
+                            super.shouldOverrideUrlLoading(view, request)
+                        }
                     }
                 }
 

@@ -1,14 +1,19 @@
 package com.instructure.student.offline.util
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.student.offline.item.FileOfflineItem
 import com.twou.offline.item.OfflineModule
+import java.io.File
 
 object OfflineUtils {
 
-    fun getSchoolId() : String {
+    fun getSchoolId(): String {
         return ApiPrefs.domain.substringBefore(".")
     }
 
@@ -62,7 +67,7 @@ object OfflineUtils {
         return when (type) {
             "Page" -> OfflineConst.TYPE_PAGE
             "File" -> OfflineConst.TYPE_FILE
-            "ExternalTool" -> OfflineConst.TYPE_LTI
+            //"ExternalTool" -> OfflineConst.TYPE_LTI
             else -> -1
         }
     }
@@ -87,5 +92,39 @@ object OfflineUtils {
 
     fun logout() {
         DownloadsRepository.logout()
+    }
+
+    fun getFile(uri: String): File {
+        return if (uri.contains("file:/")) {
+            File(uri.substring(if (uri.contains("file:///")) 7 else 5))
+        } else {
+            File(uri)
+        }
+    }
+
+    fun getFileUri(context: Context, file: File): Uri {
+        return FileProvider.getUriForFile(
+            context, context.applicationContext.packageName + ".provider", file
+        )
+    }
+
+    fun openFile(context: Context, uri: Uri?): Boolean {
+        if (uri == null) return false
+
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        if (intent.resolveActivity(context.packageManager) != null) {
+            try {
+                context.startActivity(intent)
+
+            } catch (e: ActivityNotFoundException) {
+                return false
+            }
+
+        } else {
+            return false
+        }
+
+        return true
     }
 }
