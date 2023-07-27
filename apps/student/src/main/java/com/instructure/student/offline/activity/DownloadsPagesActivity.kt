@@ -51,8 +51,10 @@ class DownloadsPagesActivity : AppCompatActivity() {
                 ) {
                     mDownloadsPagesAdapter?.getItems()?.indexOfFirst { it.key == key }
                         ?.let { index ->
-                            mDownloadsPagesAdapter?.getItems()?.removeAt(index)
-                            mDownloadsPagesAdapter?.notifyItemRemoved(index)
+                            if (index >= 0) {
+                                mDownloadsPagesAdapter?.getItems()?.removeAt(index)
+                                mDownloadsPagesAdapter?.notifyItemRemoved(index)
+                            }
                         }
                     if (mDownloadsPagesAdapter?.itemCount == 0) finish()
                 }

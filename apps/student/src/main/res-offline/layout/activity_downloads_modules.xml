@@ -22,14 +22,14 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:cacheColorHint="@android:color/transparent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/downloadPanelView"
         app:layout_constraintTop_toBottomOf="@+id/toolbar"
         app:layout_constraintVertical_bias="0.0"
         tools:layout_editor_absoluteX="0dp" />
 
-    <com.instructure.pandautils.views.EmptyView
-        android:id="@+id/emptyView"
+    <com.twou.offline.view.DownloadQueuePanelView
+        android:id="@+id/downloadPanelView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

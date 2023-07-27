@@ -52,8 +52,10 @@ class DownloadsModulesActivity : AppCompatActivity() {
                 ) {
                     mDownloadsModuleAdapter?.getItems()?.indexOfFirst { it.key == key }
                         ?.let { index ->
-                            mDownloadsModuleAdapter?.getItems()?.removeAt(index)
-                            mDownloadsModuleAdapter?.notifyItemRemoved(index)
+                            if (index >= 0) {
+                                mDownloadsModuleAdapter?.getItems()?.removeAt(index)
+                                mDownloadsModuleAdapter?.notifyItemRemoved(index)
+                            }
                         }
                     if (mDownloadsModuleAdapter?.itemCount == 0) finish()
                 }

@@ -16,7 +16,7 @@ import com.instructure.student.offline.util.downloader.FileOfflineDownloader
 import com.instructure.student.offline.util.downloader.LTIOfflineDownloader
 import com.instructure.student.offline.util.downloader.PageOfflineDownloader
 import com.twou.offline.base.downloader.BaseOfflineDownloader
-import com.twou.offline.base.downloader.BaseOfflineDownloaderCreator
+import com.twou.offline.base.BaseOfflineDownloaderCreator
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
