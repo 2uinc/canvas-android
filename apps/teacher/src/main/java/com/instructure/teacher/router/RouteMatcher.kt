@@ -39,8 +39,10 @@ import com.instructure.interactions.router.Route
 import com.instructure.interactions.router.RouteContext
 import com.instructure.interactions.router.RouterParams
 import com.instructure.pandautils.activities.BaseViewMediaActivity
+import com.instructure.pandautils.features.dashboard.edit.EditDashboardFragment
 import com.instructure.pandautils.features.discussion.details.DiscussionDetailsWebViewFragment
 import com.instructure.pandautils.features.discussion.router.DiscussionRouterFragment
+import com.instructure.pandautils.features.inbox.list.InboxFragment
 import com.instructure.pandautils.fragments.HtmlContentFragment
 import com.instructure.pandautils.loaders.OpenMediaAsyncTaskLoader
 import com.instructure.pandautils.utils.*
@@ -120,6 +122,11 @@ object RouteMatcher : BaseRouteMatcher() {
         fullscreenFragments.add(FullscreenInternalWebViewFragment::class.java)
         fullscreenFragments.add(LtiLaunchFragment::class.java)
         fullscreenFragments.add(SpeedGraderQuizWebViewFragment::class.java)
+        fullscreenFragments.add(HtmlContentFragment::class.java)
+        fullscreenFragments.add(ViewPdfFragment::class.java)
+        fullscreenFragments.add(ViewHtmlFragment::class.java)
+        fullscreenFragments.add(EditDashboardFragment::class.java)
+        fullscreenFragments.add(CourseBrowserFragment::class.java)
 
         // Bottom Sheet Fragments
         bottomSheetFragments.add(EditAssignmentDetailsFragment::class.java)
@@ -342,7 +349,7 @@ object RouteMatcher : BaseRouteMatcher() {
             DiscussionsDetailsFragment::class.java.isAssignableFrom(cls) -> fragment = getDiscussionDetailsFragment(canvasContext, route)
             DiscussionDetailsWebViewFragment::class.java.isAssignableFrom(cls) -> fragment = DiscussionDetailsWebViewFragment.newInstance(route)
             DiscussionRouterFragment::class.java.isAssignableFrom(cls) -> fragment = DiscussionRouterFragment.newInstance(canvasContext!!, route)
-            InboxFragment::class.java.isAssignableFrom(cls) -> fragment = InboxFragment()
+            InboxFragment::class.java.isAssignableFrom(cls) -> fragment = InboxFragment.newInstance(route)
             AddMessageFragment::class.java.isAssignableFrom(cls) -> fragment = AddMessageFragment.newInstance(route.arguments)
             MessageThreadFragment::class.java.isAssignableFrom(cls) -> fragment = getMessageThreadFragment(route)
             ViewPdfFragment::class.java.isAssignableFrom(cls) -> fragment = ViewPdfFragment.newInstance(route.arguments)

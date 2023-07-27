@@ -7,6 +7,9 @@ import com.instructure.canvas.espresso.refresh
 import com.instructure.dataseeding.api.AssignmentsApi
 import com.instructure.dataseeding.api.QuizzesApi
 import com.instructure.dataseeding.api.SubmissionsApi
+import com.instructure.dataseeding.model.AssignmentApiModel
+import com.instructure.dataseeding.model.CanvasUserApiModel
+import com.instructure.dataseeding.model.CourseApiModel
 import com.instructure.dataseeding.model.GradingType
 import com.instructure.dataseeding.model.SubmissionType
 import com.instructure.dataseeding.util.days
@@ -43,15 +46,7 @@ class TodoE2ETest: StudentTest() {
         val favoriteCourse = data.coursesList[1]
 
         Log.d(PREPARATION_TAG,"Seed an assignment for ${course.name} course with tomorrow due date.")
-        val testAssignment = AssignmentsApi.createAssignment(
-            AssignmentsApi.CreateAssignmentRequest(
-            courseId = course.id,
-            submissionTypes = listOf(SubmissionType.ONLINE_TEXT_ENTRY),
-            gradingType = GradingType.POINTS,
-            teacherToken = teacher.token,
-            pointsPossible = 15.0,
-            dueAt = 1.days.fromNow.iso8601
-        ))
+        val testAssignment = createAssignment(course, teacher)
 
         Log.d(PREPARATION_TAG,"Seed another assignment for ${course.name} course with 7 days from now due date.")
         val seededAssignments2 = seedAssignments(
@@ -63,24 +58,10 @@ class TodoE2ETest: StudentTest() {
         val borderDateAssignment = seededAssignments2[0] //We show items in the to do section which are within 7 days.
 
         Log.d(PREPARATION_TAG,"Seed a quiz for ${course.name} course with tomorrow due date.")
-        val quiz = QuizzesApi.createQuiz(
-                QuizzesApi.CreateQuizRequest(
-                        courseId = course.id,
-                        withDescription = true,
-                        published = true,
-                        token = teacher.token,
-                        dueAt = 1.days.fromNow.iso8601)
-        )
+        val quiz = createQuiz(course, teacher, 1.days.fromNow.iso8601)
 
         Log.d(PREPARATION_TAG,"Seed another quiz for ${course.name} course with 8 days from now due date..")
-        val tooFarAwayQuiz = QuizzesApi.createQuiz(
-            QuizzesApi.CreateQuizRequest(
-                courseId = course.id,
-                withDescription = true,
-                published = true,
-                token = teacher.token,
-                dueAt = 8.days.fromNow.iso8601)
-        )
+        val tooFarAwayQuiz = createQuiz(course, teacher, 8.days.fromNow.iso8601)
 
         Log.d(STEP_TAG, "Login with user: ${student.name}, login id: ${student.loginId}.")
         tokenLogin(student)
@@ -113,7 +94,7 @@ class TodoE2ETest: StudentTest() {
 
         Log.d(STEP_TAG, "Assert that the previously submitted assignment: '${testAssignment}', is not displayed on the To Do list any more.")
         todoPage.assertAssignmentNotDisplayed(testAssignment)
-        todoPage.assertAssignmentDisplayed(borderDateAssignment)
+        todoPage.assertAssignmentDisplayedWithRetries(borderDateAssignment, 5)
 
         Log.d(STEP_TAG, "Apply 'Favorited Courses' filter. Assert that the 'Favorited Courses' header filter and the empty view is displayed.")
         todoPage.chooseFavoriteCourseFilter()
@@ -125,7 +106,7 @@ class TodoE2ETest: StudentTest() {
         sleep(2000) //Allow the filter clarification to propagate.
 
         Log.d(STEP_TAG,"Assert that '${borderDateAssignment.name}' assignment and '${quiz.title}' quiz are displayed.")
-        todoPage.assertAssignmentDisplayed(borderDateAssignment)
+        todoPage.assertAssignmentDisplayedWithRetries(borderDateAssignment, 5)
         todoPage.assertQuizDisplayed(quiz)
 
         Log.d(STEP_TAG,"Assert that '${testAssignment}' assignment and '${tooFarAwayQuiz.title}' quiz are not displayed.")
@@ -133,15 +114,7 @@ class TodoE2ETest: StudentTest() {
         todoPage.assertQuizNotDisplayed(tooFarAwayQuiz)
 
         Log.d(PREPARATION_TAG,"Seed an assignment for ${favoriteCourse.name} course with tomorrow due date.")
-        val favoriteCourseAssignment = AssignmentsApi.createAssignment(
-            AssignmentsApi.CreateAssignmentRequest(
-                courseId = favoriteCourse.id,
-                submissionTypes = listOf(SubmissionType.ONLINE_TEXT_ENTRY),
-                gradingType = GradingType.POINTS,
-                teacherToken = teacher.token,
-                pointsPossible = 15.0,
-                dueAt = 1.days.fromNow.iso8601
-            ))
+        val favoriteCourseAssignment = createAssignment(favoriteCourse, teacher)
 
         Log.d(STEP_TAG, "Navigate back to the Dashboard Page. Open ${favoriteCourse.name} course. Mark it as favorite.")
         Espresso.pressBack()
@@ -160,11 +133,40 @@ class TodoE2ETest: StudentTest() {
         todoPage.assertFavoritedCoursesFilterHeader()
 
         Log.d(STEP_TAG, "Assert that only the favorited course's assignment, '${borderDateAssignment.name}' is displayed.")
-        todoPage.assertAssignmentDisplayed(favoriteCourseAssignment)
+        todoPage.assertAssignmentDisplayedWithRetries(favoriteCourseAssignment, 5)
         todoPage.assertAssignmentNotDisplayed(testAssignment)
         todoPage.assertAssignmentNotDisplayed(borderDateAssignment)
         todoPage.assertQuizNotDisplayed(quiz)
         todoPage.assertQuizNotDisplayed(tooFarAwayQuiz)
+    }
 
+    private fun createQuiz(
+        course: CourseApiModel,
+        teacher: CanvasUserApiModel,
+        dueAt: String
+    ) = QuizzesApi.createQuiz(
+        QuizzesApi.CreateQuizRequest(
+            courseId = course.id,
+            withDescription = true,
+            published = true,
+            token = teacher.token,
+            dueAt = dueAt
+        )
+    )
+
+    private fun createAssignment(
+        course: CourseApiModel,
+        teacher: CanvasUserApiModel
+    ): AssignmentApiModel {
+        return AssignmentsApi.createAssignment(
+            AssignmentsApi.CreateAssignmentRequest(
+                courseId = course.id,
+                submissionTypes = listOf(SubmissionType.ONLINE_TEXT_ENTRY),
+                gradingType = GradingType.POINTS,
+                teacherToken = teacher.token,
+                pointsPossible = 15.0,
+                dueAt = 1.days.fromNow.iso8601
+            )
+        )
     }
 }

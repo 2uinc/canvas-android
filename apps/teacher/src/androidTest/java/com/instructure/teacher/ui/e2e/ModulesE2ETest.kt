@@ -5,7 +5,12 @@ import com.instructure.canvas.espresso.E2E
 import com.instructure.dataseeding.api.AssignmentsApi
 import com.instructure.dataseeding.api.ModulesApi
 import com.instructure.dataseeding.api.QuizzesApi
+import com.instructure.dataseeding.model.AssignmentApiModel
+import com.instructure.dataseeding.model.CanvasUserApiModel
+import com.instructure.dataseeding.model.CourseApiModel
+import com.instructure.dataseeding.model.ModuleApiModel
 import com.instructure.dataseeding.model.ModuleItemTypes
+import com.instructure.dataseeding.model.QuizApiModel
 import com.instructure.dataseeding.model.SubmissionType
 import com.instructure.dataseeding.util.days
 import com.instructure.dataseeding.util.fromNow
@@ -24,9 +29,7 @@ import org.junit.Test
 class   ModulesE2ETest : TeacherTest() {
     override fun displaysPageObjects() = Unit
 
-    override fun enableAndConfigureAccessibilityChecks() {
-        //We don't want to see accessibility errors on E2E tests
-    }
+    override fun enableAndConfigureAccessibilityChecks() = Unit
 
     @E2E
     @Test
@@ -38,7 +41,7 @@ class   ModulesE2ETest : TeacherTest() {
         val teacher = data.teachersList[0]
         val course = data.coursesList[0]
 
-        Log.d(STEP_TAG, "Login with user: ${teacher.name}, login id: ${teacher.loginId}.")
+        Log.d(STEP_TAG, "Login with user: ${teacher.name}, login id: ${teacher.loginId}. Assert that ${course.name} course is displayed on the Dashboard.")
         tokenLogin(teacher)
         dashboardPage.waitForRender()
         dashboardPage.assertDisplaysCourse(course)
@@ -51,52 +54,23 @@ class   ModulesE2ETest : TeacherTest() {
         modulesPage.assertEmptyView()
 
         Log.d(PREPARATION_TAG, "Seeding 'Text Entry' assignment for ${course.name} course.")
-        val assignment = AssignmentsApi.createAssignment(AssignmentsApi.CreateAssignmentRequest(
-                courseId = course.id,
-                withDescription = true,
-                submissionTypes = listOf(SubmissionType.ONLINE_TEXT_ENTRY),
-                teacherToken = teacher.token,
-                dueAt = 1.days.fromNow.iso8601
-        ))
+        val assignment = createAssignment(course, teacher)
 
         Log.d(PREPARATION_TAG,"Seeding quiz for ${course.name} course.")
-        val quiz = QuizzesApi.createQuiz(QuizzesApi.CreateQuizRequest(
-                courseId = course.id,
-                withDescription = true,
-                dueAt = 3.days.fromNow.iso8601,
-                token = teacher.token,
-                published = true
-        ))
+        val quiz = createQuiz(course, teacher)
 
         Log.d(PREPARATION_TAG,"Seeding a module for ${course.name} course. It starts as unpublished.")
-        val module = ModulesApi.createModule(
-                courseId = course.id,
-                teacherToken = teacher.token,
-                unlockAt = null)
+        val module = createModule(course, teacher)
 
         Log.d(PREPARATION_TAG,"Associate ${assignment.name} assignment (and the quiz within it) with module: ${module.id}.")
-        ModulesApi.createModuleItem(
-                courseId = course.id,
-                moduleId = module.id,
-                teacherToken = teacher.token,
-                title = assignment.name,
-                type = ModuleItemTypes.ASSIGNMENT.stringVal,
-                contentId = assignment.id.toString()
-        )
+        createModuleAssignmentItem(course, module, teacher, assignment)
 
-        ModulesApi.createModuleItem(
-                courseId = course.id,
-                moduleId = module.id,
-                teacherToken = teacher.token,
-                title = quiz.title,
-                type = ModuleItemTypes.QUIZ.stringVal,
-                contentId = quiz.id.toString()
-        )
+        createModuleQuizItem(course, module, teacher, quiz)
 
         Log.d(STEP_TAG,"Refresh the page. Assert that ${module.name} module is displayed and it is unpublished by default.")
         modulesPage.refresh()
-        modulesPage.assertModuleIsPresent(module.name)
-        modulesPage.assertModuleIsUnpublished()
+        modulesPage.assertModuleIsDisplayed(module.name)
+        modulesPage.assertModuleNotPublished()
 
         Log.d(PREPARATION_TAG,"Publish ${module.name} module via API.")
         ModulesApi.updateModule(
@@ -108,12 +82,93 @@ class   ModulesE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG,"Refresh the page. Assert that ${module.name} module is displayed and it is published.")
         modulesPage.refresh()
-        modulesPage.assertModuleIsPresent(module.name)
+        modulesPage.assertModuleIsDisplayed(module.name)
         modulesPage.assertModuleIsPublished()
 
-        Log.d(STEP_TAG,"Assert that ${assignment.name} assignment and ${quiz.title} quiz are present as module items.")
-        modulesPage.assertModuleItemIsPresent(assignment.name)
-        modulesPage.assertModuleItemIsPresent(quiz.title)
+        Log.d(STEP_TAG,"Assert that ${assignment.name} assignment and ${quiz.title} quiz are present as module items, and they are published since their module is published.")
+        modulesPage.assertModuleItemIsDisplayed(assignment.name)
+        modulesPage.assertModuleItemIsPublished(assignment.name)
+        modulesPage.assertModuleItemIsDisplayed(quiz.title)
+        modulesPage.assertModuleItemIsPublished(quiz.title)
+
+        modulesPage.clickOnCollapseExpandIcon()
+        modulesPage.assertItemCountInModule(module.name, 0)
+
+        modulesPage.clickOnCollapseExpandIcon()
+        modulesPage.assertItemCountInModule(module.name, 2)
+    }
+
+    private fun createModuleQuizItem(
+        course: CourseApiModel,
+        module: ModuleApiModel,
+        teacher: CanvasUserApiModel,
+        quiz: QuizApiModel
+    ) {
+        ModulesApi.createModuleItem(
+            courseId = course.id,
+            moduleId = module.id,
+            teacherToken = teacher.token,
+            title = quiz.title,
+            type = ModuleItemTypes.QUIZ.stringVal,
+            contentId = quiz.id.toString()
+        )
+    }
+
+    private fun createModuleAssignmentItem(
+        course: CourseApiModel,
+        module: ModuleApiModel,
+        teacher: CanvasUserApiModel,
+        assignment: AssignmentApiModel
+    ) {
+        ModulesApi.createModuleItem(
+            courseId = course.id,
+            moduleId = module.id,
+            teacherToken = teacher.token,
+            title = assignment.name,
+            type = ModuleItemTypes.ASSIGNMENT.stringVal,
+            contentId = assignment.id.toString()
+        )
+    }
+
+    private fun createModule(
+        course: CourseApiModel,
+        teacher: CanvasUserApiModel
+    ): ModuleApiModel {
+        return ModulesApi.createModule(
+            courseId = course.id,
+            teacherToken = teacher.token,
+            unlockAt = null
+        )
+    }
+
+    private fun createQuiz(
+        course: CourseApiModel,
+        teacher: CanvasUserApiModel
+    ): QuizApiModel {
+        return QuizzesApi.createQuiz(
+            QuizzesApi.CreateQuizRequest(
+                courseId = course.id,
+                withDescription = true,
+                dueAt = 3.days.fromNow.iso8601,
+                token = teacher.token,
+                published = true
+            )
+        )
+    }
+
+    private fun createAssignment(
+        course: CourseApiModel,
+        teacher: CanvasUserApiModel
+    ): AssignmentApiModel {
+        return AssignmentsApi.createAssignment(
+            AssignmentsApi.CreateAssignmentRequest(
+                courseId = course.id,
+                withDescription = true,
+                submissionTypes = listOf(SubmissionType.ONLINE_TEXT_ENTRY),
+                teacherToken = teacher.token,
+                dueAt = 1.days.fromNow.iso8601
+            )
+        )
     }
 
 }

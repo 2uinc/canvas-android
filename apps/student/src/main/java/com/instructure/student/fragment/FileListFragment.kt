@@ -46,18 +46,19 @@ import com.instructure.interactions.router.Route
 import com.instructure.interactions.router.RouterParams
 import com.instructure.pandautils.analytics.SCREEN_VIEW_FILE_LIST
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.features.file.upload.FileUploadDialogFragment
 import com.instructure.pandautils.features.file.upload.FileUploadDialogParent
 import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.adapter.FileFolderCallback
 import com.instructure.student.adapter.FileListRecyclerAdapter
+import com.instructure.student.databinding.FragmentFileListBinding
 import com.instructure.student.dialog.EditTextDialog
 import com.instructure.student.features.files.search.FileSearchFragment
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.FileDownloadJobIntentService
 import com.instructure.student.util.StudentPrefs
-import kotlinx.android.synthetic.main.fragment_file_list.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -67,13 +68,29 @@ import java.util.*
 @PageView
 class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent {
 
+    private val binding by viewBinding(FragmentFileListBinding::bind)
+
     private var canvasContext by ParcelableArg<CanvasContext>(key = Const.CANVAS_CONTEXT)
 
     @Suppress("unused")
     @PageViewUrl
-    private fun makePageViewUrl() =
-        if (canvasContext.type == CanvasContext.Type.USER) "${ApiPrefs.fullDomain}/files"
+    private fun makePageViewUrl(): String {
+        var url = if (canvasContext.type == CanvasContext.Type.USER) "${ApiPrefs.fullDomain}/files"
         else "${ApiPrefs.fullDomain}/${canvasContext.contextId.replace("_", "s/")}/files"
+
+        if (folder != null && folder?.isRoot == false) {
+            url += "/folder/"
+            if (canvasContext.type == CanvasContext.Type.USER) {
+                url += "users_${canvasContext.id}/"
+            }
+            val fullNameParts = folder?.fullName?.split("/", limit = 2)
+            if ((fullNameParts?.size ?: 0) > 1) {
+                url += fullNameParts?.get(1) ?: ""
+            }
+        }
+
+        return url
+    }
 
     private var recyclerAdapter: FileListRecyclerAdapter? = null
 
@@ -119,10 +136,10 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        toolbar.title = title()
-        toolbar.subtitle = canvasContext.name
-        addFab.setInvisible()
-        toolbar.setMenu(R.menu.menu_file_list) {}
+        binding.toolbar.title = title()
+        binding.toolbar.subtitle = canvasContext.name
+        binding.addFab.setInvisible()
+        binding.toolbar.setMenu(R.menu.menu_file_list) {}
 
         if (canvasContext.type == CanvasContext.Type.USER) applyTheme()
         if (folder != null) {
@@ -144,7 +161,7 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
         }
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
+    override fun onConfigurationChanged(newConfig: Configuration) = with(binding) {
         super.onConfigurationChanged(newConfig)
         if (recyclerAdapter?.size() == 0) {
             emptyView.changeTextSize()
@@ -208,19 +225,19 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
             override fun onRefreshFinished() {
                 setRefreshing(false)
 
-                if (recyclerAdapter?.size() == 0) {
-                    setEmptyView(emptyView, R.drawable.ic_panda_nofiles, R.string.noFiles, getNoFileSubtextId())
+                if (recyclerAdapter?.size() == 0 && view != null) {
+                    setEmptyView(binding.emptyView, R.drawable.ic_panda_nofiles, R.string.noFiles, getNoFileSubtextId())
                 }
             }
         }
     }
 
     override fun onMediaLoadingStarted() {
-        fileLoadingProgressBar.setVisible()
+        binding.fileLoadingProgressBar.setVisible()
     }
 
     override fun onMediaLoadingComplete() {
-        fileLoadingProgressBar.setGone()
+        binding.fileLoadingProgressBar.setGone()
     }
 
     private fun recordFilePreviewEvent(file: FileFolder) {
@@ -228,15 +245,20 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
     }
 
     override fun applyTheme() {
-        themeToolbar()
-        if (canvasContext.type == CanvasContext.Type.USER) ViewStyler.setToolbarElevationSmall(requireContext(), toolbar)
-        toolbar.setupAsBackButton(this)
-        ViewStyler.themeFAB(addFab)
-        ViewStyler.themeFAB(addFileFab)
-        ViewStyler.themeFAB(addFolderFab)
+        with(binding) {
+            themeToolbar()
+            if (canvasContext.type == CanvasContext.Type.USER) ViewStyler.setToolbarElevationSmall(
+                requireContext(),
+                toolbar
+            )
+            toolbar.setupAsBackButton(this@FileListFragment)
+            ViewStyler.themeFAB(addFab)
+            ViewStyler.themeFAB(addFileFab)
+            ViewStyler.themeFAB(addFolderFab)
+        }
     }
 
-    private fun themeToolbar() {
+    private fun themeToolbar() = with(binding) {
         // We style the toolbar white for user files
         if (canvasContext.type == CanvasContext.Type.USER) {
             ViewStyler.themeProgressBar(fileLoadingProgressBar, ThemePrefs.primaryTextColor)
@@ -247,7 +269,7 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
         }
     }
 
-    private fun configureViews() {
+    private fun configureViews() = with(binding) {
         val isUserFiles = canvasContext.type == CanvasContext.Type.USER
 
         if (recyclerAdapter == null) {
@@ -391,9 +413,10 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
             }
             recyclerAdapter?.remove(deletedItem)
             if (recyclerAdapter?.size() == 0) {
-                setEmptyView(emptyView, R.drawable.ic_panda_nofiles, R.string.noFiles, getNoFileSubtextId())
+                setEmptyView(binding.emptyView, R.drawable.ic_panda_nofiles, R.string.noFiles, getNoFileSubtextId())
             }
             StudentPrefs.staleFolderIds = StudentPrefs.staleFolderIds + folder!!.id
+            updateFileList()
         } catch {
             toast(R.string.errorOccurred)
         }
@@ -418,12 +441,21 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
     override fun workInfoLiveDataCallback(uuid: UUID?, workInfoLiveData: LiveData<WorkInfo>) {
         workInfoLiveData.observe(viewLifecycleOwner) {
             if (it.state == WorkInfo.State.SUCCEEDED) {
-                recyclerAdapter?.refresh()
-                folder?.let {
-                    StudentPrefs.staleFolderIds = StudentPrefs.staleFolderIds + it.id
+                updateFileList(true)
+                folder?.let { fileFolder ->
+                    StudentPrefs.staleFolderIds = StudentPrefs.staleFolderIds + fileFolder.id
                 }
             }
         }
+    }
+
+    private fun updateFileList(includeCurrentScreen: Boolean = false) {
+        parentFragmentManager.fragments
+            .filterIsInstance(FileListFragment::class.java)
+            .dropLast(if (includeCurrentScreen) 0 else 1)
+            .forEach { fragment ->
+                fragment.recyclerAdapter?.refresh()
+            }
     }
 
     private fun createFolder() {
@@ -434,6 +466,7 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
                 }
                 recyclerAdapter?.add(newFolder)
                 StudentPrefs.staleFolderIds = StudentPrefs.staleFolderIds + folder!!.id
+                updateFileList()
             } catch {
                 toast(R.string.folderCreationError)
             }
@@ -454,39 +487,41 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
     override val bookmark: Bookmarker
         get() = Bookmarker(canvasContext.isCourseOrGroup, canvasContext)
 
-    private fun animateFabs() = if (mFabOpen) {
-        addFab.startAnimation(fabRotateBackwards)
-        addFab.announceForAccessibility(getString(R.string.a11y_create_file_folder_gone))
-        addFab.contentDescription = getString(R.string.createFileFolderFabContentDesc)
-        addFolderFab.startAnimation(fabHide)
-        addFolderFab.isClickable = false
+    private fun animateFabs() = with(binding) {
+        if (mFabOpen) {
+            addFab.startAnimation(fabRotateBackwards)
+            addFab.announceForAccessibility(getString(R.string.a11y_create_file_folder_gone))
+            addFab.contentDescription = getString(R.string.createFileFolderFabContentDesc)
+            addFolderFab.startAnimation(fabHide)
+            addFolderFab.isClickable = false
 
-        addFileFab.startAnimation(fabHide)
-        addFileFab.isClickable = false
+            addFileFab.startAnimation(fabHide)
+            addFileFab.isClickable = false
 
-        // Needed for accessibility
-        addFileFab.setInvisible()
-        addFolderFab.setInvisible()
-        mFabOpen = false
-    } else {
-        addFab.startAnimation(fabRotateForward)
-        addFab.announceForAccessibility(getString(R.string.a11y_create_file_folder_visible))
-        addFab.contentDescription = getString(R.string.hideCreateFileFolderFabContentDesc)
-        addFolderFab.apply {
-            startAnimation(fabReveal)
-            isClickable = true
+            // Needed for accessibility
+            addFileFab.setInvisible()
+            addFolderFab.setInvisible()
+            mFabOpen = false
+        } else {
+            addFab.startAnimation(fabRotateForward)
+            addFab.announceForAccessibility(getString(R.string.a11y_create_file_folder_visible))
+            addFab.contentDescription = getString(R.string.hideCreateFileFolderFabContentDesc)
+            addFolderFab.apply {
+                startAnimation(fabReveal)
+                isClickable = true
+            }
+
+            addFileFab.apply {
+                startAnimation(fabReveal)
+                isClickable = true
+            }
+
+            // Needed for accessibility
+            addFileFab.setVisible()
+            addFolderFab.setVisible()
+
+            mFabOpen = true
         }
-
-        addFileFab.apply {
-            startAnimation(fabReveal)
-            isClickable = true
-        }
-
-        // Needed for accessibility
-        addFileFab.setVisible()
-        addFolderFab.setVisible()
-
-        mFabOpen = true
     }
 
     @Suppress("unused")

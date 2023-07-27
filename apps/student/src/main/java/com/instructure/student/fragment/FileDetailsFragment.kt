@@ -40,22 +40,27 @@ import com.instructure.canvasapi2.utils.weave.*
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_FILE_DETAILS
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.utils.*
 import com.instructure.student.R
+import com.instructure.student.databinding.FragmentFileDetailsBinding
 import com.instructure.student.events.ModuleUpdatedEvent
 import com.instructure.student.events.post
+import com.instructure.student.offline.util.OfflineConst
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.offline.initWithOfflineData
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.FileDownloadJobIntentService
 import com.instructure.student.util.StringUtilities
-import kotlinx.android.synthetic.main.fragment_file_details.*
 import okhttp3.ResponseBody
 import java.util.*
 
 @ScreenView(SCREEN_VIEW_FILE_DETAILS)
 @PageView(url = "{canvasContext}/files/{fileId}")
 class FileDetailsFragment : ParentFragment() {
+
+    private val binding by viewBinding(FragmentFileDetailsBinding::bind)
 
     private var canvasContext by ParcelableArg<CanvasContext>(key = Const.CANVAS_CONTEXT)
 
@@ -103,29 +108,31 @@ class FileDetailsFragment : ParentFragment() {
     }
 
     override fun applyTheme() {
-        setupToolbarMenu(toolbar)
-        toolbar.setupAsBackButton(this)
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext)
-        ViewStyler.themeButton(openButton)
-        ViewStyler.themeButton(downloadButton)
+        with (binding) {
+            setupToolbarMenu(toolbar)
+            toolbar.setupAsBackButton(this@FileDetailsFragment)
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext)
+            ViewStyler.themeButton(openButton)
+            ViewStyler.themeButton(downloadButton)
+        }
     }
 
     private fun setupTextViews() {
-        fileName.text = file?.displayName
-        fileType.text = file?.contentType
+        binding.fileName.text = file?.displayName
+        binding.fileType.text = file?.contentType
 
-        toolbar.initWithOfflineData(requireContext(), OfflineUtils.getCourseIdFromUrl(fileUrl), title(), arguments, OfflineConst.TYPE_FILE, 16.toPx)
+        binding.toolbar.initWithOfflineData(requireContext(), OfflineUtils.getCourseIdFromUrl(fileUrl), title(), arguments, OfflineConst.TYPE_FILE, 16.toPx)
     }
 
     private fun setupClickListeners() {
-        openButton.setOnClickListener {
+        binding.openButton.setOnClickListener {
             file?.let {
                 openMedia(it.contentType, it.url, it.displayName, canvasContext)
                 markAsRead()
             }
         }
 
-        downloadButton.setOnClickListener {
+        binding.downloadButton.setOnClickListener {
             if (PermissionUtils.hasPermissions(requireActivity(), PermissionUtils.WRITE_EXTERNAL_STORAGE)) {
                 downloadFile()
             } else {
@@ -135,11 +142,11 @@ class FileDetailsFragment : ParentFragment() {
     }
 
     override fun onMediaLoadingStarted() {
-        fileLoadingProgressBar?.setVisible()
+        binding.fileLoadingProgressBar?.setVisible()
     }
 
     override fun onMediaLoadingComplete() {
-        fileLoadingProgressBar?.setGone()
+        binding.fileLoadingProgressBar?.setGone()
     }
 
     private fun downloadFile() {
@@ -158,7 +165,7 @@ class FileDetailsFragment : ParentFragment() {
     }
 
     @Suppress("deprecation")
-    private fun getFileFolder() {
+    private fun getFileFolder() = with(binding) {
         fileFolderJob = tryWeave {
             val response = awaitApiResponse<FileFolder> { FileFolderManager.getFileFolderFromURL(fileUrl, true, it) }
             // Set up everything else now, we should have a file

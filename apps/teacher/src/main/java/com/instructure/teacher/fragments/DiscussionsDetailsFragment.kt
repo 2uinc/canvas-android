@@ -28,6 +28,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.instructure.canvasapi2.models.*
 import com.instructure.canvasapi2.utils.*
+import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
@@ -37,17 +39,20 @@ import com.instructure.interactions.MasterDetailInteractions
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_DISCUSSION_DETAILS
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.dialogs.AttachmentPickerDialog
 import com.instructure.pandautils.discussions.DiscussionCaching
 import com.instructure.pandautils.discussions.DiscussionEntryHtmlConverter
 import com.instructure.pandautils.discussions.DiscussionUtils
 import com.instructure.pandautils.fragments.BasePresenterFragment
 import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Const
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.teacher.BuildConfig
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.InternalWebViewActivity
 import com.instructure.teacher.adapters.StudentContextFragment
+import com.instructure.teacher.databinding.FragmentDiscussionsDetailsBinding
 import com.instructure.teacher.dialog.NoInternetConnectionDialog
 import com.instructure.teacher.events.*
 import com.instructure.teacher.events.DiscussionEntryEvent
@@ -57,8 +62,6 @@ import com.instructure.teacher.presenters.DiscussionsDetailsPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.*
 import com.instructure.teacher.viewinterface.DiscussionsDetailsView
-import kotlinx.android.synthetic.main.fragment_discussions_details.*
-import kotlinx.android.synthetic.main.view_submissions_donut_group.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import org.greenrobot.eventbus.EventBus
@@ -66,23 +69,25 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.util.*
 
+@PageView(url = "{canvasContext}/{type}/{topicId}")
 @ScreenView(SCREEN_VIEW_DISCUSSION_DETAILS)
 class DiscussionsDetailsFragment : BasePresenterFragment<
         DiscussionsDetailsPresenter,
         DiscussionsDetailsView>(), DiscussionsDetailsView, Identity {
 
+    private val binding by viewBinding(FragmentDiscussionsDetailsBinding::bind)
+
     //region Member Variables
+    private var canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
+    private var discussionTopicHeader: DiscussionTopicHeader by ParcelableArg(DiscussionTopicHeader(), DISCUSSION_TOPIC_HEADER)
+    private var discussionTopic: DiscussionTopic by ParcelableArg(DiscussionTopic(), DISCUSSION_TOPIC)
+    private var discussionEntryId: Long by LongArg(0L, DISCUSSION_ENTRY_ID)
+    private var discussionTopicHeaderId: Long by LongArg(0L, DISCUSSION_TOPIC_HEADER_ID)
+    private var skipIdentityCheck: Boolean by BooleanArg(false, SKIP_IDENTITY_CHECK)
+    private var skipId: String by StringArg("", SKIP_ID)
 
-    private var mCanvasContext: CanvasContext by ParcelableArg(Course())
-    private var mDiscussionTopicHeader: DiscussionTopicHeader by ParcelableArg(DiscussionTopicHeader(), DISCUSSION_TOPIC_HEADER)
-    private var mDiscussionTopic: DiscussionTopic by ParcelableArg(DiscussionTopic(), DISCUSSION_TOPIC)
-    private var mDiscussionEntryId: Long by LongArg(0L, DISCUSSION_ENTRY_ID)
-    private var mDiscussionTopicHeaderId: Long by LongArg(0L, DISCUSSION_TOPIC_HEADER_ID)
-    private var mSkipIdentityCheck: Boolean by BooleanArg(false, SKIP_IDENTITY_CHECK)
-    private var mSkipId: String by StringArg("", SKIP_ID)
-
-    private var mIsAnnouncements: Boolean by BooleanArg(false, IS_ANNOUNCEMENT)
-    private var mIsNestedDetail: Boolean by BooleanArg(false, IS_NESTED_DETAIL)
+    private var isAnnouncements: Boolean by BooleanArg(false, IS_ANNOUNCEMENT)
+    private var isNestedDetail: Boolean by BooleanArg(false, IS_NESTED_DETAIL)
 
     private var repliesLoadHtmlJob: Job? = null
     private var headerLoadHtmlJob: Job? = null
@@ -90,14 +95,18 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
 
     //endregion
 
+    @Suppress("unused")
+    @PageViewUrlParam("topicId")
+    private fun getTopicId() = discussionTopicHeader.id
+
     override fun layoutResId(): Int = R.layout.fragment_discussions_details
 
     override fun onRefreshFinished() {
-        discussionProgressBar.setGone()
+        binding.discussionProgressBar.setGone()
     }
 
     override fun onRefreshStarted() {
-        discussionProgressBar.setVisible()
+        binding.discussionProgressBar.setVisible()
     }
 
     override fun onStart() {
@@ -117,12 +126,12 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         headerLoadHtmlJob?.cancel()
     }
 
-    override val identity: Long? get() = if(mDiscussionTopicHeaderId != 0L) mDiscussionTopicHeaderId else mDiscussionTopicHeader.id
-    override val skipCheck: Boolean get() = mSkipIdentityCheck
+    override val identity: Long? get() = if(discussionTopicHeaderId != 0L) discussionTopicHeaderId else discussionTopicHeader.id
+    override val skipCheck: Boolean get() = skipIdentityCheck
 
     override fun getPresenterFactory() =
-            DiscussionsDetailsPresenterFactory(mCanvasContext, mDiscussionTopicHeader, mDiscussionTopic,
-                    if(mSkipId.isEmpty()) DiscussionsDetailsFragment::class.java.simpleName + UUID.randomUUID().toString() else mSkipId)
+            DiscussionsDetailsPresenterFactory(canvasContext, discussionTopicHeader, discussionTopic,
+                    if(skipId.isEmpty()) DiscussionsDetailsFragment::class.java.simpleName + UUID.randomUUID().toString() else skipId)
 
     override fun onPresenterPrepared(presenter: DiscussionsDetailsPresenter) {}
 
@@ -138,24 +147,24 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
              discussionTopicEvent.only(presenter.getSkipId()) { discussionTopic ->
                 //A The Discussion Topic was changed in some way. Usually from a nested situation where something was added.
                 presenter.updateDiscussionTopic(discussionTopic)
-                if (!mIsNestedDetail) {
+                if (!isNestedDetail) {
                     EventBus.getDefault().removeStickyEvent(discussionTopicEvent)
                 }
             }
         } else {
-            if (mDiscussionTopicHeaderId == 0L && presenter.discussionTopicHeader.id != 0L) {
+            if (discussionTopicHeaderId == 0L && presenter.discussionTopicHeader.id != 0L) {
                 //We were given a valid DiscussionTopicHeader, no need to fetch from the API
                 populateDiscussionTopicHeader(presenter.discussionTopicHeader, false)
-            } else if (mDiscussionTopicHeaderId != 0L) {
+            } else if (discussionTopicHeaderId != 0L) {
                 //results of this GET will call populateDiscussionTopicHeader()
-                presenter.getDiscussionTopicHeader(mDiscussionTopicHeaderId)
+                presenter.getDiscussionTopicHeader(discussionTopicHeaderId)
             }
         }
 
         EventBus.getDefault().getStickyEvent(DiscussionTopicHeaderDeletedEvent::class.java)?.once(javaClass.simpleName + ".onResume()") {
             if (it == presenter.discussionTopicHeader.id) {
                 if (activity is MasterDetailInteractions) {
-                    (activity as MasterDetailInteractions).popFragment(mCanvasContext)
+                    (activity as MasterDetailInteractions).popFragment(canvasContext)
                 } else if(activity is FullScreenInteractions) {
                     requireActivity().finish()
                 }
@@ -171,7 +180,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         //TODO: when we add support for students
     }
 
-    override fun populateDiscussionTopicHeader(discussionTopicHeader: DiscussionTopicHeader, forceNetwork: Boolean) {
+    override fun populateDiscussionTopicHeader(discussionTopicHeader: DiscussionTopicHeader, forceNetwork: Boolean) = with(binding) {
         if(discussionTopicHeader.assignment != null) {
             setupAssignmentDetails(discussionTopicHeader.assignment!!)
             presenter.getSubmissionData(forceNetwork)
@@ -179,7 +188,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
 
         // Publish status if discussion
-        if(!mIsAnnouncements) {
+        if(!isAnnouncements) {
             if (discussionTopicHeader.published) {
                 publishStatusIconView.setImageResource(R.drawable.ic_complete_solid)
                 publishStatusIconView.setColorFilter(requireContext().getColorCompat(R.color.textSuccess))
@@ -193,10 +202,9 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
             }
         } else {
             pointsPublishedLayout.setGone()
-            pointsPublishedDivider.setGone()
-            dueLayoutDivider.setGone()
-            submissionDivider.setGone()
-
+            pointsPublishedDivider.root.setGone()
+            dueLayoutDivider.root.setGone()
+            submissionDivider.root.setGone()
         }
 
         // If we're getting here by a deep link (like from an email) we don't know that it is an announcement
@@ -207,7 +215,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
 
         loadDiscussionTopicHeader(discussionTopicHeader)
-        repliesBack.setVisible(mIsNestedDetail)
+        repliesBack.setVisible(isNestedDetail)
         repliesBack.onClick { requireActivity().onBackPressed() }
         attachmentIcon.setVisible(!discussionTopicHeader.attachments.isEmpty())
         attachmentIcon.onClick {
@@ -225,7 +233,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
     }
 
-    override fun populateDiscussionTopic(discussionTopicHeader: DiscussionTopicHeader, discussionTopic: DiscussionTopic, topLevelReplyPosted: Boolean) {
+    override fun populateDiscussionTopic(discussionTopicHeader: DiscussionTopicHeader, discussionTopic: DiscussionTopic, topLevelReplyPosted: Boolean) = with(binding) {
         // Check if we have permissions and if we have any discussions to display.
 
         loadDiscussionJob = tryWeave {
@@ -244,10 +252,10 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
                 DiscussionUtils.createDiscussionTopicHtml(
                         requireActivity(),
                         isTablet,
-                        mCanvasContext,
+                        canvasContext,
                         discussionTopicHeader,
                         discussionTopic.views,
-                        mDiscussionEntryId)
+                        discussionEntryId)
             }
 
             discussionRepliesWebViewWrapper.setInvisible()
@@ -270,22 +278,21 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         } catch { Logger.e("Error loading discussion " + it.message) }
     }
 
-    private fun setupAssignmentDetails(assignment: Assignment) = with(assignment) {
-
+    private fun setupAssignmentDetails(assignment: Assignment) = with(binding) {
         pointsTextView.setVisible()
         // Points possible
         pointsTextView.text = resources.getQuantityString(
                 R.plurals.quantityPointsAbbreviated,
-                pointsPossible.toInt(),
-                NumberHelper.formatDecimal(pointsPossible, 1, true)
+                assignment.pointsPossible.toInt(),
+                NumberHelper.formatDecimal(assignment.pointsPossible, 1, true)
         )
         pointsTextView.contentDescription = resources.getQuantityString(
                 R.plurals.quantityPointsFull,
-                pointsPossible.toInt(),
-                NumberHelper.formatDecimal(pointsPossible, 1, true))
+                assignment.pointsPossible.toInt(),
+                NumberHelper.formatDecimal(assignment.pointsPossible, 1, true))
 
         dueLayout.setVisible()
-        submissionsLayout.setVisible((mCanvasContext as? Course)?.isDesigner() == false)
+        submissionsLayout.setVisible((canvasContext as? Course)?.isDesigner() == false)
 
         //set these as gone and make them visible if we have data for them
         availabilityLayout.setGone()
@@ -298,8 +305,9 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         // Lock status
         val atSeparator = getString(R.string.at)
 
+        val allDates = assignment.allDates
         allDates.singleOrNull()?.apply {
-            if (lockDate?.before(Date()) == true) {
+            if (assignment.lockDate?.before(Date()) == true) {
                 availabilityLayout.setVisible()
                 availabilityTextView.setText(R.string.closed)
             } else {
@@ -335,7 +343,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
 
     }
 
-    override fun updateSubmissionDonuts(totalStudents: Int, gradedStudents: Int, needsGradingCount: Int, notSubmitted: Int) {
+    override fun updateSubmissionDonuts(totalStudents: Int, gradedStudents: Int, needsGradingCount: Int, notSubmitted: Int) = with(binding.donutGroup) {
         // Submission section
         gradedChart.setSelected(gradedStudents)
         gradedChart.setTotal(totalStudents)
@@ -363,23 +371,23 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         notSubmittedChart.invalidate()
     }
 
-    private fun setupListeners() {
+    private fun setupListeners() = with(binding) {
         dueLayout.setOnClickListener {
             val args = DueDatesFragment.makeBundle(presenter.discussionTopicHeader.assignment!!)
-            RouteMatcher.route(requireContext(), Route(null, DueDatesFragment::class.java, mCanvasContext, args))
+            RouteMatcher.route(requireContext(), Route(null, DueDatesFragment::class.java, canvasContext, args))
         }
         submissionsLayout.setOnClickListener {
-            navigateToSubmissions(mCanvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.ALL)
+            navigateToSubmissions(canvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.ALL)
         }
-        viewAllSubmissions.onClick { submissionsLayout.performClick() } // Separate click listener for a11y
-        gradedWrapper.setOnClickListener {
-            navigateToSubmissions(mCanvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.GRADED)
+        binding.donutGroup.viewAllSubmissions.onClick { submissionsLayout.performClick() } // Separate click listener for a11y
+        binding.donutGroup.gradedWrapper.setOnClickListener {
+            navigateToSubmissions(canvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.GRADED)
         }
-        ungradedWrapper.setOnClickListener {
-            navigateToSubmissions(mCanvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.NOT_GRADED)
+        binding.donutGroup.ungradedWrapper.setOnClickListener {
+            navigateToSubmissions(canvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.NOT_GRADED)
         }
-        notSubmittedWrapper.setOnClickListener {
-            navigateToSubmissions(mCanvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.MISSING)
+        binding.donutGroup.notSubmittedWrapper.setOnClickListener {
+            navigateToSubmissions(canvasContext, presenter.discussionTopicHeader.assignment!!, AssignmentSubmissionListPresenter.SubmissionListFilter.MISSING)
         }
     }
 
@@ -388,12 +396,12 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         RouteMatcher.route(requireContext(), Route(null, AssignmentSubmissionListFragment::class.java, context, args))
     }
 
-    private fun loadDiscussionTopicHeader(discussionTopicHeader: DiscussionTopicHeader) {
+    private fun loadDiscussionTopicHeader(discussionTopicHeader: DiscussionTopicHeader) = with(binding) {
         val displayName = discussionTopicHeader.author?.displayName
         ProfileUtils.loadAvatarForUser(authorAvatar, displayName, discussionTopicHeader.author?.avatarImageUrl)
         authorAvatar.setupAvatarA11y(discussionTopicHeader.author?.displayName)
         authorAvatar.onClick {
-            val bundle = StudentContextFragment.makeBundle(discussionTopicHeader.author?.id ?: 0, mCanvasContext.id)
+            val bundle = StudentContextFragment.makeBundle(discussionTopicHeader.author?.id ?: 0, canvasContext.id)
             RouteMatcher.route(requireContext(), Route(StudentContextFragment::class.java, null, bundle))
         }
         authorName?.text = discussionTopicHeader.author?.let { Pronouns.span(it.displayName, it.pronouns) }
@@ -407,7 +415,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
 
         headerLoadHtmlJob = discussionTopicHeaderWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), discussionTopicHeader.message, {
-            discussionTopicHeaderWebViewWrapper.loadHtml(it, discussionTopicHeader.title, baseUrl = mDiscussionTopicHeader.htmlUrl)
+            discussionTopicHeaderWebViewWrapper.loadHtml(it, discussionTopicHeader.title, baseUrl = this@DiscussionsDetailsFragment.discussionTopicHeader.htmlUrl)
         }) {
             LtiLaunchFragment.routeLtiLaunchFragment(requireContext(), canvasContext, it)
         }
@@ -415,21 +423,21 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         discussionRepliesWebViewWrapper.loadHtml("", "")
     }
 
-    override fun onPause() {
+    override fun onPause() = with(binding) {
         super.onPause()
         presenter.scrollPosition = discussionsScrollView.scrollY
         discussionTopicHeaderWebViewWrapper.webView.onPause()
         discussionRepliesWebViewWrapper.webView.onPause()
     }
 
-    override fun onResume() {
+    override fun onResume() = with(binding) {
         super.onResume()
         setupToolbar()
 
-        if (isAccessibilityEnabled(requireContext()) && mDiscussionTopicHeader.htmlUrl != null) {
+        if (isAccessibilityEnabled(requireContext()) && discussionTopicHeader.htmlUrl != null) {
             alternateViewButton.visibility = View.VISIBLE
             alternateViewButton.setOnClickListener {
-                val bundle = InternalWebViewFragment.makeBundle(mDiscussionTopicHeader.htmlUrl!!, mDiscussionTopicHeader.title!!, shouldAuthenticate = true)
+                val bundle = InternalWebViewFragment.makeBundle(discussionTopicHeader.htmlUrl!!, discussionTopicHeader.title!!, shouldAuthenticate = true)
                 RouteMatcher.route(requireActivity(), Route(null, InternalWebViewFragment::class.java, canvasContext, bundle))
             }
         }
@@ -456,32 +464,32 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
     }
 
-    private fun setupToolbar() {
-        toolbar.setupBackButtonWithExpandCollapseAndBack(this) {
-            toolbar.updateToolbarExpandCollapseIcon(this)
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar, mCanvasContext.backgroundColor, requireContext().getColor(R.color.white))
+    private fun setupToolbar() = with(binding) {
+        toolbar.setupBackButtonWithExpandCollapseAndBack(this@DiscussionsDetailsFragment) {
+            toolbar.updateToolbarExpandCollapseIcon(this@DiscussionsDetailsFragment)
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
             (activity as MasterDetailInteractions).toggleExpandCollapse()
         }
         toolbar.setupMenu(R.menu.menu_edit_generic, menuItemCallback)
-        toolbar.title = if(mIsAnnouncements) getString(R.string.announcementDetails) else getString(R.string.discussion_details)
+        toolbar.title = if(isAnnouncements) getString(R.string.announcementDetails) else getString(R.string.discussion_details)
         if(!isTablet) {
-            toolbar.subtitle = mCanvasContext.name
+            toolbar.subtitle = canvasContext.name
         }
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, mCanvasContext.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
     }
 
-    val menuItemCallback: (MenuItem) -> Unit = { item ->
+    private val menuItemCallback: (MenuItem) -> Unit = { item ->
         when (item.itemId) {
             R.id.menu_edit -> {
                 if(APIHelper.hasNetworkConnection()) {
-                    if(mIsAnnouncements) {
+                    if(isAnnouncements) {
                         val args = CreateOrEditAnnouncementFragment.newInstanceEdit(presenter.canvasContext, presenter.discussionTopicHeader).nonNullArgs
                         RouteMatcher.route(requireContext(), Route(CreateOrEditAnnouncementFragment::class.java, null, args))
                     } else {
                         // If we have an assignment, set the topic header to null to prevent cyclic reference
                         presenter.discussionTopicHeader.assignment?.discussionTopicHeader = null
                         val args = CreateDiscussionFragment.makeBundle(presenter.canvasContext, presenter.discussionTopicHeader)
-                        RouteMatcher.route(requireContext(), Route(CreateDiscussionFragment::class.java, mCanvasContext, args))
+                        RouteMatcher.route(requireContext(), Route(CreateDiscussionFragment::class.java, canvasContext, args))
                     }
                 } else {
                     NoInternetConnectionDialog.show(requireFragmentManager())
@@ -535,7 +543,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         @JavascriptInterface
         fun onAvatarPressed(id: String) {
             presenter.findEntry(id.toLong())?.let { entry ->
-                val bundle = StudentContextFragment.makeBundle(entry.author!!.id, mCanvasContext.id)
+                val bundle = StudentContextFragment.makeBundle(entry.author!!.id, canvasContext.id)
                 RouteMatcher.route(requireContext(), Route(StudentContextFragment::class.java, null, bundle))
             }
         }
@@ -566,7 +574,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         @JavascriptInterface
         fun onMoreRepliesPressed(id: String) {
             val args = makeBundle(presenter.discussionTopicHeader, presenter.discussionTopic, id.toLong(), presenter.getSkipId())
-            RouteMatcher.route(requireContext(), Route(null, DiscussionsDetailsFragment::class.java, mCanvasContext, args))
+            RouteMatcher.route(requireContext(), Route(null, DiscussionsDetailsFragment::class.java, canvasContext, args))
         }
 
         @JavascriptInterface
@@ -614,7 +622,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         updateDiscussionLikedState(discussionEntry, "setUnliked" /*Constant found in the JS files*/)
     }
 
-    private fun updateDiscussionLikedState(discussionEntry: DiscussionEntry, methodName: String) {
+    private fun updateDiscussionLikedState(discussionEntry: DiscussionEntry, methodName: String) = with(binding) {
         val likingSum = if(discussionEntry.ratingSum == 0) "" else "(" + discussionEntry.ratingSum + ")"
         val likingSumAllyText = DiscussionEntryHtmlConverter.getLikeCountText(requireContext(), discussionEntry)
         val likingColor = DiscussionUtils.getHexColorString(if (discussionEntry._hasRated) ThemePrefs.brandColor else ContextCompat.getColor(requireContext(), R.color.textDark))
@@ -624,17 +632,17 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
     }
 
-    override fun updateDiscussionEntry(discussionEntry: DiscussionEntry) {
+    override fun updateDiscussionEntry(discussionEntry: DiscussionEntry) = with(binding) {
         requireActivity().runOnUiThread {
             discussionRepliesWebViewWrapper.webView.loadUrl("javascript:updateEntry('${discussionEntry.id}', '${discussionEntry.message}')")
-            if (discussionEntry.attachments == null && discussionEntry.attachments?.size!! < 1)
+            if (discussionEntry.attachments == null)
                 discussionRepliesWebViewWrapper.webView.loadUrl("javascript:hideAttachmentIcon('${discussionEntry.id}'")
         }
     }
 
     private fun showReplyView(id: Long) {
         if (APIHelper.hasNetworkConnection()) {
-            val args = DiscussionsReplyFragment.makeBundle(presenter.discussionTopicHeader.id, id, mIsAnnouncements)
+            val args = DiscussionsReplyFragment.makeBundle(presenter.discussionTopicHeader.id, id, isAnnouncements)
             RouteMatcher.route(requireContext(), Route(DiscussionsReplyFragment::class.java, presenter.canvasContext, args))
         } else {
             NoInternetConnectionDialog.show(requireFragmentManager())
@@ -650,14 +658,14 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
     }
 
     private fun showOverflowMenu(id: Long) {
-        fragmentManager?.let {
+        parentFragmentManager.let {
             DiscussionBottomSheetMenuFragment.show(it, id)
         }
     }
 
     private fun showUpdateReplyView(id: Long) {
         if (APIHelper.hasNetworkConnection()) {
-            val args = DiscussionsUpdateFragment.makeBundle(presenter.discussionTopicHeader.id, presenter.findEntry(id), mIsAnnouncements, presenter.discussionTopic)
+            val args = DiscussionsUpdateFragment.makeBundle(presenter.discussionTopicHeader.id, presenter.findEntry(id), isAnnouncements, presenter.discussionTopic)
             RouteMatcher.route(requireContext(), Route(DiscussionsUpdateFragment::class.java, presenter.canvasContext, args))
         } else {
             NoInternetConnectionDialog.show(requireFragmentManager())
@@ -685,27 +693,27 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
 
     override fun updateDiscussionAsDeleted(discussionEntry: DiscussionEntry) {
         val deletedText = DiscussionUtils.formatDeletedInfoText(requireContext(), discussionEntry)
-        discussionRepliesWebViewWrapper.post { discussionRepliesWebViewWrapper.webView.loadUrl(
+        binding.discussionRepliesWebViewWrapper.post { binding.discussionRepliesWebViewWrapper.webView.loadUrl(
                 "javascript:markAsDeleted" + "('" + discussionEntry.id.toString() + "','" + deletedText + "')") }
     }
 
     override fun updateDiscussionsMarkedAsReadCompleted(markedAsReadIds: List<Long>) {
         markedAsReadIds.forEach {
-            discussionRepliesWebViewWrapper.post { discussionRepliesWebViewWrapper.webView.loadUrl("javascript:markAsRead('$it')") }
+            binding.discussionRepliesWebViewWrapper.post { binding.discussionRepliesWebViewWrapper.webView.loadUrl("javascript:markAsRead('$it')") }
         }
     }
 
     override fun updateDiscussionsMarkedAsUnreadCompleted(markedAsUnreadId: Long) {
-        discussionRepliesWebViewWrapper.post { discussionRepliesWebViewWrapper.webView.loadUrl("javascript:markAsUnread('$markedAsUnreadId')") }
+        binding.discussionRepliesWebViewWrapper.post { binding.discussionRepliesWebViewWrapper.webView.loadUrl("javascript:markAsUnread('$markedAsUnreadId')") }
     }
 
-    override fun showAnonymousDiscussionView() {
+    override fun showAnonymousDiscussionView() = with(binding) {
         anonymousDiscussionsNotSupported.setVisible()
-        openInBrowser.setVisible(mDiscussionTopicHeader.htmlUrl?.isNotEmpty() == true)
+        openInBrowser.setVisible(discussionTopicHeader.htmlUrl?.isNotEmpty() == true)
         replyToDiscussionTopic.setGone()
         swipeRefreshLayout.isEnabled = false
         openInBrowser.onClick {
-            mDiscussionTopicHeader.htmlUrl?.let { url ->
+            discussionTopicHeader.htmlUrl?.let { url ->
                 requireContext().startActivity(InternalWebViewActivity.createIntent(requireContext(), url, "", true))
             }
         }
@@ -714,8 +722,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
     /**
      * Checks to see if the webview element is within the viewable bounds of the scrollview.
      */
-    private fun isElementInViewPortWithinScrollView(elementHeight: Int, topOffset: Int): Boolean {
-        if (discussionsScrollView == null) return false
+    private fun isElementInViewPortWithinScrollView(elementHeight: Int, topOffset: Int): Boolean = with(binding) {
         val scrollBounds = Rect().apply { discussionsScrollView.getDrawingRect(this) }
 
         val discussionRepliesHeight = discussionRepliesWebViewWrapper.height
@@ -736,7 +743,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
                     AttachmentPickerDialog.hide(requireFragmentManager())
                     attachment.view(requireContext())
                 }
-            } else if (attachments.size == 1) {
+            } else {
                 attachments[0].view(requireContext())
             }
         }
@@ -759,7 +766,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         event.once(javaClass.simpleName + ".onPost()") {
             if (it == presenter.discussionTopicHeader.id) {
                 if(activity is MasterDetailInteractions) {
-                    (activity as MasterDetailInteractions).popFragment(mCanvasContext)
+                    (activity as MasterDetailInteractions).popFragment(canvasContext)
                 }
             } else if(activity is FullScreenInteractions) {
                 requireActivity().finish()
@@ -777,6 +784,9 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
             DiscussionBottomSheetChoice.DELETE -> deleteDiscussionEntry(id)
         }
     }
+
+    @PageViewUrlParam("type")
+    fun pageViewType(): String = if (isAnnouncements) "announcements" else "discussion_topics"
 
     companion object {
         const val DISCUSSION_TOPIC_HEADER = "discussion_topic_header"
@@ -822,7 +832,7 @@ class DiscussionsDetailsFragment : BasePresenterFragment<
         }
 
         @JvmStatic fun newInstance(canvasContext: CanvasContext, args: Bundle) = DiscussionsDetailsFragment().withArgs(args).apply {
-            mCanvasContext = canvasContext
+            this.canvasContext = canvasContext
         }
     }
 }

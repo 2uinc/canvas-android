@@ -19,7 +19,6 @@ package com.instructure.student.fragment
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.webkit.WebView
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.managers.PageManager
@@ -50,8 +49,6 @@ import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.LockInfoHTMLHelper
-import kotlinx.android.synthetic.main.fragment_webview.*
-import kotlinx.android.synthetic.main.fragment_webview.view.*
 import kotlinx.coroutines.Job
 import org.greenrobot.eventbus.Subscribe
 import retrofit2.Response
@@ -67,6 +64,7 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
     private var pageName: String? by NullableStringArg(key = PAGE_NAME)
     private var page: Page by ParcelableArg(default = Page(), key = PAGE)
     private var pageUrl: String? by NullableStringArg(key = PAGE_URL)
+    private var navigatedFromModules: Boolean by BooleanArg(key = NAVIGATED_FROM_MODULES)
 
     // Flag for the webview client to know whether or not we should clear the history
     private var isUpdated = false
@@ -97,14 +95,13 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
 
     override fun onPause() {
         super.onPause()
-        canvasWebViewWrapper?.webView?.onPause()
+        binding.canvasWebViewWrapper.webView.onPause()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         fetchDataJob?.cancel()
         loadHtmlJob?.cancel()
-        canvasWebViewWrapper?.webView?.destroy()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -188,11 +185,11 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
         }
     }
 
-    private fun loadPage(page: Page) {
+    private fun loadPage(page: Page) = with(binding) {
         setPageObject(page)
 
         if (page.lockInfo != null) {
-            val lockedMessage = LockInfoHTMLHelper.getLockedInfoHTML(page.lockInfo!!, requireContext(), R.string.lockedPageDesc)
+            val lockedMessage = LockInfoHTMLHelper.getLockedInfoHTML(page.lockInfo!!, requireContext(), R.string.lockedPageDesc, !navigatedFromModules)
             populateWebView(lockedMessage, getString(R.string.pages))
             return
         }
@@ -208,7 +205,7 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
 
             // Load the html with the helper function to handle iframe cases
             loadHtmlJob = canvasWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), body, {
-                canvasWebViewWrapper?.loadHtml(it, page.title, baseUrl = page.htmlUrl)
+                canvasWebViewWrapper.loadHtml(it, page.title, baseUrl = page.htmlUrl)
             }) {
                 LtiLaunchFragment.routeLtiLaunchFragment(requireContext(), canvasContext, it)
             }
@@ -273,7 +270,7 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
     }
 
     override fun applyTheme() {
-        toolbar?.let {
+        binding.toolbar.let {
             setupToolbarMenu(it, R.menu.menu_page_details)
             it.title = title()
             it.setupAsBackButton(this)
@@ -297,13 +294,17 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
         }
     }
 
-    private fun checkCanEdit() {
-        if (page.editingRoles?.contains("public") == true) {
-            toolbar?.menu?.findItem(R.id.menu_edit)?.isVisible = true
-        } else if (page.editingRoles?.contains("student") == true && (canvasContext as? Course)?.isStudent == true) {
-            toolbar?.menu?.findItem(R.id.menu_edit)?.isVisible = true
-        } else if (page.editingRoles?.contains("teacher") == true && (canvasContext as? Course)?.isTeacher == true) {
-            toolbar?.menu?.findItem(R.id.menu_edit)?.isVisible = true
+    private fun checkCanEdit() = with(binding) {
+        val course = canvasContext as? Course
+        val editingRoles = page.editingRoles.orEmpty()
+        if (course?.isStudent == true) {
+            if (page.lockInfo == null && (editingRoles.contains("public") || editingRoles.contains("student"))) {
+                toolbar.menu?.findItem(R.id.menu_edit)?.isVisible = true
+            }
+        } else if (course?.isTeacher == true) {
+            if ((editingRoles.contains("public") || editingRoles.contains("teacher"))) {
+                toolbar.menu?.findItem(R.id.menu_edit)?.isVisible = true
+            }
         }
     }
 
@@ -322,10 +323,13 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
         }
     }
 
+    override fun handleBackPressed() = false
+
     companion object {
         const val PAGE_NAME = "pageDetailsName"
         const val PAGE = "pageDetails"
         const val PAGE_URL = "pageUrl"
+        const val NAVIGATED_FROM_MODULES = "navigated_from_modules"
 
         fun newInstance(route: Route): PageDetailsFragment? {
             return if (validRoute(route)) PageDetailsFragment().apply {
@@ -348,8 +352,9 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
             return Route(null, PageDetailsFragment::class.java, canvasContext, canvasContext.makeBundle(Bundle().apply { if (pageName != null) putString(PAGE_NAME, pageName) }))
         }
 
-        fun makeRoute(canvasContext: CanvasContext, pageName: String?, pageUrl: String?): Route {
+        fun makeRoute(canvasContext: CanvasContext, pageName: String?, pageUrl: String?, navigatedFromModules: Boolean): Route {
             return Route(null, PageDetailsFragment::class.java, canvasContext, canvasContext.makeBundle(Bundle().apply {
+                putBoolean(NAVIGATED_FROM_MODULES, navigatedFromModules)
                 if (pageName != null)
                     putString(PAGE_NAME, pageName)
                 if (pageUrl != null)

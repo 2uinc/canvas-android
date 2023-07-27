@@ -16,10 +16,13 @@
 
 package com.instructure.canvasapi2.models
 
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class DashboardCard(
     override val id: Long = 0,
-    val isK5Subject: Boolean = false
+    val isK5Subject: Boolean = false,
+    val shortName: String? = null,
+    val originalName: String? = null,
+    val courseCode: String? = null
 ) : CanvasModel<DashboardCard>()

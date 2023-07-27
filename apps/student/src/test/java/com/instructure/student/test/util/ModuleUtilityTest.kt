@@ -23,8 +23,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.models.ModuleObject
+import com.instructure.student.features.assignmentdetails.AssignmentDetailsFragment
 import com.instructure.student.fragment.*
-import com.instructure.student.mobius.assignmentDetails.ui.AssignmentDetailsFragment
 import com.instructure.student.util.Const
 import com.instructure.student.util.ModuleUtility
 import junit.framework.TestCase
@@ -88,6 +88,7 @@ class ModuleUtilityTest : TestCase() {
         val expectedBundle = Bundle()
         expectedBundle.putParcelable(Const.CANVAS_CONTEXT, course)
         expectedBundle.putString(PageDetailsFragment.PAGE_NAME, "hello-world")
+        expectedBundle.putBoolean(PageDetailsFragment.NAVIGATED_FROM_MODULES, false)
 
         val parentFragment = callGetFragment(moduleItem, course, null)
         TestCase.assertNotNull(parentFragment)
@@ -246,6 +247,6 @@ class ModuleUtilityTest : TestCase() {
     }
 
     private fun callGetFragment(moduleItem: ModuleItem, course: Course, moduleObject: ModuleObject?): Fragment? {
-        return ModuleUtility.getFragment(moduleItem, course, moduleObject, false)
+        return ModuleUtility.getFragment(moduleItem, course, moduleObject, false, false)
     }
 }

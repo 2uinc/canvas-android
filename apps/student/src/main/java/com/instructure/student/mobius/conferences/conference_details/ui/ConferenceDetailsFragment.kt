@@ -20,6 +20,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Conference
+import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_CONFERENCE_DETAILS
 import com.instructure.pandautils.analytics.ScreenView
@@ -27,12 +29,14 @@ import com.instructure.pandautils.utils.Const
 import com.instructure.pandautils.utils.ParcelableArg
 import com.instructure.pandautils.utils.makeBundle
 import com.instructure.pandautils.utils.withArgs
+import com.instructure.student.databinding.FragmentConferenceDetailsBinding
 import com.instructure.student.mobius.common.ui.MobiusFragment
 import com.instructure.student.mobius.conferences.conference_details.*
 
+@PageView(url = "{canvasContext}/conferences/{conferenceId}")
 @ScreenView(SCREEN_VIEW_CONFERENCE_DETAILS)
 class ConferenceDetailsFragment :
-    MobiusFragment<ConferenceDetailsModel, ConferenceDetailsEvent, ConferenceDetailsEffect, ConferenceDetailsView, ConferenceDetailsViewState>() {
+    MobiusFragment<ConferenceDetailsModel, ConferenceDetailsEvent, ConferenceDetailsEffect, ConferenceDetailsView, ConferenceDetailsViewState, FragmentConferenceDetailsBinding>() {
 
     val canvasContext by ParcelableArg<CanvasContext>(key = Const.CANVAS_CONTEXT)
 
@@ -56,6 +60,9 @@ class ConferenceDetailsFragment :
             inflater,
             parent
         )
+
+    @PageViewUrlParam("conferenceId")
+    fun getConferenceId() = conference.id
 
     companion object {
         fun makeRoute(canvasContext: CanvasContext, conference: Conference): Route {

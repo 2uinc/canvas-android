@@ -37,8 +37,8 @@ import com.instructure.canvasapi2.utils.LinkHeaders
 import com.instructure.canvasapi2.utils.Logger
 import com.instructure.interactions.router.*
 import com.instructure.pandautils.activities.BaseViewMediaActivity
-import com.instructure.pandautils.features.discussion.details.DiscussionDetailsWebViewFragment
 import com.instructure.pandautils.features.discussion.router.DiscussionRouterFragment
+import com.instructure.pandautils.features.inbox.list.InboxFragment
 import com.instructure.pandautils.features.shareextension.ShareFileSubmissionTarget
 import com.instructure.pandautils.loaders.OpenMediaAsyncTaskLoader
 import com.instructure.pandautils.utils.Const
@@ -47,10 +47,10 @@ import com.instructure.pandautils.utils.RouteUtils
 import com.instructure.pandautils.utils.nonNullArgs
 import com.instructure.student.R
 import com.instructure.student.activity.*
+import com.instructure.student.features.assignmentdetails.AssignmentDetailsFragment
 import com.instructure.student.features.elementary.course.ElementaryCourseFragment
 import com.instructure.student.fragment.*
 import com.instructure.student.mobius.assignmentDetails.submissionDetails.ui.SubmissionDetailsFragment
-import com.instructure.student.mobius.assignmentDetails.ui.AssignmentDetailsFragment
 import com.instructure.student.mobius.conferences.conference_list.ui.ConferenceListFragment
 import com.instructure.student.mobius.syllabus.ui.SyllabusFragment
 import com.instructure.student.util.FileUtils
@@ -139,6 +139,7 @@ object RouteMatcher : BaseRouteMatcher() {
         // Discussions
         routes.add(Route(courseOrGroup("/:${RouterParams.COURSE_ID}/discussion_topics"), DiscussionListFragment::class.java))
         routes.add(Route(courseOrGroup("/:${RouterParams.COURSE_ID}/discussion_topics/:${RouterParams.MESSAGE_ID}"), DiscussionListFragment::class.java, CourseModuleProgressionFragment::class.java))
+        routes.add(Route(courseOrGroup("/:${RouterParams.COURSE_ID}/discussion_topics/:${RouterParams.MESSAGE_ID}"), DiscussionListFragment::class.java, DiscussionRouterFragment::class.java)) // Route for bookmarking
 
         // Pages
         routes.add(Route(courseOrGroup("/:${RouterParams.COURSE_ID}/pages"), PageListFragment::class.java))
@@ -499,7 +500,11 @@ object RouteMatcher : BaseRouteMatcher() {
 
     fun generateUrl(type: CanvasContext.Type, masterCls: Class<out Fragment>?, detailCls: Class<out Fragment>?, replacementParams: HashMap<String, String>?, queryParams: HashMap<String, String>?): String? {
         val domain = ApiPrefs.fullDomain
-        val urlRoute = getInternalRoute(masterCls, detailCls)
+
+        // Workaround for the discussion details because we bookmark a different class that we use for routing
+        val detailsClass = if (detailCls == DiscussionDetailsFragment::class.java) DiscussionRouterFragment::class.java else detailCls
+
+        val urlRoute = getInternalRoute(masterCls, detailsClass)
         if(urlRoute != null) {
             var path = urlRoute.createUrl(replacementParams)
             if (path.contains(COURSE_OR_GROUP_REGEX)) {

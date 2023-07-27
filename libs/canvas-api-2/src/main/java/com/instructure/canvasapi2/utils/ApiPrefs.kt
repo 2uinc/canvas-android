@@ -74,7 +74,7 @@ object ApiPrefs : PrefManager(PREFERENCE_FILE_NAME) {
             return selectedLocale.takeUnless { it == ACCOUNT_LOCALE }
                     ?: user?.effective_locale
                     ?: user?.locale
-                    ?: ConfigurationCompat.getLocales(Resources.getSystem().configuration)[0].language
+                    ?: ConfigurationCompat.getLocales(Resources.getSystem().configuration)[0]?.language ?: ""
         }
 
     /* Masquerading Prefs */
@@ -153,6 +153,7 @@ object ApiPrefs : PrefManager(PREFERENCE_FILE_NAME) {
 
         // Clear PageView session ID
         PageViewUtils.session.clear()
+        pandataInfo = null
 
         // Clear http cache
         RestBuilder.clearCacheDirectory()
