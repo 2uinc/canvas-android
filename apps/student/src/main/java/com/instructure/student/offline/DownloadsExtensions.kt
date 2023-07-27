@@ -42,7 +42,7 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
             extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItem.id
             extras[OfflineConst.KEY_EXTRA_URL] = moduleItem.url ?: ""
 
-            setWithRemoveAbility()
+            setVisibilityOnAction()
             setKeyItem(
                 KeyOfflineItem(
                     OfflineUtils.getModuleKey(
@@ -71,7 +71,7 @@ fun DownloadItemView.initWithPageData(page: Page) {
         extras[OfflineConst.KEY_EXTRA_PAGE_ID] = page.id
         extras[OfflineConst.KEY_EXTRA_URL] = page.url ?: ""
 
-        setWithRemoveAbility()
+        setVisibilityOnAction()
         setKeyItem(
             KeyOfflineItem(
                 OfflineUtils.getPageKey(courseId, page.id), page.title ?: "", extras

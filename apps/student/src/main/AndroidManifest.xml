@@ -134,6 +134,9 @@
             android:name=".offline.activity.DownloadsPagesActivity"
             android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:theme="@style/CanvasMaterialTheme_Default" />
+        <service
+            android:name=".offline.util.OfflineModeService"
+            android:exported="false" />
 
         <activity
             android:name=".activity.CandroidPSPDFActivity"

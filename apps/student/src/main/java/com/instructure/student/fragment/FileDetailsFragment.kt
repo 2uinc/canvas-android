@@ -46,8 +46,6 @@ import com.instructure.student.R
 import com.instructure.student.databinding.FragmentFileDetailsBinding
 import com.instructure.student.events.ModuleUpdatedEvent
 import com.instructure.student.events.post
-import com.instructure.student.offline.util.OfflineConst
-import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.offline.initWithOfflineData
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils

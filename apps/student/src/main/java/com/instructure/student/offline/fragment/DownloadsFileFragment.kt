@@ -17,7 +17,6 @@ import com.instructure.student.databinding.FragmentFileDetailsBinding
 import com.instructure.student.offline.item.FileOfflineItem
 import com.instructure.student.offline.util.OfflineUtils
 import com.twou.offline.Offline
-import kotlinx.android.synthetic.main.fragment_file_details.*
 import java.io.File
 
 class DownloadsFileFragment : DownloadsBaseFragment() {
@@ -55,7 +54,7 @@ class DownloadsFileFragment : DownloadsBaseFragment() {
             binding.fileType.text = offlineItem.contentType
 
             if (offlineItem.thumbnailPath.isNotEmpty()) {
-                fileIcon.layoutParams.apply {
+                binding.fileIcon.layoutParams.apply {
                     height = requireActivity().DP(230).toInt()
                     width = height
                 }

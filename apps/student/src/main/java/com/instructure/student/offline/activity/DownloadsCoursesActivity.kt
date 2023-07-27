@@ -15,7 +15,6 @@ import com.instructure.student.offline.adapter.DownloadsCoursesAdapter
 import com.instructure.student.offline.item.DownloadsCourseItem
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.util.StudentPrefs
-import kotlinx.android.synthetic.main.panda_recycler_refresh_layout.*
 
 class DownloadsCoursesActivity : AppCompatActivity() {
 
