@@ -57,6 +57,7 @@ object DownloadsRepository {
 
         if (mModuleItems.firstOrNull { it.key == moduleItem.key } == null) {
             mModuleItems.add(moduleItem)
+            mModuleItems.sortBy { it.moduleName }
             mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }?.add(moduleItem)
 
             saveModuleData()

@@ -44,6 +44,9 @@ import com.instructure.pandautils.utils.*
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentWebviewBinding
+import com.instructure.student.offline.initWithOfflineData
+import com.instructure.student.offline.util.OfflineConst
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.FileDownloadJobIntentService
 import kotlinx.coroutines.Job
@@ -225,6 +228,7 @@ open class InternalWebviewFragment : ParentFragment() {
 
         if (isLTITool) {
             setupToolbarMenu(binding.toolbar, R.menu.menu_internal_webview)
+            binding.toolbar.initWithOfflineData(requireContext(), OfflineUtils.getCourseIdFromUrl(url ?: html ?: ""), title(), arguments, OfflineConst.TYPE_LTI)
         }
     }
 

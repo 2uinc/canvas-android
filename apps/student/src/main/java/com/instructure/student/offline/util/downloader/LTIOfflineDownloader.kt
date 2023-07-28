@@ -4,7 +4,6 @@ import android.net.Uri
 import android.webkit.WebView
 import com.google.gson.Gson
 import com.instructure.canvasapi2.managers.OAuthManager
-import com.instructure.canvasapi2.models.AuthenticatedSession
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.weave.StatusCallbackError
@@ -62,7 +61,7 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
         sessionAuthJob = weave {
             if (ApiPrefs.domain in mUrl) {
                 try {
-                    mUrl = awaitApi<AuthenticatedSession> {
+                    mUrl = awaitApi {
                         OAuthManager.getAuthenticatedSession(mUrl, it)
                     }.sessionUrl
                 } catch (e: StatusCallbackError) {

@@ -111,6 +111,6 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
 
     companion object {
 
-        private val supportedIframes = listOf<String>()
+        private val supportedIframes = listOf("frost.2u.com")
     }
 }

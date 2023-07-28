@@ -63,7 +63,7 @@ object ModuleUtility {
                 LockedModuleItemFragment.newInstance(makeRoute(course, item.title!!, item.moduleDetails?.lockExplanation ?: ""))
             } else {
                 val uri = Uri.parse(item.htmlUrl).buildUpon().appendQueryParameter("display", "borderless").build()
-                val route = makeRoute(course, uri.toString(), item.title!!, true, true, true)
+                val route = makeRoute(course, uri.toString(), item.title!!, true, true, true).addOfflineDataForModule(item, moduleObject)
                 InternalWebviewFragment.newInstance(route)
             }
         }
