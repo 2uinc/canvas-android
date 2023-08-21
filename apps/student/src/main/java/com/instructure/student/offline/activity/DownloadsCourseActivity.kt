@@ -124,6 +124,10 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
             courseBrowserTitle.text = courseItem.title
 
             ColorKeeper.cachedThemedColors["course_${courseItem.courseId}"]?.let { themedColor ->
+                ViewStyler.setStatusBarDark(
+                    this@DownloadsCourseActivity, themedColor.backgroundColor()
+                )
+
                 courseImage.setCourseImage(
                     courseItem.logoPath, themedColor.backgroundColor(),
                     !StudentPrefs.hideCourseColorOverlay

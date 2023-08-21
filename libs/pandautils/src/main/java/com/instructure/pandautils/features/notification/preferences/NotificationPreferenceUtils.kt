@@ -45,6 +45,7 @@ class NotificationPreferenceUtils(private val resources: Resources) {
             // DISCUSSIONS
             "discussion" to getString(R.string.notification_pref_discussion),
             "discussion_entry" to getString(R.string.notification_pref_discussion_post),
+            "discussion_mention" to getString(R.string.notification_pref_discussion_new_mention),
 
             // CONVERSATIONS
             "added_to_conversation" to getString(R.string.notification_pref_add_to_conversation),
@@ -85,6 +86,7 @@ class NotificationPreferenceUtils(private val resources: Resources) {
             // DISCUSSIONS
             "discussion" to getString(R.string.notification_desc_discussion),
             "discussion_entry" to getString(R.string.notification_desc_discussion_post),
+            "discussion_mention" to getString(R.string.notification_desc_discussion_new_mention),
 
             // CONVERSATIONS
             "added_to_conversation" to getString(R.string.notification_desc_add_to_conversation),
@@ -125,6 +127,7 @@ class NotificationPreferenceUtils(private val resources: Resources) {
             // DISCUSSIONS
             "discussion" to CategoryHelper(CategoryGroup.DISCUSSIONS, 1),
             "discussion_entry" to CategoryHelper(CategoryGroup.DISCUSSIONS, 2),
+            "discussion_mention" to CategoryHelper(CategoryGroup.DISCUSSIONS, 3),
 
             // CONVERSATIONS
             "added_to_conversation" to CategoryHelper(CategoryGroup.CONVERSATIONS, 1),

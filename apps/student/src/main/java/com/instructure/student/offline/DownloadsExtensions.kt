@@ -26,12 +26,12 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
     }
 
     val type = OfflineUtils.getContentType(moduleItem.type ?: "")
-    visibility = if (!isLocked && type != -1) {
+    if (!isLocked && type != -1) {
         val url = moduleItem.url ?: moduleObject?.itemsUrl ?: moduleItem.htmlUrl
         val courseId = OfflineUtils.getCourseIdFromUrl(url ?: "")
 
         if (courseId == -1L) {
-            View.GONE
+            visibility = View.GONE
 
         } else {
             val extras = mutableMapOf<String, Any>()
@@ -50,11 +50,9 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
                     ), moduleItem.title ?: "", extras
                 )
             )
-
-            View.VISIBLE
         }
 
-    } else View.GONE
+    } else visibility = View.GONE
 }
 
 fun DownloadItemView.initWithPageData(page: Page) {

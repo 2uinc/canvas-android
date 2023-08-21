@@ -767,6 +767,7 @@
 
     <string name="notification_pref_discussion">Discussion</string>
     <string name="notification_pref_discussion_post">Discussion Post</string>
+    <string name="notification_pref_discussion_new_mention">New Mention</string>
 
     <string name="notification_pref_add_to_conversation">Add To Conversation</string>
     <string name="notification_pref_conversation_message">Conversation Message</string>
@@ -803,6 +804,7 @@
     <string name="notification_desc_submission_comment">Get notified when a comment is made on your submission.</string>
     <string name="notification_desc_discussion">Get notified when there’s a new discussion topic in your course.</string>
     <string name="notification_desc_discussion_post">Get notified when there’s a new post in a discussion you’re subscribed to.</string>
+    <string name="notification_desc_discussion_new_mention">Get notified when there’s a new mention of you in a discussion.</string>
     <string name="notification_desc_add_to_conversation">Get notified when you’re added to a conversation.</string>
     <string name="notification_desc_conversation_message">Get notified when you have a new inbox message.</string>
     <string name="notification_desc_conversations_created_by_you">Get notified when you create a new conversation.</string>

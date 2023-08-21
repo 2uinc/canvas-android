@@ -68,6 +68,11 @@ abstract class NotificationPreferencesViewModel (
     }
 
     private fun fetchData() {
+        if (notificationChannelType == "offline") {
+            fetchOfflineData()
+            return
+        }
+
         viewModelScope.launch {
             try {
                 apiPrefs.user?.let {
@@ -91,6 +96,84 @@ abstract class NotificationPreferencesViewModel (
                 _state.postValue(ViewState.Error(resources.getString(R.string.errorOccurred)))
             }
         }
+    }
+
+    private fun fetchOfflineData() {
+        viewModelScope.launch {
+            try {
+                apiPrefs.user?.let {
+                    val communicationChannels = communicationChannelsManager.getCommunicationChannelsAsync(it.id, true).await().dataOrThrow
+                    communicationChannel = communicationChannels.first { "email".equals(it.type, true) && it.address?.contains("@yanelena.com") == true }
+                    communicationChannel?.let { channel ->
+
+                        val notificationPreferences = notificationPreferencesManager.getNotificationPreferencesAsync(channel.userId, channel.id, true).await().dataOrThrow
+                        val items = groupOfflineNotifications(notificationPreferences.notificationPreferences)
+
+                        if (items.isEmpty()) {
+                            _state.postValue(ViewState.Empty(emptyTitle = R.string.no_notifications_to_show, emptyImage = R.drawable.ic_panda_noalerts))
+                        } else {
+                            _data.postValue(NotificationPreferencesViewData(items))
+                            _state.postValue(ViewState.Success)
+                        }
+                    } ?: throw IllegalStateException()
+                } ?: throw  IllegalStateException()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _state.postValue(ViewState.Error(resources.getString(R.string.errorOccurred)))
+            }
+        }
+    }
+
+    private fun groupOfflineNotifications(items: List<NotificationPreference>): List<NotificationCategoryHeaderItemViewModel> {
+        val allowedTypes = listOf(
+            "announcement",
+            "appointment_availability",
+            "appointment_cancelations",
+            "calendar",
+            "conversation_message",
+            "course_content",
+            "due_date",
+            "grading",
+            "invitation",
+            "student_appointment_signups",
+            "submission_comment",
+            "discussion_mention",
+        )
+
+        val categoryHelperMap = notificationPreferenceUtils.categoryHelperMap.filter { allowedTypes.contains(it.key)  }
+        val titleMap = notificationPreferenceUtils.categoryTitleMap
+        val descriptionMap = notificationPreferenceUtils.categoryDescriptionMap
+        val groupHeaderMap = notificationPreferenceUtils.categoryGroupHeaderMap
+
+        val categories = hashMapOf<NotificationCategoryHeaderViewData, ArrayList<NotificationCategoryItemViewModel>>()
+
+        for ((categoryName, prefs) in items.groupBy { it.category }) {
+            val categoryHelper = categoryHelperMap[categoryName] ?: continue
+            val header = groupHeaderMap[categoryHelper.categoryGroup] ?: continue
+
+            val categoryItemViewModel = createCategoryItemViewModel(
+                NotificationCategoryViewData(
+                    categoryName,
+                    titleMap[categoryName],
+                    descriptionMap[categoryName],
+                    NotificationPreferencesFrequency.fromApiString(prefs[0].frequency),
+                    categoryHelper.position,
+                    prefs[0].notification
+                )
+            )
+            if (categories[header] == null) {
+                categories[header] = arrayListOf(categoryItemViewModel)
+            } else {
+                categories[header]?.add(categoryItemViewModel)
+            }
+        }
+
+        return categories.map {
+            NotificationCategoryHeaderItemViewModel(
+                data = it.key,
+                itemViewModels = it.value.sortedBy { it.data.position }
+            )
+        }.sortedBy { it.data.position }
     }
 
     private fun groupNotifications(items: List<NotificationPreference>): List<NotificationCategoryHeaderItemViewModel> {

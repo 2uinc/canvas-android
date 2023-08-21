@@ -47,7 +47,7 @@ android {
     buildToolsVersion Versions.BUILD_TOOLS
 
     defaultConfig {
-        applicationId "com.instructure.candroid"
+        applicationId "com.instructure.candroid.twou"
         minSdkVersion Versions.MIN_SDK
         targetSdkVersion Versions.TARGET_SDK
         versionCode = 253
@@ -126,6 +126,11 @@ android {
             ext {
                 heapEnabled = true
             }
+
+            buildConfigField "String", "EMAIL_DOMAIN", "\"" + Keys.EMAIL_DOMAIN + "\""
+            buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
+            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
+            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
         }
 
         release {
@@ -152,6 +157,11 @@ android {
             ext {
                 heapEnabled = true
             }
+
+            buildConfigField "String", "EMAIL_DOMAIN", "\"" + Keys.EMAIL_DOMAIN + "\""
+            buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
+            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
+            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
         }
     }
 
@@ -361,6 +371,9 @@ dependencies {
     implementation("com.google.android.exoplayer:exoplayer-core:2.17.1")
     implementation("com.google.android.exoplayer:exoplayer-ui:2.17.1")
     implementation "com.google.android.exoplayer:extension-cast:2.17.1"
+    implementation "com.amazonaws:aws-android-sdk-core:2.71.0"
+    implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
+    implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"
 }
 
 // Comment out this line if the reporting logic starts going wonky.

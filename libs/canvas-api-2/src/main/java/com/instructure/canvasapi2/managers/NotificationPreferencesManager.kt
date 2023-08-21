@@ -72,6 +72,17 @@ class NotificationPreferencesManager(private val notificationPreferencesApi: Not
             channelId: Long,
             frequency: String
     ) = apiAsync<NotificationPreferenceResponse> { updatePreferenceCategory(categoryName, channelId, frequency, it) }
+
+    fun updateMultipleNotificationPreferencesAsync(
+        communicationChannelId: Long,
+        notifications: List<String>,
+        frequency: String
+    ) = apiAsync {
+        val adapter = RestBuilder(it)
+        val params = RestParams()
+        notificationPreferencesApi.updateMultipleNotificationPreferences(communicationChannelId, notifications, frequency, adapter, params, it)
+    }
+
 }
 
 enum class NotificationPreferencesFrequency(val apiString: String, @StringRes val stringRes: Int) {
