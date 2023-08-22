@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
@@ -92,7 +93,7 @@ class DownloadsCoursesActivity : AppCompatActivity() {
             binding.emptyView.setMessageText(R.string.download_no_courses_subtext)
             binding.emptyView.setListEmpty()
             binding.emptyView.setVisible()
-
+            binding.recyclerView.visibility = View.GONE
         }
     }
 

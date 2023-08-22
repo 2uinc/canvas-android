@@ -1,5 +1,6 @@
 package com.instructure.student.offline.activity
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -17,6 +18,9 @@ import com.instructure.student.offline.fragment.DownloadsHtmlFragment
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
+import com.twou.offline.Offline
+import com.twou.offline.OfflineManager
+import com.twou.offline.item.KeyOfflineItem
 
 class DownloadsContentActivity : AppCompatActivity() {
 
@@ -24,6 +28,8 @@ class DownloadsContentActivity : AppCompatActivity() {
 
     private var mKey = ""
     private var mCurrentFragment: DownloadsBaseFragment? = null
+
+    private var mOfflineListener: OfflineManager.OfflineListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +40,25 @@ class DownloadsContentActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         initView()
+
+        mOfflineListener = object : OfflineManager.OfflineListener() {
+
+            @SuppressLint("NotifyDataSetChanged")
+            override fun onItemRemoved(key: String) {
+                if (key == mKey) finish()
+            }
+
+            override fun onItemsRemoved(keys: List<String>) {
+                keys.forEach { onItemRemoved(it) }
+            }
+        }
+
+        mOfflineListener?.let { Offline.getOfflineManager().addListener(it) }
+    }
+
+    override fun onDestroy() {
+        mOfflineListener?.let { Offline.getOfflineManager().removeListener(it) }
+        super.onDestroy()
     }
 
     override fun onBackPressed() {
@@ -44,6 +69,9 @@ class DownloadsContentActivity : AppCompatActivity() {
 
     private fun initView() {
         binding.toolbar.setupAsBackButton { onBackPressed() }
+        binding.downloadItemView.setWithRemoveAbility()
+        binding.downloadItemView.setViewColor(Color.WHITE)
+        binding.downloadItemView.setKeyItem(KeyOfflineItem(mKey, ""))
 
         val courseId = OfflineUtils.getCourseId(mKey)
 

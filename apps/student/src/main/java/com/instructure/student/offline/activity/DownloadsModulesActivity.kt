@@ -1,6 +1,7 @@
 package com.instructure.student.offline.activity
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -20,9 +21,13 @@ import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 
-class DownloadsModulesActivity : AppCompatActivity() {
+class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
     private lateinit var binding: ActivityDownloadsModulesBinding
 
@@ -31,6 +36,11 @@ class DownloadsModulesActivity : AppCompatActivity() {
 
     private var mDownloadsModuleAdapter: DownloadsModulesAdapter? = null
     private var mOfflineListener: OfflineManager.OfflineListener? = null
+
+    private var mAlertDialog: AlertDialog? = null
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +81,7 @@ class DownloadsModulesActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         mOfflineListener?.let { Offline.getOfflineManager().removeListener(it) }
+        mAlertDialog?.dismiss()
         super.onDestroy()
     }
 
@@ -108,6 +119,35 @@ class DownloadsModulesActivity : AppCompatActivity() {
                         }
                     })
                 binding.recyclerView.adapter = mDownloadsModuleAdapter
+            }
+        }
+
+        binding.removeAllTextView.setOnClickListener {
+            if (mAlertDialog == null) {
+                mAlertDialog = AlertDialog.Builder(this)
+                    .setPositiveButton(R.string.delete) { _, _ ->
+                        removeAllContents()
+                    }
+                    .setNegativeButton(R.string.cancel) { _, _ -> }
+                    .setMessage(R.string.download_modules_remove_all_dialog_title)
+                    .show()
+            }
+
+            mAlertDialog?.show()
+        }
+    }
+
+    private fun removeAllContents() {
+        launch {
+            val keys = mutableListOf<String>()
+            DownloadsRepository.getModuleItems(mCourseId)?.forEach {
+                keys.add(it.key)
+            }
+
+            Offline.getOfflineManager().remove(keys)
+
+            launch(Dispatchers.Main) {
+                finish()
             }
         }
     }

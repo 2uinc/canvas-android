@@ -16,11 +16,14 @@
 
     <string name="download_no_intent_msg">There is no app installed to open this</string>
 
-    <string name="download_no_courses">No Courses</string>
-    <string name="download_no_courses_subtext">It looks like there aren\'t any contents downloaded yet.</string>
+    <string name="download_no_courses">No Downloads</string>
+    <string name="download_no_courses_subtext">To download content, open a content type and press save.\nDownloaded modules will appear here.</string>
 
     <string name="download_course_modules">Modules</string>
     <string name="download_course_pages">Pages</string>
+
+    <string name="download_modules_remove_all">Remove all</string>
+    <string name="download_modules_remove_all_dialog_title">Are you sure you want to remove all contents?</string>
 
     <string name="download_content_not_downloaded">This content is not downloaded yet</string>
 

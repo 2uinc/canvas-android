@@ -113,7 +113,7 @@ class OfflineModeService : Service() {
 
         val name = "Offline mode notifications"
 
-        val importance = NotificationManager.IMPORTANCE_HIGH
+        val importance = NotificationManager.IMPORTANCE_LOW
         val channel = NotificationChannel(CHANNEL_OFFLINE_MODE, name, importance)
         channel.description = name
         channel.enableLights(false)

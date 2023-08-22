@@ -14,7 +14,24 @@
         android:elevation="6dp"
         app:layout_constraintTop_toTopOf="parent"
         app:popupTheme="@style/ToolBarPopupStyle"
-        app:theme="@style/ToolBarStyle" />
+        app:theme="@style/ToolBarStyle">
+
+        <View
+            android:layout_width="56dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <com.twou.offline.view.DownloadItemView
+        android:id="@+id/downloadItemView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="16dp"
+        android:elevation="10dp"
+        app:layout_constraintBottom_toBottomOf="@+id/toolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <FrameLayout
         android:id="@+id/containerLayout"

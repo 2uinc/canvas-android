@@ -42,7 +42,7 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
             extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItem.id
             extras[OfflineConst.KEY_EXTRA_URL] = moduleItem.url ?: ""
 
-            setVisibilityOnAction()
+            setWithRemoveAbility()
             setKeyItem(
                 KeyOfflineItem(
                     OfflineUtils.getModuleKey(
