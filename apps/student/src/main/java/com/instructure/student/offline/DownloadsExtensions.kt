@@ -50,6 +50,7 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
                     ), moduleItem.title ?: "", extras
                 )
             )
+            visibility = View.VISIBLE
         }
 
     } else visibility = View.GONE

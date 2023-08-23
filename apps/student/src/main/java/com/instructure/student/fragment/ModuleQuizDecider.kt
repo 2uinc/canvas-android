@@ -133,7 +133,6 @@ class ModuleQuizDecider : ParentFragment() {
             setupViews()
         } catch {
             toast(R.string.errorOccurred)
-            activity?.finish()
         }
     }
 

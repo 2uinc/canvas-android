@@ -96,7 +96,7 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
             if (element.hasAttr(HtmlLink.HREF)) {
                 var href = element.attr(HtmlLink.HREF)
                 if (href.contains("/courses/") && href.contains("/files/")) {
-                    href = Uri.parse(href)
+                    href = Uri.parse(href.replace("/preview", ""))
                         .buildUpon()
                         .appendPath("download")
                         .build().toString()

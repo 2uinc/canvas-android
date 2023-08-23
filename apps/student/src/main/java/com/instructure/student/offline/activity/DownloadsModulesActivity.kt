@@ -1,6 +1,5 @@
 package com.instructure.student.offline.activity
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -24,7 +23,6 @@ import com.twou.offline.OfflineManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
@@ -55,7 +53,6 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
         mOfflineListener = object : OfflineManager.OfflineListener() {
 
-            @SuppressLint("NotifyDataSetChanged")
             override fun onItemRemoved(key: String) {
                 if (OfflineUtils.getModuleType(key) == OfflineConst.MODULE_TYPE_MODULES &&
                     OfflineUtils.getCourseId(key) == mCourseId
@@ -65,6 +62,9 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
                             if (index >= 0) {
                                 mDownloadsModuleAdapter?.getItems()?.removeAt(index)
                                 mDownloadsModuleAdapter?.notifyItemRemoved(index)
+                                if (index < (mDownloadsModuleAdapter?.itemCount ?: 0)) {
+                                    mDownloadsModuleAdapter?.notifyItemChanged(index)
+                                }
                             }
                         }
                     if (mDownloadsModuleAdapter?.itemCount == 0) finish()

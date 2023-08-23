@@ -11,6 +11,7 @@ import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.weave
 import com.instructure.pandautils.views.CanvasWebView
+import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
@@ -42,7 +43,25 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 }
 
             } else {
-                setInitialDocument(Jsoup.parse("<html>$html</html>"))
+                var isOnlineOnly = false
+
+                run job@{
+                    resourceSet.forEach {
+                        if (it.contains("/lti/course-player/")) {
+                            isOnlineOnly = true
+                            return@job
+                        }
+                    }
+                }
+
+                if (isOnlineOnly) {
+                    processError(
+                        OfflineUnsupportedException(message = "No support for Course Player")
+                    )
+
+                } else {
+                    setInitialDocument(Jsoup.parse("<html>$html</html>"))
+                }
             }
         }
     }
