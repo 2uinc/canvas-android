@@ -7,8 +7,14 @@ import com.instructure.student.offline.item.DownloadsPageItem
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
 import io.paperdb.Paper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.coroutines.CoroutineContext
 
-object DownloadsRepository {
+object DownloadsRepository : CoroutineScope {
 
     private val mCourseItems = mutableListOf<DownloadsCourseItem>()
     private val mModuleItems = mutableListOf<DownloadsModuleItem>()
@@ -18,6 +24,11 @@ object DownloadsRepository {
     private val mPageItemsMap = mutableMapOf<Long, ArrayList<DownloadsPageItem>?>()
 
     private var isLoaded = false
+
+    private val mSaveMutex = Mutex()
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default
 
     fun logout() {
         mCourseItems.clear()
@@ -51,9 +62,10 @@ object DownloadsRepository {
     fun addModuleItem(courseItem: DownloadsCourseItem, moduleItem: DownloadsModuleItem) {
         if (!isLoaded) loadData()
 
-        mCourseItems.removeIf { it.courseId == courseItem.courseId }
-        mCourseItems.add(courseItem)
-        saveCourseData()
+        if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
+            mCourseItems.add(courseItem)
+            saveCourseData()
+        }
 
         if (mModuleItems.firstOrNull { it.key == moduleItem.key } == null) {
             mModuleItems.add(moduleItem)
@@ -88,7 +100,7 @@ object DownloadsRepository {
         }
     }
 
-    private fun loadData() {
+    fun loadData() {
         val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
@@ -205,20 +217,32 @@ object DownloadsRepository {
         val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
-        Paper.book("${schoolId}_$userId").write("downloads_course_items", mCourseItems)
+        launch {
+            mSaveMutex.withLock(this@DownloadsRepository) {
+                Paper.book("${schoolId}_$userId").write("downloads_course_items", mCourseItems)
+            }
+        }
     }
 
     private fun saveModuleData() {
         val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
-        Paper.book("${schoolId}_$userId").write("downloads_module_items", mModuleItems)
+        launch {
+            mSaveMutex.withLock(this@DownloadsRepository) {
+                Paper.book("${schoolId}_$userId").write("downloads_module_items", mModuleItems)
+            }
+        }
     }
 
     private fun savePageData() {
         val schoolId = OfflineUtils.getSchoolId()
         val userId = ApiPrefs.user?.id ?: 0L
 
-        Paper.book("${schoolId}_$userId").write("downloads_page_items", mPageItems)
+        launch {
+            mSaveMutex.withLock(this@DownloadsRepository) {
+                Paper.book("${schoolId}_$userId").write("downloads_page_items", mPageItems)
+            }
+        }
     }
 }

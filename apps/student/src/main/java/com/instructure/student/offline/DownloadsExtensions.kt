@@ -70,7 +70,7 @@ fun DownloadItemView.initWithPageData(page: Page) {
         extras[OfflineConst.KEY_EXTRA_PAGE_ID] = page.id
         extras[OfflineConst.KEY_EXTRA_URL] = page.url ?: ""
 
-        setVisibilityOnAction()
+        setWithRemoveAbility()
         setKeyItem(
             KeyOfflineItem(
                 OfflineUtils.getPageKey(courseId, page.id), page.title ?: "", extras

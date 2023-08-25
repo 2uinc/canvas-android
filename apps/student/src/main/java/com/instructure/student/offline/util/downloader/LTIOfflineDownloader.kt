@@ -11,6 +11,7 @@ import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.weave
 import com.instructure.pandautils.views.CanvasWebView
+import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
 import org.jsoup.Jsoup
@@ -22,6 +23,7 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
     private var sessionAuthJob: WeaveJob? = null
 
     private var isFirstLaunch = true
+    private var mReloadCount = 0
 
     private val mHtmlListener = object : HtmlListener {
         override fun onHtmlLoaded(html: String) {
@@ -48,8 +50,10 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 run job@{
                     resourceSet.forEach {
                         if (it.contains("/lti/course-player/")) {
-                            isOnlineOnly = true
-                            return@job
+                            if (!html.contains("<video")) {
+                                isOnlineOnly = true
+                                return@job
+                            }
                         }
                     }
                 }
@@ -60,7 +64,20 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                     )
 
                 } else {
-                    setInitialDocument(Jsoup.parse("<html>$html</html>"))
+                    if (html.contains("Third-Party cookies Disabled")) {
+                        if (mReloadCount < 3) {
+                            mReloadCount++
+                            loadLti()
+
+                        } else {
+                            processError(
+                                OfflineDownloadException(message = "Something went wrong")
+                            )
+                        }
+
+                    } else {
+                        setInitialDocument(Jsoup.parse("<html>$html</html>"))
+                    }
                 }
             }
         }
@@ -96,7 +113,7 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 .appendQueryParameter("display", "borderless")
                 .build().toString()
 
-            getWebView(mHtmlListener)?.loadUrl(mUrl, getReferer())
+            loadLti()
         }
     }
 
@@ -104,6 +121,13 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
         sessionAuthJob?.cancel()
 
         super.destroy()
+    }
+
+    private fun loadLti() {
+        isFirstLaunch = true
+        handler.post {
+            getWebView(mHtmlListener)?.loadUrl(mUrl, getReferer())
+        }
     }
 
     private fun processLTIItem(ltiItem: LTIItem) {

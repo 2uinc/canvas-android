@@ -38,7 +38,7 @@ class PageOfflineDownloader(
 
     override fun startPreparation() {
         mFetchDataJob = tryWeave {
-            val response = awaitApiResponse<Page> {
+            val response = awaitApiResponse {
                 PageManager.getPageDetails(mCanvasContext, mUrl, true, it)
             }
 
@@ -95,7 +95,7 @@ class PageOfflineDownloader(
                     override fun onError(e: Exception) {
                         processError(e)
                     }
-                }, isNeedReplaceIframes = false)
+                }, isNeedReplaceIframes = true)
             })
 
         } else if (page.body == null || page.body?.endsWith("") == true) {

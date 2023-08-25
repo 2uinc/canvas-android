@@ -365,13 +365,17 @@ open class InternalWebviewFragment : ParentFragment() {
 
     fun loadHtml(data: String, mimeType: String, encoding: String, historyUrl: String?) {
         // BaseURL is set as Referer. Referer needed for some vimeo videos to play
-        binding.canvasWebViewWrapper.webView.loadDataWithBaseURL(
-            CanvasWebView.getReferrer(),
-            data,
-            mimeType,
-            encoding,
-            historyUrl
-        )
+        try {
+            binding.canvasWebViewWrapper.webView.loadDataWithBaseURL(
+                CanvasWebView.getReferrer(),
+                data,
+                mimeType,
+                encoding,
+                historyUrl
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun loadUrl(targetUrl: String?) {

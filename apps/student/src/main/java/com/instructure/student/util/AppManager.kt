@@ -24,6 +24,7 @@ import androidx.work.WorkerFactory
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.typeface.TypefaceBehavior
+import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.tasks.StudentLogoutTask
 import com.instructure.student.offline.util.OfflineDownloaderCreator
 import com.instructure.student.offline.util.OfflineModeService
@@ -57,6 +58,8 @@ class AppManager : BaseAppManager() {
                 }
             }
         })
+
+        DownloadsRepository.loadData()
     }
 
     override fun performLogoutOnAuthError() {
