@@ -6,6 +6,7 @@ import com.instructure.student.offline.item.DownloadsModuleItem
 import com.instructure.student.offline.item.DownloadsPageItem
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
+import io.paperdb.Book
 import io.paperdb.Paper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,10 +26,12 @@ object DownloadsRepository : CoroutineScope {
 
     private var isLoaded = false
 
+    private var mBook: Book? = null
+
     private val mSaveMutex = Mutex()
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default
+        get() = Dispatchers.IO
 
     fun logout() {
         mCourseItems.clear()
@@ -214,35 +217,40 @@ object DownloadsRepository : CoroutineScope {
     }
 
     private fun saveCourseData() {
-        val schoolId = OfflineUtils.getSchoolId()
-        val userId = ApiPrefs.user?.id ?: 0L
-
         launch {
-            mSaveMutex.withLock(this@DownloadsRepository) {
-                Paper.book("${schoolId}_$userId").write("downloads_course_items", mCourseItems)
+            mSaveMutex.withLock {
+                getBookInstance().write("downloads_course_items", mCourseItems)
             }
         }
     }
 
     private fun saveModuleData() {
-        val schoolId = OfflineUtils.getSchoolId()
-        val userId = ApiPrefs.user?.id ?: 0L
-
         launch {
-            mSaveMutex.withLock(this@DownloadsRepository) {
-                Paper.book("${schoolId}_$userId").write("downloads_module_items", mModuleItems)
+            mSaveMutex.withLock {
+                try {
+                    getBookInstance().write("downloads_module_items", mModuleItems)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
 
     private fun savePageData() {
-        val schoolId = OfflineUtils.getSchoolId()
-        val userId = ApiPrefs.user?.id ?: 0L
-
         launch {
-            mSaveMutex.withLock(this@DownloadsRepository) {
-                Paper.book("${schoolId}_$userId").write("downloads_page_items", mPageItems)
+            mSaveMutex.withLock {
+                getBookInstance().write("downloads_page_items", mPageItems)
             }
         }
+    }
+
+    private fun getBookInstance(): Book {
+        if (mBook == null) {
+            val schoolId = OfflineUtils.getSchoolId()
+            val userId = ApiPrefs.user?.id ?: 0L
+            mBook = Paper.book("${schoolId}_$userId")
+        }
+
+        return mBook!!
     }
 }

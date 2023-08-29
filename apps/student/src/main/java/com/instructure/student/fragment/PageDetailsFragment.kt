@@ -249,6 +249,7 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
     }
 
     private fun loadFailedPageInfo(response: Response<Page>? = null) {
+        try {
         if (response != null && response.code() >= 400 && response.code() < 500 && pageName != null && pageName == Page.FRONT_PAGE_NAME) {
 
             var context: String = if (canvasContext.type == CanvasContext.Type.COURSE) {
@@ -267,6 +268,7 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
         } else {
             loadHtml(resources.getString(R.string.noPageFound), "text/html", "utf-8", null)
         }
+        } catch (ignore: Exception) {}
     }
 
     override fun applyTheme() {

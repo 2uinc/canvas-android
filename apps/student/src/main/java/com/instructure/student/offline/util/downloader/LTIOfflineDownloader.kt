@@ -1,16 +1,13 @@
 package com.instructure.student.offline.util.downloader
 
 import android.net.Uri
-import android.webkit.WebView
 import com.google.gson.Gson
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.utils.ApiPrefs
-import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.weave.StatusCallbackError
 import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.weave
-import com.instructure.pandautils.views.CanvasWebView
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
@@ -85,12 +82,6 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
     init {
         initWebView()
-    }
-
-    override fun createWebView(): WebView {
-        val webView = CanvasWebView(ContextKeeper.appContext)
-        addWebViewClient(webView)
-        return webView
     }
 
     override fun startPreparation() {
