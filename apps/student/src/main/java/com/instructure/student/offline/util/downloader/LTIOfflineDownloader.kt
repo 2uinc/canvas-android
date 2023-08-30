@@ -52,6 +52,10 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                                 isOnlineOnly = true
                                 return@job
                             }
+
+                        } else if (it.contains("/leap/view/lti/provider/")) {
+                            isOnlineOnly = true
+                            return@job
                         }
                     }
                 }

@@ -4,7 +4,6 @@ import android.net.Uri
 import android.webkit.CookieManager
 import com.instructure.canvasapi2.managers.CourseManager
 import com.instructure.canvasapi2.models.CanvasContext
-import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
@@ -15,8 +14,8 @@ import com.instructure.student.offline.item.DownloadsPageItem
 import com.instructure.student.offline.util.downloader.FileOfflineDownloader
 import com.instructure.student.offline.util.downloader.LTIOfflineDownloader
 import com.instructure.student.offline.util.downloader.PageOfflineDownloader
-import com.twou.offline.base.downloader.BaseOfflineDownloader
 import com.twou.offline.base.BaseOfflineDownloaderCreator
+import com.twou.offline.base.downloader.BaseOfflineDownloader
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
@@ -63,7 +62,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
         mOfflineJob = tryWeave(true) {
             val courseId = OfflineUtils.getCourseId(getKeyOfflineItem().key)
 
-            val canvasContext = awaitApi<Course> {
+            val canvasContext = awaitApi {
                 CourseManager.getCourse(courseId, it, false)
             }
 
@@ -131,7 +130,22 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                         ?: ""
                 ).lastPathSegment
 
-                if (mCanvasContext == null || url == null) {
+                if (mCanvasContext == null) {
+                    prepareOfflineDownloader { error ->
+                        if (mCanvasContext == null || error != null) {
+                            unit(
+                                null, error
+                                    ?: OfflineDownloadException(message = "Failed to create Offline Downloader")
+                            )
+
+                        } else {
+                            createOfflineDownloader(unit)
+                        }
+                    }
+                    return
+                }
+
+                if (url == null) {
                     unit(
                         null,
                         OfflineDownloadException(message = "Failed to create Offline Downloader")
@@ -143,6 +157,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                     mCanvasContext!!, url, getKeyOfflineItem()
                 )
             }
+
             OfflineConst.TYPE_FILE -> {
                 val url =
                     getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
@@ -156,6 +171,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                     mOfflineDownloader = FileOfflineDownloader(url, getKeyOfflineItem())
                 }
             }
+
             OfflineConst.TYPE_LTI -> {
                 val url =
                     getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
