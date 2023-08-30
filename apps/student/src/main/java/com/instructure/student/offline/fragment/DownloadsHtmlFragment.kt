@@ -1,5 +1,6 @@
 package com.instructure.student.offline.fragment
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -75,7 +76,15 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
                             true
 
                         } else {
-                            super.shouldOverrideUrlLoading(view, request)
+                            if (requestUrl.startsWith("http") ||
+                                requestUrl.startsWith("mailto:")
+                            ) {
+                                OfflineUtils.openFile(mContext, Uri.parse(requestUrl))
+                                true
+
+                            } else {
+                                super.shouldOverrideUrlLoading(view, request)
+                            }
                         }
                     }
                 }

@@ -11,6 +11,7 @@ import com.instructure.canvasapi2.utils.weave.weave
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
+import com.twou.offline.util.OfflineLogs
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
@@ -61,7 +62,14 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                     )
 
                 } else {
-                    if (html.contains("Third-Party cookies Disabled")) {
+                    if (html.contains("Third-Party cookies Disabled") ||
+                        html.contains("MissingKeyMissing Key-Pair-Id")
+                    ) {
+                        OfflineLogs.e(
+                            TAG,
+                            "Issue with LTI found, reloading... " + html.contains("MissingKeyMissing Key-Pair-Id")
+                        )
+
                         if (mReloadCount < 3) {
                             mReloadCount++
                             loadLti()
@@ -132,4 +140,9 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
     data class IframeElement(val link: String, val element: Element)
 
     data class LTIItem(val url: String)
+
+    companion object {
+
+        private const val TAG = "LTIOfflineDownloader"
+    }
 }

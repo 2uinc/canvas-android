@@ -85,7 +85,7 @@ class DownloadsContentActivity : AppCompatActivity() {
             OfflineConst.MODULE_TYPE_MODULES -> {
                 DownloadsRepository.getModuleItems(courseId)?.let { moduleItems ->
                     moduleItems.find { it.key == mKey }?.let { moduleItem ->
-                        binding.toolbar.title = moduleItem.moduleName
+                        binding.toolbar.title = moduleItem.moduleItemName
 
                         showContent(moduleItem.type)
                     }
