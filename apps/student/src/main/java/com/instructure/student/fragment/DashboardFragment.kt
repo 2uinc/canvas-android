@@ -62,6 +62,7 @@ import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineNotificationHelper
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.StudentPrefs
+import com.twou.offline.Offline
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 
@@ -99,6 +100,8 @@ class DashboardFragment : ParentFragment() {
         super.onViewCreated(view, savedInstanceState)
         recyclerBinding = CourseGridRecyclerRefreshLayoutBinding.bind(binding.root)
         applyTheme()
+
+        Offline.getOfflineManager().start()
     }
 
 
