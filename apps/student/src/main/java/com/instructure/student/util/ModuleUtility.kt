@@ -38,8 +38,8 @@ import com.instructure.student.offline.addOfflineDataForModule
 import java.util.*
 
 object ModuleUtility {
-    fun getFragment(item: ModuleItem, course: Course, moduleObject: ModuleObject?, isDiscussionRedesignEnabled: Boolean, navigatedFromModules: Boolean): Fragment? = when (item.type) {
-        "Page" -> PageDetailsFragment.newInstance(makeRoute(course, item.title, item.pageUrl, navigatedFromModules).addOfflineDataForModule(item, moduleObject))
+    fun getFragment(position: Int, item: ModuleItem, course: Course, moduleObject: ModuleObject?, isDiscussionRedesignEnabled: Boolean, navigatedFromModules: Boolean): Fragment? = when (item.type) {
+        "Page" -> PageDetailsFragment.newInstance(makeRoute(course, item.title, item.pageUrl, navigatedFromModules).addOfflineDataForModule(position, item, moduleObject))
         "Assignment" -> AssignmentDetailsFragment.newInstance(makeRoute(course, getAssignmentId(item)))
         "Discussion" -> {
             if (isDiscussionRedesignEnabled) {
@@ -63,7 +63,7 @@ object ModuleUtility {
                 LockedModuleItemFragment.newInstance(makeRoute(course, item.title!!, item.moduleDetails?.lockExplanation ?: ""))
             } else {
                 val uri = Uri.parse(item.htmlUrl).buildUpon().appendQueryParameter("display", "borderless").build()
-                val route = makeRoute(course, uri.toString(), item.title!!, true, true, true).addOfflineDataForModule(item, moduleObject)
+                val route = makeRoute(course, uri.toString(), item.title!!, true, true, true).addOfflineDataForModule(position, item, moduleObject)
                 InternalWebviewFragment.newInstance(route)
             }
         }
@@ -72,7 +72,7 @@ object ModuleUtility {
             if (moduleObject == null) {
                 FileDetailsFragment.newInstance(FileDetailsFragment.makeRoute(course, url!!))
             } else {
-                FileDetailsFragment.newInstance(FileDetailsFragment.makeRoute(course, moduleObject, item.id, url!!).addOfflineDataForModule(item, moduleObject))
+                FileDetailsFragment.newInstance(FileDetailsFragment.makeRoute(course, moduleObject, item.id, url!!).addOfflineDataForModule(position, item, moduleObject))
             }
         }
         else -> null

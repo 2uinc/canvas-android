@@ -17,7 +17,9 @@ import com.instructure.student.util.ModuleUtility
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.view.DownloadItemView
 
-fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem: ModuleItem?) {
+fun DownloadItemView.initWithModuleData(
+    moduleIndex: Int, moduleObject: ModuleObject?, moduleItem: ModuleItem?
+) {
     val isLocked = ModuleUtility.isGroupLocked(moduleObject)
 
     if (moduleItem == null) {
@@ -37,7 +39,8 @@ fun DownloadItemView.initWithModuleData(moduleObject: ModuleObject?, moduleItem:
             val extras = mutableMapOf<String, Any>()
             extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = OfflineConst.MODULE_TYPE_MODULES
 
-            extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleObject?.name ?: ""
+            extras[OfflineConst.KEY_EXTRA_MODULE_INDEX] = moduleIndex
+                extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleObject?.name ?: ""
             extras[OfflineConst.KEY_EXTRA_MODULE_ID] = moduleItem.moduleId
             extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItem.id
             extras[OfflineConst.KEY_EXTRA_URL] = moduleItem.url ?: ""
@@ -82,10 +85,11 @@ fun DownloadItemView.initWithPageData(page: Page) {
 }
 
 fun Route.addOfflineDataForModule(
-    moduleItem: ModuleItem, moduleObject: ModuleObject? = null
+    moduleIndex: Int, moduleItem: ModuleItem, moduleObject: ModuleObject? = null
 ): Route {
     arguments.putInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, OfflineConst.MODULE_TYPE_MODULES)
 
+    arguments.putInt(OfflineConst.KEY_EXTRA_MODULE_INDEX, moduleIndex)
     arguments.putString(OfflineConst.KEY_EXTRA_MODULE_NAME, moduleObject?.name ?: "")
     arguments.putLong(OfflineConst.KEY_EXTRA_MODULE_ID, moduleItem.moduleId)
     arguments.putLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID, moduleItem.id)
@@ -148,10 +152,12 @@ private fun getOfflineExtras(arguments: Bundle): MutableMap<String, Any> {
     extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = moduleType
 
     if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
+        val moduleIndex = arguments.getInt(OfflineConst.KEY_EXTRA_MODULE_INDEX)
         val moduleName = arguments.getString(OfflineConst.KEY_EXTRA_MODULE_NAME) ?: ""
         val moduleId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ID)
         val moduleItemId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID)
 
+        extras[OfflineConst.KEY_EXTRA_MODULE_INDEX] = moduleIndex
         extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleName
         extras[OfflineConst.KEY_EXTRA_MODULE_ID] = moduleId
         extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItemId

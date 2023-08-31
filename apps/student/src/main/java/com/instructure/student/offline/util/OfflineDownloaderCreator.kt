@@ -66,6 +66,16 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                 CourseManager.getCourse(courseId, it, false)
             }
 
+            var courseIndex = 0
+            val dashboardCards = awaitApi { CourseManager.getDashboardCourses(false, it) }
+            run job@{
+                dashboardCards.forEachIndexed { index, dashboardCard ->
+                    if (dashboardCard.id == courseId) {
+                        courseIndex = index
+                        return@job
+                    }
+                }
+            }
             mCanvasContext = canvasContext
 
             var logoPath = ""
@@ -76,6 +86,9 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
             if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
                 val type = OfflineUtils.getKeyType(getKeyOfflineItem().key)
 
+                val moduleIndex =
+                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_INDEX) as? Int
+                        ?: 0
                 val moduleName =
                     getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_NAME) as? String
                         ?: ""
@@ -88,12 +101,12 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
 
                 DownloadsRepository.addModuleItem(
                     DownloadsCourseItem(
-                        courseId, canvasContext.name, canvasContext.courseCode ?: "", logoPath,
-                        canvasContext.term?.name ?: ""
+                        courseIndex, courseId, canvasContext.name,
+                        canvasContext.courseCode ?: "", logoPath, canvasContext.term?.name ?: ""
                     ),
                     DownloadsModuleItem(
-                        getKeyOfflineItem().key, courseId, moduleId, moduleName, moduleItemId,
-                        offlineQueueItem.keyItem.title, type
+                        moduleIndex, getKeyOfflineItem().key, courseId, moduleId, moduleName,
+                        moduleItemId, offlineQueueItem.keyItem.title, type
                     )
                 )
 
@@ -102,8 +115,8 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
             } else if (moduleType == OfflineConst.MODULE_TYPE_PAGES) {
                 DownloadsRepository.addPageItem(
                     DownloadsCourseItem(
-                        courseId, canvasContext.name, canvasContext.courseCode ?: "", logoPath,
-                        canvasContext.term?.name ?: ""
+                        courseIndex, courseId, canvasContext.name,
+                        canvasContext.courseCode ?: "", logoPath, canvasContext.term?.name ?: ""
                     ),
                     DownloadsPageItem(
                         getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title

@@ -10,6 +10,7 @@ class OfflineConst {
         const val MODULE_TYPE_PAGES = 1
         const val MODULE_TYPE_FILES = 2
 
+        const val KEY_EXTRA_MODULE_INDEX = "KEY_EXTRA_MODULE_INDEX"
         const val KEY_EXTRA_MODULE_NAME = "KEY_EXTRA_MODULE_NAME"
         const val KEY_EXTRA_MODULE_ID = "KEY_EXTRA_MODULE_ID"
         const val KEY_EXTRA_MODULE_ITEM_ID = "KEY_EXTRA_MODULE_ITEM_ID"

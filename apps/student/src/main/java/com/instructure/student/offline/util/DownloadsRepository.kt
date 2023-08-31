@@ -67,13 +67,18 @@ object DownloadsRepository : CoroutineScope {
 
         if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
             mCourseItems.add(courseItem)
+            mCourseItems.sortBy { it.index }
             saveCourseData()
         }
 
         if (mModuleItems.firstOrNull { it.key == moduleItem.key } == null) {
             mModuleItems.add(moduleItem)
-            mModuleItems.sortBy { it.moduleName }
-            mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }?.add(moduleItem)
+
+            val moduleList = mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }
+            moduleList?.add(moduleItem)
+            moduleList?.sortWith(
+                compareBy(DownloadsModuleItem::index, DownloadsModuleItem::moduleName)
+            )
 
             saveModuleData()
         }
@@ -84,6 +89,7 @@ object DownloadsRepository : CoroutineScope {
 
         mCourseItems.removeIf { it.courseId == courseItem.courseId }
         mCourseItems.add(courseItem)
+        mCourseItems.sortBy { it.index }
         saveCourseData()
 
         if (mPageItems.firstOrNull { it.key == pageItem.key } == null) {
@@ -110,7 +116,7 @@ object DownloadsRepository : CoroutineScope {
         try {
             Paper.book("${schoolId}_$userId")
                 .read<List<DownloadsCourseItem>>("downloads_course_items")?.let {
-                    mCourseItems.addAll(it.sortedBy { courseItem -> courseItem.title })
+                    mCourseItems.addAll(it)
                 }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -123,6 +129,11 @@ object DownloadsRepository : CoroutineScope {
                     mModuleItems.forEach { moduleItem ->
                         mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }
                             ?.add(moduleItem)
+                    }
+                    mModuleItemsMap.values.forEach { moduleList ->
+                        moduleList?.sortWith(
+                            compareBy(DownloadsModuleItem::index, DownloadsModuleItem::moduleName)
+                        )
                     }
                 }
         } catch (e: Exception) {

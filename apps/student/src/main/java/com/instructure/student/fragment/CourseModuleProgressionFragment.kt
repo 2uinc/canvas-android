@@ -635,7 +635,7 @@ class CourseModuleProgressionFragment : ParentFragment(), Bookmarkable {
         // so we need to find the correct one overall
         val moduleItem = getCurrentModuleItem(position) ?: getCurrentModuleItem(0) // Default to the first item, band-aid for NPE
 
-        val fragment = ModuleUtility.getFragment(moduleItem!!, canvasContext as Course, modules[groupPos], isDiscussionRedesignEnabled, navigatedFromModules)
+        val fragment = ModuleUtility.getFragment(position, moduleItem!!, canvasContext as Course, modules[groupPos], isDiscussionRedesignEnabled, navigatedFromModules)
         var args: Bundle? = fragment!!.arguments
         if (args == null) {
             args = Bundle()
