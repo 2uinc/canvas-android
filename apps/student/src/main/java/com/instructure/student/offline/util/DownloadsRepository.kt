@@ -87,10 +87,11 @@ object DownloadsRepository : CoroutineScope {
     fun addPageItem(courseItem: DownloadsCourseItem, pageItem: DownloadsPageItem) {
         if (!isLoaded) loadData()
 
-        mCourseItems.removeIf { it.courseId == courseItem.courseId }
-        mCourseItems.add(courseItem)
-        mCourseItems.sortBy { it.index }
-        saveCourseData()
+        if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
+            mCourseItems.add(courseItem)
+            mCourseItems.sortBy { it.index }
+            saveCourseData()
+        }
 
         if (mPageItems.firstOrNull { it.key == pageItem.key } == null) {
             mPageItems.add(pageItem)
