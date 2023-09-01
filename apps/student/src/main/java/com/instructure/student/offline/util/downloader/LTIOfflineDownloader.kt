@@ -50,51 +50,39 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 }
 
             } else {
-                var isOnlineOnly = false
-
-                run job@{
-                    resourceSet.forEach {
-                        if (it.contains("/lti/course-player/")) {
-                            if (!html.contains("<video")) {
-                                isOnlineOnly = true
-                                return@job
+                resourceSet.forEach {
+                    if (it.contains("/lti/course-player/")) {
+                        handler.post {
+                            getWebView()?.evaluateJavascript(
+                                "(function(){" +
+                                        "return document.querySelectorAll(\"div[class*='NavigationItem']\").length / 2 " +
+                                        "})()"
+                            ) { value ->
+                                try {
+                                    processHtml(html, isOnlineOnly = value.toInt() > 1)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    processHtml(html, isOnlineOnly = false)
+                                }
                             }
+                        }
+                        return
 
-                        } else if (it.contains("/leap/view/lti/provider/")) {
-                            isOnlineOnly = true
-                            return@job
+                    } else if (it.contains("/leap/view/lti/provider/")) {
+                        processHtml(html, isOnlineOnly = true)
+                        return
+
+                    } else if (it.contains("/oyster/player/") || it.contains("lti/media-player/")) {
+                        if (!html.contains("oyster-wrapper")) {
+                            OfflineLogs.e(TAG, "Issue with OYSTER found, reloading...")
+
+                            reloadLti()
+                            return
                         }
                     }
                 }
 
-                if (isOnlineOnly) {
-                    processError(
-                        OfflineUnsupportedException(message = "No support for Course Player")
-                    )
-
-                } else {
-                    if (html.contains("Third-Party cookies Disabled") ||
-                        html.contains("MissingKeyMissing Key-Pair-Id")
-                    ) {
-                        OfflineLogs.e(
-                            TAG,
-                            "Issue with LTI found, reloading... " + html.contains("MissingKeyMissing Key-Pair-Id")
-                        )
-
-                        if (mReloadCount < 3) {
-                            mReloadCount++
-                            loadLti()
-
-                        } else {
-                            processError(
-                                OfflineDownloadException(message = "Something went wrong")
-                            )
-                        }
-
-                    } else {
-                        setInitialDocument(Jsoup.parse("<html>$html</html>"))
-                    }
-                }
+                processHtml(html, isOnlineOnly = false)
             }
         }
     }
@@ -140,9 +128,44 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
         }
     }
 
+    private fun reloadLti() {
+        if (mReloadCount < 3) {
+            mReloadCount++
+            loadLti()
+
+        } else {
+            processError(
+                OfflineDownloadException(message = "Something went wrong")
+            )
+        }
+    }
+
     private fun processLTIItem(url: String) {
         handler.post {
             getWebView(mHtmlListener)?.loadUrl(url)
+        }
+    }
+
+    private fun processHtml(html: String, isOnlineOnly: Boolean) {
+        if (isOnlineOnly) {
+            processError(
+                OfflineUnsupportedException(message = "No support for Course Player")
+            )
+
+        } else {
+            if (html.contains("Third-Party cookies Disabled") ||
+                html.contains("MissingKeyMissing Key-Pair-Id")
+            ) {
+                OfflineLogs.e(
+                    TAG,
+                    "Issue with LTI found, reloading... " + html.contains("MissingKeyMissing Key-Pair-Id")
+                )
+
+                reloadLti()
+
+            } else {
+                setInitialDocument(Jsoup.parse("<html>$html</html>"))
+            }
         }
     }
 

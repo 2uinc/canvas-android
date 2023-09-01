@@ -231,7 +231,11 @@ object DownloadsRepository : CoroutineScope {
     private fun saveCourseData() {
         launch {
             mSaveMutex.withLock {
-                getBookInstance().write("downloads_course_items", mCourseItems)
+                try {
+                    getBookInstance().write("downloads_course_items", mCourseItems)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -251,7 +255,11 @@ object DownloadsRepository : CoroutineScope {
     private fun savePageData() {
         launch {
             mSaveMutex.withLock {
-                getBookInstance().write("downloads_page_items", mPageItems)
+                try {
+                    getBookInstance().write("downloads_page_items", mPageItems)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }

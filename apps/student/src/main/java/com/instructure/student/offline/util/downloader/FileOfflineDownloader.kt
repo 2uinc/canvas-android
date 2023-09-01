@@ -62,7 +62,7 @@ class FileOfflineDownloader(
                 }
             }
 
-            updateProgress(50, 100)
+            handler.post { updateProgress(80, 100, 2000) }
 
             var filePath = ""
             file.url?.let { url ->
@@ -78,7 +78,7 @@ class FileOfflineDownloader(
                 }
             }
 
-            updateProgress(100, 100)
+            handler.post { updateProgress(100, 100, 500) }
 
             val value = Gson().toJson(
                 FileOfflineItem(

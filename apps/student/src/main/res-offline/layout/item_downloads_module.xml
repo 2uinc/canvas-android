@@ -11,6 +11,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <View
+            android:id="@+id/dividerTop"
+            android:layout_width="match_parent"
+            android:layout_height=".5dp"
+            android:layout_gravity="top"
+            android:background="@color/backgroundMedium" />
+
         <TextView
             android:id="@+id/moduleTextView"
             style="@style/AdapterItemTitleText"
@@ -25,7 +32,7 @@
             tools:text="Module Item Header" />
 
         <View
-            android:id="@+id/divider"
+            android:id="@+id/dividerBottom"
             android:layout_width="match_parent"
             android:layout_height=".5dp"
             android:layout_gravity="bottom"
