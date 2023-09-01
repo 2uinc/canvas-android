@@ -35,7 +35,14 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
                 try {
                     val ltiItem = Gson().fromJson(text, LTIItem::class.java)
-                    processLTIItem(ltiItem)
+                    if (ltiItem.url.isNullOrEmpty()) {
+                        processError(
+                            OfflineUnsupportedException(message = "No support when URL is empty")
+                        )
+
+                    } else {
+                        processLTIItem(ltiItem.url)
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
 
@@ -133,9 +140,9 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
         }
     }
 
-    private fun processLTIItem(ltiItem: LTIItem) {
+    private fun processLTIItem(url: String) {
         handler.post {
-            getWebView(mHtmlListener)?.loadUrl(ltiItem.url)
+            getWebView(mHtmlListener)?.loadUrl(url)
         }
     }
 
@@ -143,7 +150,7 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
     data class IframeElement(val link: String, val element: Element)
 
-    data class LTIItem(val url: String)
+    data class LTIItem(val url: String?)
 
     companion object {
 
