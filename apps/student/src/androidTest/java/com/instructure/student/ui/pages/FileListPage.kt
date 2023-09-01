@@ -18,6 +18,7 @@ package com.instructure.student.ui.pages
 
 import androidx.appcompat.widget.AppCompatButton
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -27,6 +28,7 @@ import com.instructure.canvas.espresso.containsTextCaseInsensitive
 import com.instructure.canvas.espresso.scrollRecyclerView
 import com.instructure.canvas.espresso.withCustomConstraints
 import com.instructure.espresso.OnViewWithId
+import com.instructure.espresso.Searchable
 import com.instructure.espresso.assertDisplayed
 import com.instructure.espresso.assertNotDisplayed
 import com.instructure.espresso.clearText
@@ -38,7 +40,6 @@ import com.instructure.espresso.page.waitForView
 import com.instructure.espresso.page.waitForViewWithId
 import com.instructure.espresso.page.withAncestor
 import com.instructure.espresso.page.withId
-import com.instructure.espresso.replaceText
 import com.instructure.espresso.scrollTo
 import com.instructure.espresso.typeText
 import com.instructure.student.R
@@ -46,7 +47,7 @@ import org.hamcrest.Matchers.allOf
 
 // Tests that files submitted for submissions, submission comments and discussions are
 // properly displayed.
-class FileListPage : BasePage(R.id.fileListPage) {
+class FileListPage(val searchable: Searchable) : BasePage(R.id.fileListPage) {
 
     private val addButton by OnViewWithId(R.id.addFab)
     private val uploadFileButton by OnViewWithId(R.id.addFileFab, autoAssert = false)
@@ -54,7 +55,7 @@ class FileListPage : BasePage(R.id.fileListPage) {
 
     fun assertItemDisplayed(itemName: String) {
         val matcher = allOf(withId(R.id.fileName), withText(itemName))
-        onView(matcher).scrollTo().assertDisplayed()
+        waitForView(matcher).scrollTo().assertDisplayed()
     }
 
     fun assertItemNotDisplayed(itemName: String) {
@@ -69,11 +70,11 @@ class FileListPage : BasePage(R.id.fileListPage) {
     }
 
     fun clickAddButton() {
-        addButton.click()
+        onView(allOf(withId(R.id.addFab), isDisplayed())).perform(click())
     }
 
     fun clickUploadFileButton() {
-        uploadFileButton.click()
+        onView(allOf(withId(R.id.addFileFab), isDisplayed())).perform(click())
     }
 
     fun clickCreateNewFolderButton() {
@@ -123,19 +124,6 @@ class FileListPage : BasePage(R.id.fileListPage) {
         onView(allOf(withId(R.id.emptyView), isDisplayed())).assertDisplayed()
     }
 
-    fun clickSearchButton() {
-        onView(withId(R.id.search)).click()
-    }
-
-    fun typeSearchInput(searchText: String) {
-        onView(withId(R.id.queryInput)).replaceText(searchText)
-    }
-
-    fun clickResetSearchText() {
-        waitForView(withId(R.id.clearButton)).click()
-        onView(withId(R.id.backButton)).click()
-    }
-
     fun assertSearchResultCount(expectedCount: Int) {
         Thread.sleep(2000)
         onView(withId(R.id.fileSearchRecyclerView) + withAncestor(R.id.container)).check(
@@ -150,11 +138,7 @@ class FileListPage : BasePage(R.id.fileListPage) {
         )
     }
 
-    fun pressSearchBackButton() {
-        onView(withId(R.id.backButton)).click()
-    }
-
     fun assertFolderSize(folderName: String, expectedSize: Int) {
-        onView(allOf(withId(R.id.fileSize), hasSibling(withId(R.id.fileName) + withText(folderName)))).check(matches(containsTextCaseInsensitive("$expectedSize items")))
+        waitForView(allOf(withId(R.id.fileSize), hasSibling(withId(R.id.fileName) + withText(folderName)))).check(matches(containsTextCaseInsensitive("$expectedSize ${if (expectedSize == 1) "item" else "items"}")))
     }
 }

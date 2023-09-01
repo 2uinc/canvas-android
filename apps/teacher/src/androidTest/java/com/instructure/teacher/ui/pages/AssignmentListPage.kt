@@ -18,22 +18,30 @@ package com.instructure.teacher.ui.pages
 
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers.hasSibling
+import androidx.test.espresso.matcher.ViewMatchers.withChild
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import com.instructure.canvasapi2.models.Assignment
 import com.instructure.dataseeding.model.AssignmentApiModel
+import com.instructure.espresso.DoesNotExistAssertion
 import com.instructure.espresso.OnViewWithId
 import com.instructure.espresso.RecyclerViewItemCountAssertion
+import com.instructure.espresso.Searchable
 import com.instructure.espresso.WaitForViewWithId
 import com.instructure.espresso.assertDisplayed
 import com.instructure.espresso.click
 import com.instructure.espresso.page.BasePage
 import com.instructure.espresso.page.onView
 import com.instructure.espresso.page.plus
+import com.instructure.espresso.page.waitForView
 import com.instructure.espresso.page.waitForViewWithText
+import com.instructure.espresso.page.withAncestor
 import com.instructure.espresso.page.withId
+import com.instructure.espresso.page.withParent
 import com.instructure.espresso.page.withText
 import com.instructure.espresso.swipeDown
 import com.instructure.espresso.waitForCheck
 import com.instructure.teacher.R
+import org.hamcrest.CoreMatchers.allOf
 
 /**
  * AssignmentListPage represents a page that displays a list of assignments.
@@ -41,7 +49,7 @@ import com.instructure.teacher.R
  *
  * @constructor Creates an instance of the AssignmentListPage.
  */
-class AssignmentListPage : BasePage() {
+class AssignmentListPage(val searchable: Searchable) : BasePage() {
 
     private val assignmentListToolbar by OnViewWithId(R.id.assignmentListToolbar)
     private val assignmentRecyclerView by OnViewWithId(R.id.assignmentRecyclerView)
@@ -94,6 +102,15 @@ class AssignmentListPage : BasePage() {
     }
 
     /**
+     * Asserts that the given assignment is NOT present in the list.
+     *
+     * @param assignment The assignment to check.
+     */
+    fun assertAssignmentNotDisplayed(assignment: AssignmentApiModel) {
+        onView(withText(assignment.name)).check(DoesNotExistAssertion(10))
+    }
+
+    /**
      * Asserts that grading periods are present.
      */
     fun assertHasGradingPeriods() {
@@ -133,7 +150,7 @@ class AssignmentListPage : BasePage() {
     }
 
     private fun assertAssignmentName(assignmentName: String) {
-        waitForViewWithText(assignmentName).assertDisplayed()
+        waitForView(withText(assignmentName) + withAncestor(R.id.assignmentLayout)).assertDisplayed()
     }
 
     /**
@@ -144,5 +161,27 @@ class AssignmentListPage : BasePage() {
      */
     fun assertNeedsGradingCountOfAssignment(assignmentName: String, needsGradingCount: Int) {
         onView(withId(R.id.ungradedCount) + withText("$needsGradingCount needs grading") + hasSibling(withId(R.id.assignmentTitle) + withText(assignmentName))).assertDisplayed()
+    }
+
+    /**
+     * Asserts that the given assignment status is published (so the published icon is displayed).
+     *
+     * @param assignmentName The name of the assignment to check.
+     */
+    fun assertAssignmentPublished(assignmentName: String) {
+        onView(allOf(withId(R.id.publishedStatusIcon), withContentDescription(R.string.published),
+            withParent(hasSibling(withChild(withText(assignmentName) + withId(R.id.assignmentTitle))
+            )))).assertDisplayed()
+    }
+
+    /**
+     * Asserts that the given assignment status is unpublished (so the unpublished icon is displayed).
+     *
+     * @param assignmentName The name of the assignment to check.
+     */
+    fun assertAssignmentUnPublished(assignmentName: String) {
+        onView(allOf(withId(R.id.publishedStatusIcon), withContentDescription(R.string.not_published),
+            withParent(hasSibling(withChild(withText(assignmentName) + withId(R.id.assignmentTitle))
+            )))).assertDisplayed()
     }
 }
