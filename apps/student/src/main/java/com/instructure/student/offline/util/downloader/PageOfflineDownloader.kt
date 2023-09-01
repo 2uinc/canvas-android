@@ -1,6 +1,5 @@
 package com.instructure.student.offline.util.downloader
 
-import android.view.View
 import androidx.annotation.ColorRes
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.OAuthManager
@@ -57,10 +56,8 @@ class PageOfflineDownloader(
 
     private fun loadPage(page: Page) {
         if (page.body != null && page.body != "null" && page.body != "") {
-            val webView = getWebView() as? CanvasWebView
-
             // Add RTL support
-            if (webView?.layoutDirection == View.LAYOUT_DIRECTION_RTL) {
+            if (ContextKeeper.appContext.resources.getBoolean(R.bool.is_rtl)) {
                 page.body = "<body dir=\"rtl\">${page.body}</body>"
             }
 
