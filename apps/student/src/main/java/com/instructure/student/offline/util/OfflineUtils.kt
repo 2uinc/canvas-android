@@ -3,13 +3,21 @@ package com.instructure.student.offline.util
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Base64
 import androidx.core.content.FileProvider
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.google.gson.Gson
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.ContextKeeper
+import com.instructure.student.R
 import com.instructure.student.offline.item.FileOfflineItem
 import com.twou.offline.item.OfflineModule
+import java.io.ByteArrayOutputStream
 import java.io.File
+
 
 object OfflineUtils {
 
@@ -126,5 +134,29 @@ object OfflineUtils {
         }
 
         return true
+    }
+
+    fun getHtmlErrorOverlay(): String {
+        ResourcesCompat.getDrawable(
+            ContextKeeper.appContext.resources, R.drawable.ic_panda_all_hidden, null
+        )?.toBitmap(480, 620)?.let { bitmap ->
+            val byteStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream)
+            val byteArray = byteStream.toByteArray()
+            val baseString: String = Base64.encodeToString(byteArray, Base64.DEFAULT)
+
+            return """
+            <div style = "width:100%; border: 2px solid #e5146fff; margin-bottom: 10px; margin-top: 10px;" >
+                <center>
+                    <div style="padding: 10px;">
+                        <img style="width: 50%" src="data:image/png;base64, $baseString">
+                        <p> This content has not been downloaded. </p>
+                    </div>
+                </center>
+            </div>
+        """.trimIndent()
+        }
+
+        return ""
     }
 }

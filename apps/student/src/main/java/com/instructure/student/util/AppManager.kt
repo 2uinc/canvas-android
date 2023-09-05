@@ -25,9 +25,10 @@ import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.offline.util.DownloadsRepository
-import com.instructure.student.tasks.StudentLogoutTask
 import com.instructure.student.offline.util.OfflineDownloaderCreator
 import com.instructure.student.offline.util.OfflineModeService
+import com.instructure.student.offline.util.OfflineUtils
+import com.instructure.student.tasks.StudentLogoutTask
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
 import dagger.hilt.android.HiltAndroidApp
@@ -46,7 +47,10 @@ class AppManager : BaseAppManager() {
         super.onCreate()
         MasqueradeHelper.masqueradeLogoutTask = Runnable { StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior).execute() }
 
-        Offline.init(this) { OfflineDownloaderCreator(it) }
+        Offline.init(
+            this, Offline.Builder().setHtmlErrorOverlay(OfflineUtils.getHtmlErrorOverlay())
+                .setHtmlErrorScript("").setHtmlErrorCSS("")
+        ) { OfflineDownloaderCreator(it) }
 
         Offline.getOfflineManager().addListener(object : OfflineManager.OfflineListener() {
             override fun onItemStartedDownload(key: String) {

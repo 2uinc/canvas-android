@@ -3,6 +3,7 @@ package com.instructure.student.offline.util.downloader
 import android.net.Uri
 import com.twou.offline.base.downloader.BaseHtmlOnePageDownloader
 import com.twou.offline.item.KeyOfflineItem
+import com.twou.offline.util.BaseOfflineUtils
 import com.twou.offline.util.OfflineHtmlVideoChecker
 import kotlinx.coroutines.launch
 import org.jsoup.Jsoup
@@ -90,7 +91,9 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
     }
 
     private fun removeUnusedIframes(document: Document) {
-        document.getElementsByTag("iframe")?.forEach { element -> element.remove() }
+        document.getElementsByTag("iframe")?.forEach { element ->
+            element.replaceWith(Jsoup.parse(BaseOfflineUtils.getHtmlErrorOverlay(element)))
+        }
 
         document.getElementsByTag(HtmlLink.A)?.forEach { element ->
             if (element.hasAttr(HtmlLink.HREF)) {
