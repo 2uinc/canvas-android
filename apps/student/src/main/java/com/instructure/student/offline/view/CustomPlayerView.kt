@@ -41,6 +41,11 @@ import com.instructure.pandautils.utils.DP
 import com.instructure.pandautils.utils.PX
 import com.instructure.student.R
 import com.instructure.student.databinding.ViewCustomPlayerBinding
+import com.instructure.student.offline.util.OfflineStorageHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlin.math.abs
 
 class CustomPlayerView @JvmOverloads constructor(
@@ -48,9 +53,6 @@ class CustomPlayerView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyle: Int = 0
 ) : FrameLayout(context, attrs, defStyle), Player.Listener {
-
-    /*@Inject
-    lateinit var dataStorageHelper: DataStorageHelper*/
 
     private var settingsWindow: PopupWindow
     private var settingsView: RecyclerView
@@ -137,13 +139,13 @@ class CustomPlayerView @JvmOverloads constructor(
                 settingsView.layoutManager?.scrollToPosition(selectedSpeedPosition)
             }
         }
-        /*dataStorageHelper.speedState.onEach { speed ->
+        OfflineStorageHelper.speedState.onEach { speed ->
             val oldPosition = selectedSpeedPosition
             exoPlayer.setPlaybackSpeed(speed)
             playbackSpeedAdapter.updateSelectedIndex(speed)
             playbackSpeedAdapter.notifyItemChanged(oldPosition)
             playbackSpeedAdapter.notifyItemChanged(PLAYBACK_SPEEDS.indexOfFirst { it == speed })
-        }.launchIn(CoroutineScope(Dispatchers.Main))*/
+        }.launchIn(CoroutineScope(Dispatchers.Main))
 
         mSubtitleView = binding.playerView.subtitleView
         mSubtitleLayout = binding.playerView.findViewById(R.id.subtitleLayout)
@@ -470,7 +472,7 @@ class CustomPlayerView @JvmOverloads constructor(
     }
 
     private fun setPlaybackSpeed(position: Int) {
-        //dataStorageHelper.playerSpeed = PLAYBACK_SPEEDS[position]
+        OfflineStorageHelper.playerSpeed = PLAYBACK_SPEEDS[position]
     }
 
     private fun updateSubtitleViewMargin() {

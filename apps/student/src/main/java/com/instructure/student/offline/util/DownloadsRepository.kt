@@ -13,16 +13,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.Collections
 import kotlin.coroutines.CoroutineContext
 
 object DownloadsRepository : CoroutineScope {
 
-    private val mCourseItems = mutableListOf<DownloadsCourseItem>()
-    private val mModuleItems = mutableListOf<DownloadsModuleItem>()
-    private val mModuleItemsMap = mutableMapOf<Long, ArrayList<DownloadsModuleItem>?>()
+    private val mCourseItems = Collections.synchronizedList(mutableListOf<DownloadsCourseItem>())
+    private val mModuleItems = Collections.synchronizedList(mutableListOf<DownloadsModuleItem?>())
+    private val mModuleItemsMap = mutableMapOf<Long, MutableList<DownloadsModuleItem>?>()
 
-    private val mPageItems = mutableListOf<DownloadsPageItem>()
-    private val mPageItemsMap = mutableMapOf<Long, ArrayList<DownloadsPageItem>?>()
+    private val mPageItems = Collections.synchronizedList(mutableListOf<DownloadsPageItem>())
+    private val mPageItemsMap = mutableMapOf<Long, MutableList<DownloadsPageItem>?>()
 
     private var isLoaded = false
 
@@ -50,13 +51,13 @@ object DownloadsRepository : CoroutineScope {
         return mCourseItems
     }
 
-    fun getModuleItems(courseId: Long): ArrayList<DownloadsModuleItem>? {
+    fun getModuleItems(courseId: Long): List<DownloadsModuleItem>? {
         if (!isLoaded) loadData()
 
         return mModuleItemsMap[courseId]
     }
 
-    fun getPageItems(courseId: Long): ArrayList<DownloadsPageItem>? {
+    fun getPageItems(courseId: Long): List<DownloadsPageItem>? {
         if (!isLoaded) loadData()
 
         return mPageItemsMap[courseId]
@@ -71,10 +72,12 @@ object DownloadsRepository : CoroutineScope {
             saveCourseData()
         }
 
-        if (mModuleItems.firstOrNull { it.key == moduleItem.key } == null) {
+        if (mModuleItems.firstOrNull { it?.key == moduleItem.key } == null) {
             mModuleItems.add(moduleItem)
 
-            val moduleList = mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }
+            val moduleList = mModuleItemsMap.getOrPut(moduleItem.courseId) {
+                Collections.synchronizedList(ArrayList())
+            }
             moduleList?.add(moduleItem)
             moduleList?.sortWith(
                 compareBy(DownloadsModuleItem::index, DownloadsModuleItem::moduleName)
@@ -95,7 +98,8 @@ object DownloadsRepository : CoroutineScope {
 
         if (mPageItems.firstOrNull { it.key == pageItem.key } == null) {
             mPageItems.add(pageItem)
-            mPageItemsMap.getOrPut(pageItem.courseId) { ArrayList() }?.add(pageItem)
+            mPageItemsMap.getOrPut(pageItem.courseId) { Collections.synchronizedList(ArrayList()) }
+                ?.add(pageItem)
 
             savePageData()
         }
@@ -128,8 +132,11 @@ object DownloadsRepository : CoroutineScope {
                 .read<List<DownloadsModuleItem>>("downloads_module_items")?.let {
                     mModuleItems.addAll(it)
                     mModuleItems.forEach { moduleItem ->
-                        mModuleItemsMap.getOrPut(moduleItem.courseId) { ArrayList() }
-                            ?.add(moduleItem)
+                        moduleItem?.let {
+                            mModuleItemsMap.getOrPut(moduleItem.courseId) {
+                                Collections.synchronizedList(ArrayList())
+                            }?.add(moduleItem)
+                        }
                     }
                     mModuleItemsMap.values.forEach { moduleList ->
                         moduleList?.sortWith(
@@ -146,7 +153,9 @@ object DownloadsRepository : CoroutineScope {
                 ?.let {
                     mPageItems.addAll(it)
                     mPageItems.forEach { pageItem ->
-                        mPageItemsMap.getOrPut(pageItem.courseId) { ArrayList() }?.add(pageItem)
+                        mPageItemsMap.getOrPut(pageItem.courseId) {
+                            Collections.synchronizedList(ArrayList())
+                        }?.add(pageItem)
                     }
                 }
         } catch (e: Exception) {
@@ -198,7 +207,7 @@ object DownloadsRepository : CoroutineScope {
             private fun removeModuleItem(key: String, isWithSave: Boolean = true) {
                 val courseId = OfflineUtils.getCourseId(key)
 
-                mModuleItems.removeIf { it.key == key }
+                mModuleItems.removeIf { it?.key == key }
                 mModuleItemsMap[courseId]?.removeIf { it.key == key }
 
                 checkIfNeedToRemoveCourse(courseId, isWithSave)

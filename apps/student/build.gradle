@@ -368,9 +368,8 @@ dependencies {
 
     implementation project(path: ':mobile-offline-downloader-android')
     implementation "org.jsoup:jsoup:1.13.1"
-    implementation("com.google.android.exoplayer:exoplayer-core:2.17.1")
-    implementation("com.google.android.exoplayer:exoplayer-ui:2.17.1")
-    implementation "com.google.android.exoplayer:extension-cast:2.17.1"
+    implementation(Libs.EXOPLAYER)
+    implementation("com.google.android.exoplayer:extension-cast:2.18.5")
     implementation "com.amazonaws:aws-android-sdk-core:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"

@@ -12,6 +12,7 @@ import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.util.OfflineLogs
+import kotlinx.coroutines.launch
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
@@ -20,70 +21,50 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
     private var sessionAuthJob: WeaveJob? = null
 
-    private var isFirstLaunch = true
     private var mReloadCount = 0
 
     private val mHtmlListener = object : HtmlListener {
         override fun onHtmlLoaded(html: String) {
             if (isDestroyed.get()) return
 
-            if (isFirstLaunch) {
-                isFirstLaunch = false
+            resourceSet.forEach {
+                if (it.contains("/lti/course-player/")) {
+                    handler.post {
+                        if (html.contains("<video")) {
+                            processHtml(html, isOnlineOnly = false)
+                            return@post
+                        }
 
-                val document = Jsoup.parse(html)
-                val text = document.text()
-
-                try {
-                    val ltiItem = Gson().fromJson(text, LTIItem::class.java)
-                    if (ltiItem.url.isNullOrEmpty()) {
-                        processError(
-                            OfflineUnsupportedException(message = "No support when URL is empty")
-                        )
-
-                    } else {
-                        processLTIItem(ltiItem.url)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-
-                    processError(e)
-                }
-
-            } else {
-                resourceSet.forEach {
-                    if (it.contains("/lti/course-player/")) {
-                        handler.post {
-                            getWebView()?.evaluateJavascript(
-                                "(function(){" +
-                                        "return document.querySelectorAll(\"div[class*='NavigationItem']\").length / 2 " +
-                                        "})()"
-                            ) { value ->
-                                try {
-                                    processHtml(html, isOnlineOnly = value.toInt() > 1)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    processHtml(html, isOnlineOnly = false)
-                                }
+                        getWebView()?.evaluateJavascript(
+                            "(function(){" +
+                                    "return document.querySelectorAll(\"div[class*='NavigationItem']\").length / 2 " +
+                                    "})()"
+                        ) { value ->
+                            try {
+                                processHtml(html, isOnlineOnly = value.toInt() > 1)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                processHtml(html, isOnlineOnly = false)
                             }
                         }
+                    }
+                    return
+
+                } else if (it.contains("/leap/view/lti/provider/")) {
+                    processHtml(html, isOnlineOnly = true)
+                    return
+
+                } else if (it.contains("/oyster/player/") || it.contains("lti/media-player/")) {
+                    if (!html.contains("oyster-wrapper")) {
+                        OfflineLogs.e(TAG, "Issue with OYSTER found, reloading...")
+
+                        reloadLti()
                         return
-
-                    } else if (it.contains("/leap/view/lti/provider/")) {
-                        processHtml(html, isOnlineOnly = true)
-                        return
-
-                    } else if (it.contains("/oyster/player/") || it.contains("lti/media-player/")) {
-                        if (!html.contains("oyster-wrapper")) {
-                            OfflineLogs.e(TAG, "Issue with OYSTER found, reloading...")
-
-                            reloadLti()
-                            return
-                        }
                     }
                 }
-
-                processHtml(html, isOnlineOnly = false)
             }
+
+            processHtml(html, isOnlineOnly = false)
         }
     }
 
@@ -122,9 +103,26 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
     }
 
     private fun loadLti() {
-        isFirstLaunch = true
-        handler.post {
-            getWebView(mHtmlListener)?.loadUrl(mUrl, getReferer())
+        launch {
+            try {
+                val text = downloadFileContent(mUrl)
+
+                val ltiItem = Gson().fromJson(text, LTIItem::class.java)
+                if (ltiItem.url.isNullOrEmpty()) {
+                    processError(
+                        OfflineUnsupportedException(message = "No support when URL is empty")
+                    )
+
+                } else {
+                    handler.post {
+                        getWebView(mHtmlListener)?.loadUrl(ltiItem.url)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+
+                processError(e)
+            }
         }
     }
 
@@ -137,12 +135,6 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
             processError(
                 OfflineDownloadException(message = "Something went wrong")
             )
-        }
-    }
-
-    private fun processLTIItem(url: String) {
-        handler.post {
-            getWebView(mHtmlListener)?.loadUrl(url)
         }
     }
 
@@ -168,8 +160,6 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
             }
         }
     }
-
-    private fun getReferer(): Map<String, String> = mutableMapOf(Pair("Referer", ApiPrefs.domain))
 
     data class IframeElement(val link: String, val element: Element)
 

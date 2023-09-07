@@ -136,6 +136,9 @@ open class DownloadsBaseFragment : Fragment() {
                 window.resizeObserver = new ResizeObserver(entries => {
                     if (document.children.length > 0) {
                         var height = document.children[0].offsetHeight;
+                        var scrollHeight = document.children[0].scrollHeight;
+                        
+                        if (scrollHeight > height) height = scrollHeight;
                         javascript:window.offline.onContentHeightChanged(height);
                     }
                 });                    
