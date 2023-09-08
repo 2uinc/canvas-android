@@ -133,6 +133,9 @@ class CustomPlayerView @JvmOverloads constructor(
         settingsView.layoutManager = LinearLayoutManager(getContext())
         settingsWindow =
             PopupWindow(settingsView, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, true)
+        settingsWindow.setOnDismissListener {
+            if (isInFullscreenMode) hideBars()
+        }
         binding.playerView.findViewById<AppCompatImageButton>(R.id.speedButton)?.apply {
             setOnClickListener {
                 displaySettingsWindow()
@@ -333,14 +336,7 @@ class CustomPlayerView @JvmOverloads constructor(
 
         mCustomView = binding.fullscreenVideoLayout
 
-        mActivity?.window?.let { window ->
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-            WindowInsetsControllerCompat(window, window.decorView).let { controller ->
-                controller.hide(WindowInsetsCompat.Type.systemBars())
-                controller.systemBarsBehavior =
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        }
+        hideBars()
 
         binding.parentVideoLayout.removeView(mCustomView)
 
@@ -380,6 +376,17 @@ class CustomPlayerView @JvmOverloads constructor(
         isInFullscreenMode = false
 
         updateVideoSize()
+    }
+
+    private fun hideBars() {
+        mActivity?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+                controller.hide(WindowInsetsCompat.Type.systemBars())
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
     }
 
     private fun updateSubtitleButtons() {

@@ -62,7 +62,7 @@ class FileOfflineDownloader(
                 }
             }
 
-            handler.post { updateProgress(80, 100, 2000) }
+            handler.post { updateProgress(8, 10, 2000) }
 
             var filePath = ""
             file.url?.let { url ->

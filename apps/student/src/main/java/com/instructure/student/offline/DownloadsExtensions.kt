@@ -16,6 +16,7 @@ import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.ModuleUtility
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.view.DownloadItemView
+import java.net.URL
 
 fun DownloadItemView.initWithModuleData(
     moduleIndex: Int, moduleObject: ModuleObject?, moduleItem: ModuleItem?
@@ -40,7 +41,7 @@ fun DownloadItemView.initWithModuleData(
             extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = OfflineConst.MODULE_TYPE_MODULES
 
             extras[OfflineConst.KEY_EXTRA_MODULE_INDEX] = moduleIndex
-                extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleObject?.name ?: ""
+            extras[OfflineConst.KEY_EXTRA_MODULE_NAME] = moduleObject?.name ?: ""
             extras[OfflineConst.KEY_EXTRA_MODULE_ID] = moduleItem.moduleId
             extras[OfflineConst.KEY_EXTRA_MODULE_ITEM_ID] = moduleItem.id
             extras[OfflineConst.KEY_EXTRA_URL] = moduleItem.url ?: ""
@@ -143,6 +144,15 @@ fun Toolbar.initWithOfflineData(
         setViewColor(Color.WHITE)
         tag = "DownloadItemView"
     })
+}
+
+fun URL.findParameterValue(parameterName: String): String? {
+    return query.split('&').map {
+        val parts = it.split('=')
+        val name = parts.firstOrNull() ?: ""
+        val value = parts.drop(1).firstOrNull() ?: ""
+        Pair(name, value)
+    }.firstOrNull { it.first == parameterName }?.second
 }
 
 private fun getOfflineExtras(arguments: Bundle): MutableMap<String, Any> {
