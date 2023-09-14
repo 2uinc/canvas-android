@@ -121,15 +121,9 @@ object OfflineUtils {
 
         val intent = Intent(Intent.ACTION_VIEW, uri)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        if (intent.resolveActivity(context.packageManager) != null) {
-            try {
-                context.startActivity(intent)
-
-            } catch (e: ActivityNotFoundException) {
-                return false
-            }
-
-        } else {
+        try {
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
             return false
         }
 
@@ -146,7 +140,7 @@ object OfflineUtils {
             val baseString: String = Base64.encodeToString(byteArray, Base64.DEFAULT)
 
             return """
-            <div style = "width:100%; border: 2px solid #e5146fff; margin-bottom: 10px; margin-top: 10px;" >
+            <div class="offline-error-container" style = "width:100%; border: 2px solid #e5146fff; margin-bottom: 10px; margin-top: 10px;">
                 <center>
                     <div style="padding: 10px;">
                         <img style="width: 50%" src="data:image/png;base64, $baseString">

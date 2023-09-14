@@ -173,7 +173,7 @@ class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         }
         BinderUtils.updateShadows(isFirstItem, isLastItem, shadowTop, shadowBottom)
 
-        downloadItemView.initWithModuleData(layoutPosition, moduleObject, moduleItem)
+        downloadItemView.initWithModuleData(layoutPosition, moduleObject, moduleItem, courseColor)
     }
 
     companion object {

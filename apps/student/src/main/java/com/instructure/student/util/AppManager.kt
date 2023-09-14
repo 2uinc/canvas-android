@@ -53,6 +53,10 @@ class AppManager : BaseAppManager() {
         ) { OfflineDownloaderCreator(it) }
 
         Offline.getOfflineManager().addListener(object : OfflineManager.OfflineListener() {
+            override fun onItemAdded(key: String) {
+                onItemStartedDownload(key)
+            }
+
             override fun onItemStartedDownload(key: String) {
                 if (!OfflineModeService.isStarted) {
                     ContextCompat.startForegroundService(

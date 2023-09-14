@@ -8,7 +8,7 @@ data class DownloadsSegmentItem(val elements: List<DownloadsElementItem>)
 
 data class DownloadsElementItem(
     @SerializedName("video_uuid") val videoUuid: String,
-    val overlays: List<DownloadsOverlayItem>
+    val overlays: List<DownloadsOverlayItem>, @SerializedName("type_id") val typeId: Int
 )
 
 data class DownloadsOverlayItem(

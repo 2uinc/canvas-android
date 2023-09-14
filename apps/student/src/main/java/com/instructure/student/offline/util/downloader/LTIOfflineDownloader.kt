@@ -10,8 +10,7 @@ import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.weave
 import com.instructure.student.offline.findParameterValue
-import com.instructure.student.offline.item.DownloadsContentPlayerItem
-import com.instructure.student.offline.item.DownloadsVideoItem
+import com.instructure.student.offline.item.*
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
@@ -32,11 +31,29 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
     private var sessionAuthJob: WeaveJob? = null
 
+    private var isGetAuthUrl = false
     private var mReloadCount = 0
 
     private val mHtmlListener = object : HtmlListener {
         override fun onHtmlLoaded(html: String) {
             if (isDestroyed.get()) return
+
+            if (isGetAuthUrl) {
+                isGetAuthUrl = false
+
+                val document = Jsoup.parse(html)
+                val text = document.text()
+
+                try {
+                    val ltiItem = Gson().fromJson(text, LTIItem::class.java)
+                    processLTIItem(ltiItem)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+
+                    processError(e)
+                }
+                return
+            }
 
             if (!OfflineConst.IS_PREPARED) {
                 resourceSet.forEach { resource ->
@@ -81,6 +98,11 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                         }
                     }
                 }
+
+            } else if (html.contains("Invalid LTI request")) {
+                processError(
+                    OfflineDownloadException(message = "Error loading LTI")
+                )
             }
 
             processHtml(html, isOnlineOnly = false)
@@ -89,6 +111,10 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
     init {
         initWebView()
+    }
+
+    override fun isNeedDelayWebView(): Boolean {
+        return !isGetAuthUrl
     }
 
     override fun startPreparation() {
@@ -124,79 +150,18 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
     private fun loadLti() {
         launch {
             try {
-                val text = downloadFileContent(mUrl)
+                val text = downloadFileContent(mUrl, mutableMapOf(Pair("Referer", ApiPrefs.domain)))
 
-                val ltiItem = Gson().fromJson(text, LTIItem::class.java)
-                if (ltiItem.url.isNullOrEmpty()) {
-                    processError(
-                        OfflineUnsupportedException(message = "No support when URL is empty")
-                    )
+                if (text.contains("unauthenticated")) {
+                    isGetAuthUrl = true
+                    handler.post { getWebView(mHtmlListener)?.loadUrl(mUrl) }
 
                 } else {
-                    if (!OfflineConst.IS_PREPARED) {
-                        handler.post {
-                            getWebView(mHtmlListener)?.loadUrl(ltiItem.url)
-                        }
-                        return@launch
-                    }
-
-                    val content = downloadFileContent(ltiItem.url)
-                    var action = ""
-                    val params = mutableListOf<Pair<String, String>>()
-
-                    Jsoup.parse(content).getElementsByTag("form").firstOrNull()
-                        ?.let { formElement ->
-                            action = formElement.attr("action")
-
-                            formElement.getElementsByTag("input")?.forEach { element ->
-                                val name = element.attr("name")
-                                val value = element.attr("value")
-
-                                params.add(Pair(name, value))
-                            }
-                        }
-
-                    if (action.isNotEmpty() && params.isNotEmpty()) {
-                        var redirectUrl = getFormRedirect(action, params)
-
-                        if (redirectUrl.isEmpty()) {
-                            processError(
-                                OfflineDownloadException(message = "Error getting Redirect URL")
-                            )
-
-                        } else {
-                            if (redirectUrl.startsWith("/")) {
-                                val uri = Uri.parse(action)
-                                val host = uri.scheme + "://" + uri.host
-                                redirectUrl = host + redirectUrl
-                            }
-
-                            if (redirectUrl.contains("media-player?auth_token=")) {
-                                processOysterContent(redirectUrl)
-
-                            } else if (redirectUrl.contains("leap")) {
-                                processError(
-                                    OfflineUnsupportedException(message = "No support for Leap")
-                                )
-
-                            } else if (redirectUrl.contains("course-player?auth_token=")) {
-                                processCoursePlayerContent(redirectUrl)
-
-                            } else {
-                                handler.post { getWebView(mHtmlListener)?.loadUrl(redirectUrl) }
-                            }
-                        }
-
-                    } else {
-                        processError(
-                            OfflineDownloadException(message = "Error with Action and Params")
-                        )
-                    }
+                    val ltiItem = Gson().fromJson(text, LTIItem::class.java)
+                    processLTIItem(ltiItem)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-
-                processError(e)
             }
         }
     }
@@ -210,6 +175,69 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
             processError(
                 OfflineDownloadException(message = "Something went wrong")
             )
+        }
+    }
+
+    private fun processLTIItem(ltiItem: LTIItem) {
+        if (ltiItem.url.isNullOrEmpty()) {
+            processError(OfflineDownloadException(message = "URL is empty"))
+            return
+        }
+
+        if (!OfflineConst.IS_PREPARED) {
+            handler.post { getWebView(mHtmlListener)?.loadUrl(ltiItem.url) }
+            return
+        }
+
+        val content = downloadFileContent(ltiItem.url)
+        var action = ""
+        val params = mutableListOf<Pair<String, String>>()
+
+        Jsoup.parse(content).getElementsByTag("form").firstOrNull()
+            ?.let { formElement ->
+                action = formElement.attr("action")
+
+                formElement.getElementsByTag("input")?.forEach { element ->
+                    val name = element.attr("name")
+                    val value = element.attr("value")
+
+                    params.add(Pair(name, value))
+                }
+            }
+
+        if (action.isNotEmpty() && params.isNotEmpty()) {
+            var redirectUrl = getFormRedirect(action, params)
+
+            if (redirectUrl.isEmpty()) {
+                processError(
+                    OfflineDownloadException(message = "Error getting Redirect URL")
+                )
+
+            } else {
+                if (redirectUrl.startsWith("/")) {
+                    val uri = Uri.parse(action)
+                    val host = uri.scheme + "://" + uri.host
+                    redirectUrl = host + redirectUrl
+                }
+
+                if (redirectUrl.contains("media-player?auth_token=")) {
+                    processOysterContent(redirectUrl)
+
+                } else if (redirectUrl.contains("leap")) {
+                    processError(
+                        OfflineUnsupportedException(message = "No support for Leap")
+                    )
+
+                } else if (redirectUrl.contains("course-player?auth_token=")) {
+                    processCoursePlayerContent(redirectUrl)
+
+                } else {
+                    handler.post { getWebView(mHtmlListener)?.loadUrl(redirectUrl) }
+                }
+            }
+
+        } else {
+            handler.post { getWebView(mHtmlListener)?.loadUrl(mUrl) }
         }
     }
 
@@ -254,7 +282,7 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
             "${host}/content/files-api/files/bundler/cit-oyster?videoUUID=${oysterItem.segment.elements.firstOrNull()?.videoUuid}",
             mapOf("Authorization" to token)
         )
-        val videoItem = Gson().fromJson(videoContent, DownloadsVideoItem::class.java)
+        val videoItem = Gson().fromJson(videoContent, DownloadsOysterVideoItem::class.java)
         val videoUrl = videoItem.sources.minByOrNull { it.size }?.url ?: ""
 
         val html = ContextKeeper.appContext.assets.open("offline_oyster.html").reader().readText()
@@ -283,8 +311,71 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
             )
 
         } else {
-            handler.post { getWebView(mHtmlListener)?.loadUrl(redirectUrl) }
+            val element = coursePlayerItem.segment.elements.firstOrNull()
+            if (element?.typeId == 21 || element?.typeId == 2) {
+                try {
+                    processCoursePlayerVideoElement(element, host, token)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+
+                    handler.post { getWebView(mHtmlListener)?.loadUrl(redirectUrl) }
+                }
+
+            } else {
+                handler.post { getWebView(mHtmlListener)?.loadUrl(redirectUrl) }
+            }
         }
+    }
+
+    private fun processCoursePlayerVideoElement(
+        element: DownloadsElementItem, host: String, token: String
+    ) {
+        val videoUuid = element.videoUuid
+        val videoContent = downloadFileContent(
+            "$host/content/files-api/metadata?uuid=$videoUuid", mapOf("Authorization" to token)
+        )
+        val videoItem =
+            Gson().fromJson(videoContent, Array<DownloadsVideoItem>::class.java).toList()
+                .firstOrNull()
+        val videoLabel = videoItem?.sources?.minByOrNull { it.size }?.label ?: ""
+
+        val videoUrl =
+            "$host/content/files-api/files/$videoUuid?label=$videoLabel&auth-token=$token"
+        var subtitleUrl = ""
+        var transcriptText = ""
+
+        val projectId = videoItem?.tracks?.firstOrNull()?.projectId ?: ""
+        val externalId = videoItem?.tracks?.firstOrNull()?.externalId ?: ""
+
+        if (projectId.isNotEmpty() && externalId.isNotEmpty()) {
+            val transcriptContent = downloadFileContent(
+                "https://static.3playmedia.com/p/projects/$projectId/files/$externalId/transcript.tpm?format=tpm"
+            )
+
+            try {
+                val transcriptItem =
+                    Gson().fromJson(transcriptContent, DownloadsTranscriptItem::class.java)
+                transcriptText = transcriptItem.transcript
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        videoItem?.tracks?.firstOrNull()?.uuid?.let { uuid ->
+            if (uuid.isNotEmpty()) {
+                subtitleUrl =
+                    "$host/content/files-api/files/$videoUuid/tracks/$uuid?auth-token=$token"
+            }
+        }
+
+        val html =
+            ContextKeeper.appContext.assets.open("offline_video.html").reader().readText()
+                .replace("#PLAYER#", OfflineConst.OFFLINE_VIDEO_SCRIPT)
+                .replace("#VIDEO#", videoUrl)
+                .replace("#SUBTITLE#", subtitleUrl)
+                .replace("#TRANSCRIPT#", transcriptText)
+
+        setInitialDocument(Jsoup.parse("<html>$html</html>"))
     }
 
     private fun getFormRedirect(action: String, params: List<Pair<String, String>>): String {

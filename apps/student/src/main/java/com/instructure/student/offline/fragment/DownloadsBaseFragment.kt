@@ -134,11 +134,12 @@ open class DownloadsBaseFragment : Fragment() {
         webView.evaluateJavascript(
             """
                 window.resizeObserver = new ResizeObserver(entries => {
-                    if (document.children.length > 0) {
-                        var height = document.children[0].offsetHeight;
-                        var scrollHeight = document.children[0].scrollHeight;
+                    if (document.body.children.length > 0) {
+                        var height = document.body.children[0].offsetHeight;
+                        var scrollHeight = document.body.children[0].scrollHeight;
                         
-                        if (scrollHeight > height) height = scrollHeight;
+                        console.log("height  " + height);
+                        //if (scrollHeight > height) height = scrollHeight;
                         javascript:window.offline.onContentHeightChanged(height);
                     }
                 });                    

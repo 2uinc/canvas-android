@@ -1,10 +1,12 @@
 package com.instructure.student.offline.activity
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
@@ -20,8 +22,12 @@ import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
 
-class DownloadsPagesActivity : AppCompatActivity() {
+class DownloadsPagesActivity : AppCompatActivity(), CoroutineScope {
 
     private lateinit var binding: ActivityDownloadsPagesBinding
 
@@ -30,6 +36,11 @@ class DownloadsPagesActivity : AppCompatActivity() {
 
     private var mDownloadsPagesAdapter: DownloadsPagesAdapter? = null
     private var mOfflineListener: OfflineManager.OfflineListener? = null
+
+    private var mAlertDialog: AlertDialog? = null
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +81,7 @@ class DownloadsPagesActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         mOfflineListener?.let { Offline.getOfflineManager().removeListener(it) }
+        mAlertDialog?.dismiss()
         super.onDestroy()
     }
 
@@ -107,6 +119,37 @@ class DownloadsPagesActivity : AppCompatActivity() {
                         }
                     })
                 binding.recyclerView.adapter = mDownloadsPagesAdapter
+            }
+        }
+
+        binding.removeAllTextView.setOnClickListener {
+            if (mAlertDialog == null) {
+                mAlertDialog = AlertDialog.Builder(this)
+                    .setPositiveButton(R.string.delete) { _, _ ->
+                        removeAllContents()
+                    }
+                    .setNegativeButton(R.string.cancel) { _, _ -> }
+                    .setMessage(R.string.download_modules_remove_all_dialog_title)
+                    .show()
+            }
+
+            mAlertDialog?.show()
+        }
+    }
+
+    private fun removeAllContents() {
+        binding.progressBar.visibility = View.VISIBLE
+
+        launch {
+            val keys = mutableListOf<String>()
+            DownloadsRepository.getPageItems(mCourseId)?.forEach {
+                keys.add(it.key)
+            }
+
+            Offline.getOfflineManager().remove(keys)
+
+            launch(Dispatchers.Main) {
+                finish()
             }
         }
     }

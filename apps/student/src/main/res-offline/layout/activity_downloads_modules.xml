@@ -45,6 +45,16 @@
         app:layout_constraintVertical_bias="0.0"
         tools:layout_editor_absoluteX="0dp" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.twou.offline.view.DownloadQueuePanelView
         android:id="@+id/downloadPanelView"
         android:layout_width="match_parent"

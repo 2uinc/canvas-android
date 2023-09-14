@@ -46,6 +46,7 @@ class DownloadsModulesAdapter(
 
             downloadItemView.setWithRemoveAbility()
             downloadItemView.setKeyItem(KeyOfflineItem(item.key, item.moduleItemName))
+            downloadItemView.setViewColor(mTextAndIconColor)
 
             val resId = when (item.type) {
                 OfflineConst.TYPE_PAGE -> R.drawable.ic_pages

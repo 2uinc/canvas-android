@@ -14,7 +14,25 @@
         android:elevation="6dp"
         app:layout_constraintTop_toTopOf="parent"
         app:popupTheme="@style/ToolBarPopupStyle"
-        app:theme="@style/ToolBarStyle" />
+        app:theme="@style/ToolBarStyle">
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="end">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/removeAllTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|end"
+                android:layout_marginEnd="12dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:padding="4dp"
+                android:text="@string/download_modules_remove_all"
+                android:textColor="@color/white" />
+        </FrameLayout>
+    </androidx.appcompat.widget.Toolbar>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
@@ -23,6 +41,16 @@
         android:cacheColorHint="@android:color/transparent"
         app:layout_constraintBottom_toTopOf="@+id/downloadPanelView"
         app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.twou.offline.view.DownloadQueuePanelView
         android:id="@+id/downloadPanelView"

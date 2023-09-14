@@ -38,6 +38,7 @@ class DownloadsPagesAdapter(
 
             downloadItemView.setWithRemoveAbility()
             downloadItemView.setKeyItem(KeyOfflineItem(item.key, item.pageName))
+            downloadItemView.setViewColor(mTextAndIconColor)
 
             val drawable =
                 ColorKeeper.getColoredDrawable(mContext, R.drawable.ic_pages, mTextAndIconColor)

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
@@ -138,6 +139,8 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
     }
 
     private fun removeAllContents() {
+        binding.progressBar.visibility = View.VISIBLE
+
         launch {
             val keys = mutableListOf<String>()
             DownloadsRepository.getModuleItems(mCourseId)?.forEach {

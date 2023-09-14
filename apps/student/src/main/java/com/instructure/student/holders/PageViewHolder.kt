@@ -51,7 +51,7 @@ class PageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         root.setOnClickListener { adapterToFragmentCallback.onRowClicked(page, adapterPosition, true) }
 
-        downloadItemView.initWithPageData(page)
+        downloadItemView.initWithPageData(page, iconColor)
     }
 
     companion object {

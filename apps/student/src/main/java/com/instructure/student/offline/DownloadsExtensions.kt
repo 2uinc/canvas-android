@@ -19,7 +19,7 @@ import com.twou.offline.view.DownloadItemView
 import java.net.URL
 
 fun DownloadItemView.initWithModuleData(
-    moduleIndex: Int, moduleObject: ModuleObject?, moduleItem: ModuleItem?
+    moduleIndex: Int, moduleObject: ModuleObject?, moduleItem: ModuleItem?, courseColor: Int
 ) {
     val isLocked = ModuleUtility.isGroupLocked(moduleObject)
 
@@ -54,13 +54,14 @@ fun DownloadItemView.initWithModuleData(
                     ), moduleItem.title ?: "", extras
                 )
             )
+            setViewColor(courseColor)
             visibility = View.VISIBLE
         }
 
     } else visibility = View.GONE
 }
 
-fun DownloadItemView.initWithPageData(page: Page) {
+fun DownloadItemView.initWithPageData(page: Page, courseColor: Int) {
     val url = page.htmlUrl
     val courseId = OfflineUtils.getCourseIdFromUrl(url ?: "")
 
@@ -80,7 +81,7 @@ fun DownloadItemView.initWithPageData(page: Page) {
                 OfflineUtils.getPageKey(courseId, page.id), page.title ?: "", extras
             )
         )
-
+        setViewColor(courseColor)
         View.VISIBLE
     }
 }
@@ -116,6 +117,8 @@ fun Toolbar.initWithOfflineData(
 
     val moduleType = arguments.getInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, -1)
     if (moduleType == -1) return
+
+    clipChildren = false
 
     addView(DownloadItemView(context).apply {
         layoutParams = Toolbar.LayoutParams(

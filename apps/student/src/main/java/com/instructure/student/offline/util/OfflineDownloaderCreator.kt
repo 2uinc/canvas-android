@@ -3,7 +3,7 @@ package com.instructure.student.offline.util
 import android.net.Uri
 import android.webkit.CookieManager
 import com.instructure.canvasapi2.managers.CourseManager
-import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
@@ -21,6 +21,7 @@ import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.util.OfflineDownloaderUtils
+import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.BufferedInputStream
@@ -44,13 +45,17 @@ KEY_EXTRA_MODULE_ITEM_ID
 to download the Page content call OfflineUtils.getPageKey to create the key
  */
 class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
-    BaseOfflineDownloaderCreator(offlineQueueItem) {
+    BaseOfflineDownloaderCreator(offlineQueueItem), CoroutineScope {
 
+    private var mCourseIndex = 0
     private var mOfflineJob: WeaveJob? = null
-
-    private var mCanvasContext: CanvasContext? = null
-
+    private var mCanvasContext: Course? = null
     private var mOfflineDownloader: BaseOfflineDownloader? = null
+
+    override val coroutineContext = Dispatchers.Default
+
+    private var mBgJob: CompletableJob? = null
+    private var mBgScope: CoroutineScope? = null
 
     override fun getKeyOfflineItem(): KeyOfflineItem {
         return offlineQueueItem.keyItem
@@ -66,23 +71,63 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                 CourseManager.getCourse(courseId, it, false)
             }
 
-            var courseIndex = 0
             val dashboardCards = awaitApi { CourseManager.getDashboardCourses(false, it) }
             run job@{
                 dashboardCards.forEachIndexed { index, dashboardCard ->
                     if (dashboardCard.id == courseId) {
-                        courseIndex = index
+                        mCourseIndex = index
                         return@job
                     }
                 }
             }
             mCanvasContext = canvasContext
 
+            unit(null)
+
+        } catch {
+            it.printStackTrace()
+
+            unit(it)
+        }
+    }
+
+    override fun createOfflineDownloader(unit: (downloader: BaseOfflineDownloader?, error: Throwable?) -> Unit) {
+        if (mCanvasContext == null) {
+            prepareOfflineDownloader { error ->
+                if (mCanvasContext == null || error != null) {
+                    unit(
+                        null, error
+                            ?: OfflineDownloadException(message = "Failed to create Offline Downloader")
+                    )
+
+                } else {
+                    createOfflineDownloader(unit)
+                }
+            }
+            return
+        }
+
+        if (mBgScope == null) {
+            SupervisorJob().let {
+                mBgJob = it
+                mBgScope = CoroutineScope(context = Dispatchers.Default + it)
+            }
+        }
+        mBgScope?.launch {
+            val courseId = OfflineUtils.getCourseId(getKeyOfflineItem().key)
             var logoPath = ""
-            canvasContext.imageUrl?.let { logoPath = downloadCourseImage(it) }
+            try {
+                mCanvasContext?.imageUrl?.let { logoPath = downloadCourseImage(it) }
+            } catch (e: Exception) {
+                e.printStackTrace()
+
+                unit(null, e)
+                return@launch
+            }
 
             val moduleType =
                 getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE)
+
             if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
                 val type = OfflineUtils.getKeyType(getKeyOfflineItem().key)
 
@@ -101,8 +146,8 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
 
                 DownloadsRepository.addModuleItem(
                     DownloadsCourseItem(
-                        courseIndex, courseId, canvasContext.name,
-                        canvasContext.courseCode ?: "", logoPath, canvasContext.term?.name ?: ""
+                        mCourseIndex, courseId, mCanvasContext?.name ?: "",
+                        mCanvasContext?.courseCode ?: "", logoPath, mCanvasContext?.term?.name ?: ""
                     ),
                     DownloadsModuleItem(
                         moduleIndex, getKeyOfflineItem().key, courseId, moduleId, moduleName,
@@ -110,107 +155,88 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                     )
                 )
 
-                unit(null)
-
             } else if (moduleType == OfflineConst.MODULE_TYPE_PAGES) {
                 DownloadsRepository.addPageItem(
                     DownloadsCourseItem(
-                        courseIndex, courseId, canvasContext.name,
-                        canvasContext.courseCode ?: "", logoPath, canvasContext.term?.name ?: ""
+                        mCourseIndex, courseId, mCanvasContext?.name ?: "",
+                        mCanvasContext?.courseCode ?: "", logoPath, mCanvasContext?.term?.name ?: ""
                     ),
                     DownloadsPageItem(
                         getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title
                     )
                 )
-
-                unit(null)
             }
 
-        } catch {
-            it.printStackTrace()
+            mBgScope?.launch(Dispatchers.Main) job@{
+                val type = OfflineUtils.getKeyType(getKeyOfflineItem().key)
 
-            unit(OfflineDownloadException(it, message = "Failed to retrieve Content Data"))
-        }
-    }
+                when (type) {
+                    OfflineConst.TYPE_PAGE -> {
+                        val url = Uri.parse(
+                            getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
+                                ?: ""
+                        ).lastPathSegment
 
-    override fun createOfflineDownloader(unit: (downloader: BaseOfflineDownloader?, error: Throwable?) -> Unit) {
-        val type = OfflineUtils.getKeyType(getKeyOfflineItem().key)
-
-        when (type) {
-            OfflineConst.TYPE_PAGE -> {
-                val url = Uri.parse(
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
-                        ?: ""
-                ).lastPathSegment
-
-                if (mCanvasContext == null) {
-                    prepareOfflineDownloader { error ->
-                        if (mCanvasContext == null || error != null) {
+                        if (url == null) {
                             unit(
-                                null, error
-                                    ?: OfflineDownloadException(message = "Failed to create Offline Downloader")
+                                null,
+                                OfflineDownloadException(message = "Failed to create Offline Downloader")
+                            )
+                            return@job
+                        }
+
+                        mOfflineDownloader = PageOfflineDownloader(
+                            mCanvasContext!!, url, getKeyOfflineItem()
+                        )
+                    }
+
+                    OfflineConst.TYPE_FILE -> {
+                        val url =
+                            getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
+                        if (url.isNullOrEmpty()) {
+                            unit(
+                                null,
+                                OfflineDownloadException(message = "Failed to create Offline Downloader")
                             )
 
                         } else {
-                            createOfflineDownloader(unit)
+                            mOfflineDownloader = FileOfflineDownloader(url, getKeyOfflineItem())
                         }
                     }
-                    return
+
+                    OfflineConst.TYPE_LTI -> {
+                        val url =
+                            getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
+                        if (url.isNullOrEmpty()) {
+                            unit(
+                                null,
+                                OfflineDownloadException(message = "Failed to create Offline Downloader")
+                            )
+
+                        } else {
+                            mOfflineDownloader = LTIOfflineDownloader(url, getKeyOfflineItem())
+                        }
+                    }
                 }
 
-                if (url == null) {
+                if (mOfflineDownloader == null) {
                     unit(
-                        null,
-                        OfflineDownloadException(message = "Failed to create Offline Downloader")
-                    )
-                    return
-                }
-
-                mOfflineDownloader = PageOfflineDownloader(
-                    mCanvasContext!!, url, getKeyOfflineItem()
-                )
-            }
-
-            OfflineConst.TYPE_FILE -> {
-                val url =
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
-                if (url.isNullOrEmpty()) {
-                    unit(
-                        null,
-                        OfflineDownloadException(message = "Failed to create Offline Downloader")
+                        null, OfflineUnsupportedException(message = "No support for $type")
                     )
 
-                } else {
-                    mOfflineDownloader = FileOfflineDownloader(url, getKeyOfflineItem())
+                } else if (mBgScope != null) {
+                    unit(mOfflineDownloader, null)
                 }
             }
-
-            OfflineConst.TYPE_LTI -> {
-                val url =
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_URL) as? String
-                if (url.isNullOrEmpty()) {
-                    unit(
-                        null,
-                        OfflineDownloadException(message = "Failed to create Offline Downloader")
-                    )
-
-                } else {
-                    mOfflineDownloader = LTIOfflineDownloader(url, getKeyOfflineItem())
-                }
-            }
-        }
-
-        if (mOfflineDownloader == null) {
-            unit(
-                null, OfflineUnsupportedException(message = "No support for $type")
-            )
-
-        } else {
-            unit(mOfflineDownloader, null)
         }
     }
 
     override fun destroy() {
+        mBgJob?.cancel()
+        mBgJob?.cancelChildren()
+        mBgJob = null
+        mBgScope = null
+
         mOfflineJob?.cancel()
         mOfflineDownloader?.destroy()
     }

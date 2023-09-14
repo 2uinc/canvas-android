@@ -18,7 +18,6 @@ class OfflineModeService : Service() {
     private val mOfflineManager = Offline.getOfflineManager()
 
     private val mOfflineListener = object : OfflineManager.OfflineListener() {
-        @Suppress("DEPRECATION")
         override fun onStateChanged(state: Int) {
             when (state) {
                 OfflineManager.STATE_IDLE, OfflineManager.STATE_PAUSED -> {
