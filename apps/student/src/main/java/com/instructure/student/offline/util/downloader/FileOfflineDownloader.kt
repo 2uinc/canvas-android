@@ -53,12 +53,8 @@ class FileOfflineDownloader(
 
                 val resourceLink = ResourceLink(url, "$filesDirPath/", fileName ?: "thumbnail")
 
-                try {
-                    downloadFileToLocalStorage(resourceLink)
-                    thumbnailPath = resourceLink.getFilePath()
-                } catch (e: Exception) {
-                    processError(e)
-                }
+                downloadFileToLocalStorage(resourceLink)
+                thumbnailPath = resourceLink.getFilePath()
             }
 
             var filePath = ""
@@ -67,12 +63,8 @@ class FileOfflineDownloader(
                     url, "$filesDirPath/", file.name ?: file.displayName ?: file.fullName ?: ""
                 )
 
-                try {
-                    downloadFileToLocalStorage(resourceLink)
-                    filePath = resourceLink.getFilePath()
-                } catch (e: Exception) {
-                    processError(e)
-                }
+                downloadFileToLocalStorage(resourceLink)
+                filePath = resourceLink.getFilePath()
             }
 
             val value = Gson().toJson(

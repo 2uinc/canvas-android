@@ -86,6 +86,7 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         }
 
         downloadItemView.initWithFileData(item, courseId, tint)
+        downloadFreeSpaceView.visibility = if (downloadItemView.visibility == View.VISIBLE && hasOptions.isEmpty()) View.VISIBLE else View.GONE
     }
 
     companion object {

@@ -32,6 +32,17 @@ open class DownloadsBaseFragment : Fragment() {
         mContext = view.context
     }
 
+    override fun onStop() {
+        super.onStop()
+
+        pauseVideo()
+    }
+
+    fun pauseVideo() {
+        mCurrentVideoIdToPlay = ""
+        getCurrentVideoPlayer()?.pause()
+    }
+
     @SuppressLint("JavascriptInterface")
     protected fun addVideoPlayerToWebView(webView: WebView) {
         webView.addJavascriptInterface(object : Any() {
@@ -116,7 +127,7 @@ open class DownloadsBaseFragment : Fragment() {
                 }
             }
 
-            @Suppress("UNUSED_PARAMETER", "unused")
+            @Suppress("unused")
             @JavascriptInterface
             fun onContentHeightChanged(height: Int) {
                 mOfflineHandler.post {
@@ -136,11 +147,14 @@ open class DownloadsBaseFragment : Fragment() {
                 window.resizeObserver = new ResizeObserver(entries => {
                     if (document.body.children.length > 0) {
                         setTimeout(function() {
-                            var height = document.body.children[0].offsetHeight;
-                            var scrollHeight = document.body.children[0].scrollHeight;
-                            
+                            /*var allHeight = 0;
+                            var children = document.body.children;
+                            for (var i = 0; i < children.length; i++) {
+                                allHeight += children[i].offsetHeight;
+                                console.log("allHeight  " + allHeight);
+                            }*/
+                            var height = document.body.getBoundingClientRect().height;
                             console.log("height  " + height);
-                            //if (scrollHeight > height) height = scrollHeight;
                             javascript:window.offline.onContentHeightChanged(height);
                         }, 500);
                     }
@@ -187,5 +201,15 @@ open class DownloadsBaseFragment : Fragment() {
                 playerView.pause()
             }
         }
+    }
+
+    private fun getCurrentVideoPlayer(): CustomPlayerView? {
+        mVideoViewList.values.forEach { view ->
+            val childView = (view as ViewGroup).children.firstOrNull()
+            val playerView = childView as? CustomPlayerView
+            if (playerView?.isVideoPlay() == true) return playerView
+        }
+
+        return null
     }
 }
