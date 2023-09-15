@@ -29,6 +29,7 @@ import com.instructure.student.R
 import com.instructure.student.adapter.FileFolderCallback
 import com.instructure.student.databinding.ViewholderFileBinding
 import com.instructure.student.fragment.FileListFragment
+import com.instructure.student.offline.initWithFileData
 
 class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
@@ -37,7 +38,7 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         tint: Int,
         context: Context,
         hasOptions: List<FileListFragment.FileMenuType>,
-        callback: FileFolderCallback
+        callback: FileFolderCallback, courseId: Long
     ): Unit = with(ViewholderFileBinding.bind(itemView)) {
         // Set up click listeners
         root.onClick { callback.onItemClicked(item) }
@@ -83,6 +84,8 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fileSize.text = context.resources.getQuantityString(R.plurals.item_count, itemCount, itemCount);
             fileIcon.setColoredResource(R.drawable.ic_folder_solid, tint)
         }
+
+        downloadItemView.initWithFileData(item, courseId, tint)
     }
 
     companion object {

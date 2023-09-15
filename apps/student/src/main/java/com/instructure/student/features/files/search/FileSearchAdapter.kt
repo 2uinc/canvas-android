@@ -71,7 +71,7 @@ class FileSearchAdapter(
     }
 
     override fun bindHolder(item: FileFolder, holder: FileViewHolder, position: Int) {
-        holder.bind(item, canvasContext.textAndIconColor, context, emptyList(), callback)
+        holder.bind(item, canvasContext.textAndIconColor, context, emptyList(), callback, canvasContext.id)
     }
 
     override fun createViewHolder(v: View, viewType: Int) = FileViewHolder(v)

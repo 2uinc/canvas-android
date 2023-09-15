@@ -14,7 +14,7 @@ import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.pandautils.utils.ViewStyler
 import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
-import com.instructure.student.databinding.ActivityDownloadsPagesBinding
+import com.instructure.student.databinding.ActivityDownloadsContentListBinding
 import com.instructure.student.offline.adapter.DownloadsPagesAdapter
 import com.instructure.student.offline.item.DownloadsPageItem
 import com.instructure.student.offline.util.DownloadsRepository
@@ -29,7 +29,7 @@ import kotlin.coroutines.CoroutineContext
 
 class DownloadsPagesActivity : AppCompatActivity(), CoroutineScope {
 
-    private lateinit var binding: ActivityDownloadsPagesBinding
+    private lateinit var binding: ActivityDownloadsContentListBinding
 
     private var mCourseId = -1L
     private var mCourseName = ""
@@ -45,7 +45,7 @@ class DownloadsPagesActivity : AppCompatActivity(), CoroutineScope {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityDownloadsPagesBinding.inflate(layoutInflater)
+        binding = ActivityDownloadsContentListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         mCourseId = intent.getLongExtra(EXTRA_COURSE_ID, -1L)

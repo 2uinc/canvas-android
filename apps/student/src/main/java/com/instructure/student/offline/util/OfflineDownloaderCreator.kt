@@ -9,6 +9,7 @@ import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
 import com.instructure.student.offline.item.DownloadsCourseItem
+import com.instructure.student.offline.item.DownloadsFileItem
 import com.instructure.student.offline.item.DownloadsModuleItem
 import com.instructure.student.offline.item.DownloadsPageItem
 import com.instructure.student.offline.util.downloader.FileOfflineDownloader
@@ -125,46 +126,66 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                 return@launch
             }
 
-            val moduleType =
-                getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE)
+            when (getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE)) {
+                OfflineConst.MODULE_TYPE_MODULES -> {
+                    val type = OfflineUtils.getKeyType(getKeyOfflineItem().key)
 
-            if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
-                val type = OfflineUtils.getKeyType(getKeyOfflineItem().key)
+                    val moduleIndex =
+                        getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_INDEX) as? Int
+                            ?: 0
+                    val moduleName =
+                        getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_NAME) as? String
+                            ?: ""
+                    val moduleId =
+                        getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_ID) as? Long
+                            ?: -1L
+                    val moduleItemId =
+                        getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID) as? Long
+                            ?: -1L
 
-                val moduleIndex =
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_INDEX) as? Int
-                        ?: 0
-                val moduleName =
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_NAME) as? String
-                        ?: ""
-                val moduleId =
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_ID) as? Long
-                        ?: -1L
-                val moduleItemId =
-                    getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID) as? Long
-                        ?: -1L
-
-                DownloadsRepository.addModuleItem(
-                    DownloadsCourseItem(
-                        mCourseIndex, courseId, mCanvasContext?.name ?: "",
-                        mCanvasContext?.courseCode ?: "", logoPath, mCanvasContext?.term?.name ?: ""
-                    ),
-                    DownloadsModuleItem(
-                        moduleIndex, getKeyOfflineItem().key, courseId, moduleId, moduleName,
-                        moduleItemId, offlineQueueItem.keyItem.title, type
+                    DownloadsRepository.addModuleItem(
+                        DownloadsCourseItem(
+                            mCourseIndex, courseId, mCanvasContext?.name ?: "",
+                            mCanvasContext?.courseCode ?: "", logoPath,
+                            mCanvasContext?.term?.name ?: ""
+                        ),
+                        DownloadsModuleItem(
+                            moduleIndex, getKeyOfflineItem().key, courseId, moduleId, moduleName,
+                            moduleItemId, offlineQueueItem.keyItem.title, type
+                        )
                     )
-                )
+                }
 
-            } else if (moduleType == OfflineConst.MODULE_TYPE_PAGES) {
-                DownloadsRepository.addPageItem(
-                    DownloadsCourseItem(
-                        mCourseIndex, courseId, mCanvasContext?.name ?: "",
-                        mCanvasContext?.courseCode ?: "", logoPath, mCanvasContext?.term?.name ?: ""
-                    ),
-                    DownloadsPageItem(
-                        getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title
+                OfflineConst.MODULE_TYPE_PAGES -> {
+                    DownloadsRepository.addPageItem(
+                        DownloadsCourseItem(
+                            mCourseIndex, courseId, mCanvasContext?.name ?: "",
+                            mCanvasContext?.courseCode ?: "", logoPath,
+                            mCanvasContext?.term?.name ?: ""
+                        ),
+                        DownloadsPageItem(
+                            getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title
+                        )
                     )
-                )
+                }
+
+                OfflineConst.MODULE_TYPE_FILES -> {
+                    val contentType =
+                        getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_FILE_TYPE) as? String
+                            ?: ""
+
+                    DownloadsRepository.addFileItem(
+                        DownloadsCourseItem(
+                            mCourseIndex, courseId, mCanvasContext?.name ?: "",
+                            mCanvasContext?.courseCode ?: "", logoPath,
+                            mCanvasContext?.term?.name ?: ""
+                        ),
+                        DownloadsFileItem(
+                            getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title,
+                            contentType
+                        )
+                    )
+                }
             }
 
             mBgScope?.launch(Dispatchers.Main) job@{

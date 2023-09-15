@@ -58,6 +58,7 @@ import com.instructure.student.adapter.FileListRecyclerAdapter
 import com.instructure.student.databinding.FragmentFileListBinding
 import com.instructure.student.dialog.EditTextDialog
 import com.instructure.student.features.files.search.FileSearchFragment
+import com.instructure.student.offline.addOfflineDataForFile
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.StudentPrefs
 import dagger.hilt.android.AndroidEntryPoint
@@ -206,6 +207,11 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
                 if (item.fullName != null) {
                     RouteMatcher.route(requireContext(), FileListFragment.makeRoute(canvasContext, item))
                 } else {
+                    item.url?.let {
+                        val fileUrl = "courses/${canvasContext.id}/files/${item.id}"
+                        RouteMatcher.route(requireContext(), FileDetailsFragment.makeRoute(canvasContext, ModuleObject(), item.id, fileUrl).addOfflineDataForFile(item.id, item.contentType.orEmpty(), fileUrl))
+                        return
+                    }
                     recordFilePreviewEvent(item)
                     if (item.isHtmlFile) {
                         /* An HTML file can reference other canvas files as resources (e.g. CSS files) and must be
@@ -623,6 +629,10 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
                 }
             }
 
+            // Because we have our own downloader
+            options.remove(FileMenuType.DOWNLOAD)
+            // Because we don't use internal pdf viewer
+            options.remove(FileMenuType.OPEN_IN_ALTERNATE)
             // If there's some case we didn't catch, default to not showing the menu
             return options
         }

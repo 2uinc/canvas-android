@@ -101,6 +101,16 @@ class DownloadsContentActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            OfflineConst.MODULE_TYPE_FILES -> {
+                DownloadsRepository.getFileItems(courseId)?.let { fileItems ->
+                    fileItems.find { it.key == mKey }?.let { fileItem ->
+                        binding.toolbar.title = fileItem.fileName
+
+                        showContent(OfflineConst.TYPE_FILE)
+                    }
+                }
+            }
         }
     }
 

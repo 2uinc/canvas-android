@@ -2,6 +2,7 @@ package com.instructure.student.offline.util
 
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.student.offline.item.DownloadsCourseItem
+import com.instructure.student.offline.item.DownloadsFileItem
 import com.instructure.student.offline.item.DownloadsModuleItem
 import com.instructure.student.offline.item.DownloadsPageItem
 import com.twou.offline.Offline
@@ -25,6 +26,9 @@ object DownloadsRepository : CoroutineScope {
     private val mPageItems = Collections.synchronizedList(mutableListOf<DownloadsPageItem>())
     private val mPageItemsMap = mutableMapOf<Long, MutableList<DownloadsPageItem>?>()
 
+    private val mFileItems = Collections.synchronizedList(mutableListOf<DownloadsFileItem>())
+    private val mFileItemsMap = mutableMapOf<Long, MutableList<DownloadsFileItem>?>()
+
     private var isLoaded = false
 
     private var mBook: Book? = null
@@ -41,6 +45,9 @@ object DownloadsRepository : CoroutineScope {
 
         mPageItems.clear()
         mPageItemsMap.clear()
+
+        mFileItems.clear()
+        mFileItemsMap.clear()
 
         isLoaded = false
     }
@@ -61,6 +68,12 @@ object DownloadsRepository : CoroutineScope {
         if (!isLoaded) loadData()
 
         return mPageItemsMap[courseId]
+    }
+
+    fun getFileItems(courseId: Long): List<DownloadsFileItem>? {
+        if (!isLoaded) loadData()
+
+        return mFileItemsMap[courseId]
     }
 
     fun addModuleItem(courseItem: DownloadsCourseItem, moduleItem: DownloadsModuleItem) {
@@ -102,6 +115,24 @@ object DownloadsRepository : CoroutineScope {
                 ?.add(pageItem)
 
             savePageData()
+        }
+    }
+
+    fun addFileItem(courseItem: DownloadsCourseItem, fileItem: DownloadsFileItem) {
+        if (!isLoaded) loadData()
+
+        if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
+            mCourseItems.add(courseItem)
+            mCourseItems.sortBy { it.index }
+            saveCourseData()
+        }
+
+        if (mFileItems.firstOrNull { it.key == fileItem.key } == null) {
+            mFileItems.add(fileItem)
+            mFileItemsMap.getOrPut(fileItem.courseId) { Collections.synchronizedList(ArrayList()) }
+                ?.add(fileItem)
+
+            saveFileData()
         }
     }
 
@@ -162,12 +193,27 @@ object DownloadsRepository : CoroutineScope {
             e.printStackTrace()
         }
 
+        try {
+            Paper.book("${schoolId}_$userId").read<List<DownloadsFileItem>>("downloads_file_items")
+                ?.let {
+                    mFileItems.addAll(it)
+                    mFileItems.forEach { fileItem ->
+                        mFileItemsMap.getOrPut(fileItem.courseId) {
+                            Collections.synchronizedList(ArrayList())
+                        }?.add(fileItem)
+                    }
+                }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         Offline.getOfflineManager().addListener(object : OfflineManager.OfflineListener() {
 
             override fun onItemRemoved(key: String) {
                 when (OfflineUtils.getModuleType(key)) {
                     OfflineConst.MODULE_TYPE_MODULES -> removeModuleItem(key)
                     OfflineConst.MODULE_TYPE_PAGES -> removePageItem(key)
+                    OfflineConst.MODULE_TYPE_FILES -> removeFileItem(key)
                 }
             }
 
@@ -175,6 +221,7 @@ object DownloadsRepository : CoroutineScope {
                 var isNeedSaveCourses = false
                 var isNeedSaveModules = false
                 var isNeedSavePages = false
+                var isNeedSaveFiles = false
 
                 keys.forEach { key ->
                     when (OfflineUtils.getModuleType(key)) {
@@ -189,18 +236,26 @@ object DownloadsRepository : CoroutineScope {
                             isNeedSaveCourses = true
                             isNeedSavePages = true
                         }
+
+                        OfflineConst.MODULE_TYPE_FILES -> {
+                            removeFileItem(key, isWithSave = false)
+                            isNeedSaveCourses = true
+                            isNeedSaveFiles = true
+                        }
                     }
                 }
 
                 if (isNeedSaveCourses) saveCourseData()
                 if (isNeedSaveModules) saveModuleData()
                 if (isNeedSavePages) savePageData()
+                if (isNeedSaveFiles) saveFileData()
             }
 
             override fun onItemError(key: String, error: Throwable) {
                 when (OfflineUtils.getModuleType(key)) {
                     OfflineConst.MODULE_TYPE_MODULES -> removeModuleItem(key)
                     OfflineConst.MODULE_TYPE_PAGES -> removePageItem(key)
+                    OfflineConst.MODULE_TYPE_FILES -> removeFileItem(key)
                 }
             }
 
@@ -224,6 +279,17 @@ object DownloadsRepository : CoroutineScope {
                 checkIfNeedToRemoveCourse(courseId, isWithSave)
 
                 if (isWithSave) savePageData()
+            }
+
+            private fun removeFileItem(key: String, isWithSave: Boolean = true) {
+                val courseId = OfflineUtils.getCourseId(key)
+
+                mFileItems.removeIf { it.key == key }
+                mFileItemsMap[courseId]?.removeIf { it.key == key }
+
+                checkIfNeedToRemoveCourse(courseId, isWithSave)
+
+                if (isWithSave) saveFileData()
             }
         })
 
@@ -266,6 +332,18 @@ object DownloadsRepository : CoroutineScope {
             mSaveMutex.withLock {
                 try {
                     getBookInstance().write("downloads_page_items", mPageItems)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    private fun saveFileData() {
+        launch {
+            mSaveMutex.withLock {
+                try {
+                    getBookInstance().write("downloads_file_items", mFileItems)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

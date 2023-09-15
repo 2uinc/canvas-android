@@ -1,5 +1,6 @@
 package com.instructure.student.offline.activity
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -14,8 +15,8 @@ import com.instructure.pandautils.utils.ViewStyler
 import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
 import com.instructure.student.databinding.ActivityDownloadsContentListBinding
-import com.instructure.student.offline.adapter.DownloadsModulesAdapter
-import com.instructure.student.offline.item.DownloadsModuleItem
+import com.instructure.student.offline.adapter.DownloadsFilesAdapter
+import com.instructure.student.offline.item.DownloadsFileItem
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
@@ -26,14 +27,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 
-class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
+class DownloadsFilesActivity : AppCompatActivity(), CoroutineScope {
 
     private lateinit var binding: ActivityDownloadsContentListBinding
 
     private var mCourseId = -1L
     private var mCourseName = ""
 
-    private var mDownloadsModuleAdapter: DownloadsModulesAdapter? = null
+    private var mDownloadsFilesAdapter: DownloadsFilesAdapter? = null
     private var mOfflineListener: OfflineManager.OfflineListener? = null
 
     private var mAlertDialog: AlertDialog? = null
@@ -54,21 +55,19 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
         mOfflineListener = object : OfflineManager.OfflineListener() {
 
+            @SuppressLint("NotifyDataSetChanged")
             override fun onItemRemoved(key: String) {
-                if (OfflineUtils.getModuleType(key) == OfflineConst.MODULE_TYPE_MODULES &&
+                if (OfflineUtils.getModuleType(key) == OfflineConst.MODULE_TYPE_FILES &&
                     OfflineUtils.getCourseId(key) == mCourseId
                 ) {
-                    mDownloadsModuleAdapter?.getItems()?.indexOfFirst { it.key == key }
+                    mDownloadsFilesAdapter?.getItems()?.indexOfFirst { it.key == key }
                         ?.let { index ->
                             if (index >= 0) {
-                                mDownloadsModuleAdapter?.getItems()?.removeAt(index)
-                                mDownloadsModuleAdapter?.notifyItemRemoved(index)
-                                if (index < (mDownloadsModuleAdapter?.itemCount ?: 0)) {
-                                    mDownloadsModuleAdapter?.notifyItemChanged(index)
-                                }
+                                mDownloadsFilesAdapter?.getItems()?.removeAt(index)
+                                mDownloadsFilesAdapter?.notifyItemRemoved(index)
                             }
                         }
-                    if (mDownloadsModuleAdapter?.itemCount == 0) finish()
+                    if (mDownloadsFilesAdapter?.itemCount == 0) finish()
                 }
             }
 
@@ -97,13 +96,13 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
             binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-            DownloadsRepository.getModuleItems(mCourseId)?.let {
-                mDownloadsModuleAdapter = DownloadsModulesAdapter(this,
+            DownloadsRepository.getFileItems(mCourseId)?.let {
+                mDownloadsFilesAdapter = DownloadsFilesAdapter(
                     themedColor.textAndIconColor(), it.toMutableList(),
-                    object : DownloadsModulesAdapter.OnDownloadsModuleListener {
-                        override fun onModuleItemClick(item: DownloadsModuleItem) {
+                    object : DownloadsFilesAdapter.OnDownloadsFilesListener {
+                        override fun onFileClick(fileItem: DownloadsFileItem) {
                             if (Offline.getOfflineRepository()
-                                    .getOfflineModule(item.key) == null
+                                    .getOfflineModule(fileItem.key) == null
                             ) {
                                 Snackbar.make(
                                     binding.recyclerView, R.string.download_content_not_downloaded,
@@ -114,12 +113,12 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
                             startActivity(
                                 DownloadsContentActivity.newIntent(
-                                    this@DownloadsModulesActivity, item.key
+                                    this@DownloadsFilesActivity, fileItem.key
                                 )
                             )
                         }
                     })
-                binding.recyclerView.adapter = mDownloadsModuleAdapter
+                binding.recyclerView.adapter = mDownloadsFilesAdapter
             }
         }
 
@@ -143,7 +142,7 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
         launch {
             val keys = mutableListOf<String>()
-            DownloadsRepository.getModuleItems(mCourseId)?.forEach {
+            DownloadsRepository.getFileItems(mCourseId)?.forEach {
                 keys.add(it.key)
             }
 
@@ -162,7 +161,7 @@ class DownloadsModulesActivity : AppCompatActivity(), CoroutineScope {
 
         @JvmStatic
         fun newIntent(context: Context, courseId: Long, courseName: String): Intent {
-            return Intent(context, DownloadsModulesActivity::class.java)
+            return Intent(context, DownloadsFilesActivity::class.java)
                 .putExtra(EXTRA_COURSE_ID, courseId)
                 .putExtra(EXTRA_COURSE_NAME, courseName)
         }

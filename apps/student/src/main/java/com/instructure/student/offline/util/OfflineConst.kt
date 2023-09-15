@@ -17,6 +17,9 @@ class OfflineConst {
 
         const val KEY_EXTRA_PAGE_ID = "KEY_EXTRA_PAGE_ID"
 
+        const val KEY_EXTRA_FILE_ID = "KEY_EXTRA_FILE_ID"
+        const val KEY_EXTRA_FILE_TYPE = "KEY_EXTRA_FILE_TYPE"
+
         const val KEY_EXTRA_URL = "KEY_EXTRA_URL"
 
         const val TYPE_PAGE = 0

@@ -21,6 +21,7 @@
 
     <string name="download_course_modules">Modules</string>
     <string name="download_course_pages">Pages</string>
+    <string name="download_course_files">Files</string>
 
     <string name="download_modules_remove_all">Delete all</string>
     <string name="download_modules_remove_all_dialog_title">Are you sure you want to remove all contents?</string>

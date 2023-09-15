@@ -46,8 +46,13 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
             binding.pagesLayout.setGone()
         }
 
+        if (DownloadsRepository.getFileItems(mCourseId).isNullOrEmpty()) {
+            binding.filesLayout.setGone()
+        }
+
         if (binding.modulesLayout.visibility == View.GONE &&
-            binding.pagesLayout.visibility == View.GONE
+            binding.pagesLayout.visibility == View.GONE &&
+            binding.filesLayout.visibility == View.GONE
         ) {
             finish()
         }
@@ -138,6 +143,7 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
 
                 modulesImageView.setColorFilter(themedColor.textAndIconColor())
                 pagesImageView.setColorFilter(themedColor.textAndIconColor())
+                filesImageView.setColorFilter(themedColor.textAndIconColor())
             }
 
             courseBrowserSubtitle.text = courseItem.termsName
@@ -183,6 +189,19 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
                 pagesLayout.setOnClickListener {
                     startActivity(
                         DownloadsPagesActivity.newIntent(
+                            this@DownloadsCourseActivity, courseItem.courseId, courseItem.title
+                        )
+                    )
+                }
+            }
+
+            if (DownloadsRepository.getFileItems(courseItem.courseId).isNullOrEmpty()) {
+                filesLayout.setGone()
+
+            } else {
+                filesLayout.setOnClickListener {
+                    startActivity(
+                        DownloadsFilesActivity.newIntent(
                             this@DownloadsCourseActivity, courseItem.courseId, courseItem.title
                         )
                     )

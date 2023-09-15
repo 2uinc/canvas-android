@@ -37,6 +37,12 @@ object OfflineUtils {
         return "${schoolId}_${userId}_${OfflineConst.TYPE_PAGE}_${courseId}_${pageId}"
     }
 
+    fun getFileKey(courseId: Long, fileId: Long): String {
+        val schoolId = getSchoolId()
+        val userId = ApiPrefs.user?.id ?: 0L
+        return "${schoolId}_${userId}_${OfflineConst.TYPE_FILE}_${courseId}_${fileId}"
+    }
+
     fun getModuleType(key: String): Int {
         val parsedKey = parseKey(key)
         return if (parsedKey.size == 5) {

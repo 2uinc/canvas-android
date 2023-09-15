@@ -24,6 +24,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.FileFolder
+import com.instructure.canvasapi2.models.ModuleObject
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageViewUtils
 import com.instructure.interactions.MasterDetailInteractions
@@ -34,7 +35,10 @@ import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentFileSearchBinding
+import com.instructure.student.fragment.FileDetailsFragment
 import com.instructure.student.fragment.ParentFragment
+import com.instructure.student.offline.addOfflineDataForFile
+import com.instructure.student.router.RouteMatcher
 import com.instructure.pandautils.utils.ColorUtils as PandaColorUtils
 
 @ScreenView(SCREEN_VIEW_FILE_SEARCH)
@@ -136,6 +140,12 @@ class FileSearchFragment : ParentFragment(), FileSearchView {
     }
 
     override fun fileClicked(file: FileFolder) {
+        file.url?.let {
+            val fileUrl = "courses/${canvasContext.id}/files/${file.id}"
+            RouteMatcher.route(requireContext(), FileDetailsFragment.makeRoute(canvasContext, ModuleObject(), file.id, fileUrl).addOfflineDataForFile(file.id, file.contentType.orEmpty(), fileUrl))
+            return
+        }
+
         PageViewUtils.saveSingleEvent("FilePreview", "${makePageViewUrl()}?preview=${file.id}")
         openMedia(file.contentType, file.url, file.displayName, canvasContext)
     }

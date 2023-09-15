@@ -3,7 +3,6 @@ package com.instructure.student.offline.util.downloader
 import android.net.Uri
 import com.google.gson.Gson
 import com.instructure.canvasapi2.managers.FileFolderManager
-import com.instructure.canvasapi2.models.FileFolder
 import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.awaitApiResponse
 import com.instructure.canvasapi2.utils.weave.catch
@@ -26,7 +25,7 @@ class FileOfflineDownloader(
         mFetchDataJob = tryWeave(background = true) {
             val fileUrl = mUrl?.substringAfter("/api/v1/")
                 ?: throw Exception("Page url/name null!")
-            val response = awaitApiResponse<FileFolder> {
+            val response = awaitApiResponse {
                 FileFolderManager.getFileFolderFromURL(fileUrl, true, it)
             }
 
@@ -62,8 +61,6 @@ class FileOfflineDownloader(
                 }
             }
 
-            handler.post { updateProgress(8, 10, 2000) }
-
             var filePath = ""
             file.url?.let { url ->
                 val resourceLink = ResourceLink(
@@ -78,8 +75,6 @@ class FileOfflineDownloader(
                 }
             }
 
-            handler.post { updateProgress(100, 100, 500) }
-
             val value = Gson().toJson(
                 FileOfflineItem(
                     mKeyItem.key, file.displayName ?: "", file.contentType ?: "",
@@ -87,7 +82,6 @@ class FileOfflineDownloader(
                 )
             )
             setAllDataDownloaded(OfflineModule(mKeyItem.key, value))
-
 
         } catch {
             it.printStackTrace()

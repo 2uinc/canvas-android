@@ -135,12 +135,14 @@ open class DownloadsBaseFragment : Fragment() {
             """
                 window.resizeObserver = new ResizeObserver(entries => {
                     if (document.body.children.length > 0) {
-                        var height = document.body.children[0].offsetHeight;
-                        var scrollHeight = document.body.children[0].scrollHeight;
-                        
-                        console.log("height  " + height);
-                        //if (scrollHeight > height) height = scrollHeight;
-                        javascript:window.offline.onContentHeightChanged(height);
+                        setTimeout(function() {
+                            var height = document.body.children[0].offsetHeight;
+                            var scrollHeight = document.body.children[0].scrollHeight;
+                            
+                            console.log("height  " + height);
+                            //if (scrollHeight > height) height = scrollHeight;
+                            javascript:window.offline.onContentHeightChanged(height);
+                        }, 500);
                     }
                 });                    
                     

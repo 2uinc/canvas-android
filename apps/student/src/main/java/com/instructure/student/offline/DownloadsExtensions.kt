@@ -7,9 +7,12 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.Toolbar
+import com.instructure.canvasapi2.models.FileFolder
 import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.models.ModuleObject
 import com.instructure.canvasapi2.models.Page
+import com.instructure.canvasapi2.utils.ContextKeeper
+import com.instructure.canvasapi2.utils.isValid
 import com.instructure.interactions.router.Route
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
@@ -86,6 +89,33 @@ fun DownloadItemView.initWithPageData(page: Page, courseColor: Int) {
     }
 }
 
+fun DownloadItemView.initWithFileData(item: FileFolder, courseId: Long, courseColor: Int) {
+    visibility = if (courseId == -1L || !item.displayName.isValid()) {
+        View.GONE
+
+    } else {
+        val fileUrl = "courses/${courseId}/files/${item.id}"
+
+        val extras = mutableMapOf<String, Any>()
+        extras[OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE] = OfflineConst.MODULE_TYPE_FILES
+
+        extras[OfflineConst.KEY_EXTRA_FILE_ID] = item.id
+        extras[OfflineConst.KEY_EXTRA_FILE_TYPE] = item.contentType.orEmpty()
+        extras[OfflineConst.KEY_EXTRA_URL] = fileUrl
+
+        setWithRemoveAbility()
+        setKeyItem(
+            KeyOfflineItem(
+                OfflineUtils.getFileKey(courseId, item.id), item.displayName
+                    ?: ContextKeeper.appContext.getString(com.instructure.student.R.string.file),
+                extras
+            )
+        )
+        setViewColor(courseColor)
+        View.VISIBLE
+    }
+}
+
 fun Route.addOfflineDataForModule(
     moduleIndex: Int, moduleItem: ModuleItem, moduleObject: ModuleObject? = null
 ): Route {
@@ -104,6 +134,15 @@ fun Route.addOfflineDataForPage(page: Page): Route {
 
     arguments.putLong(OfflineConst.KEY_EXTRA_PAGE_ID, page.id)
     arguments.putString(OfflineConst.KEY_EXTRA_URL, page.url ?: "")
+    return this
+}
+
+fun Route.addOfflineDataForFile(fileId: Long, contentType: String, fileUrl: String): Route {
+    arguments.putInt(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE, OfflineConst.MODULE_TYPE_FILES)
+
+    arguments.putLong(OfflineConst.KEY_EXTRA_FILE_ID, fileId)
+    arguments.putString(OfflineConst.KEY_EXTRA_FILE_TYPE, contentType)
+    arguments.putString(OfflineConst.KEY_EXTRA_URL, fileUrl)
     return this
 }
 
@@ -132,16 +171,22 @@ fun Toolbar.initWithOfflineData(
 
         setWithRemoveAbility()
 
-        val key = if (moduleType == OfflineConst.MODULE_TYPE_MODULES) {
-            val moduleId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ID)
-            val moduleItemId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID)
+        val key = when (moduleType) {
+            OfflineConst.MODULE_TYPE_MODULES -> {
+                val moduleId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ID)
+                val moduleItemId = arguments.getLong(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID)
+                OfflineUtils.getModuleKey(type, courseId, moduleId, moduleItemId)
+            }
 
-            OfflineUtils.getModuleKey(type, courseId, moduleId, moduleItemId)
+            OfflineConst.MODULE_TYPE_PAGES -> {
+                val pageId = arguments.getLong(OfflineConst.KEY_EXTRA_PAGE_ID)
+                OfflineUtils.getPageKey(courseId, pageId)
+            }
 
-        } else {
-            val pageId = arguments.getLong(OfflineConst.KEY_EXTRA_PAGE_ID)
-
-            OfflineUtils.getPageKey(courseId, pageId)
+            else -> {
+                val fileId = arguments.getLong(OfflineConst.KEY_EXTRA_FILE_ID)
+                OfflineUtils.getFileKey(courseId, fileId)
+            }
         }
         setKeyItem(KeyOfflineItem(key, title, extras))
         setViewColor(Color.WHITE)
