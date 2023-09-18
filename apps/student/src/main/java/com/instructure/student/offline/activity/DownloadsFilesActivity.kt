@@ -32,7 +32,6 @@ class DownloadsFilesActivity : AppCompatActivity(), CoroutineScope {
     private lateinit var binding: ActivityDownloadsContentListBinding
 
     private var mCourseId = -1L
-    private var mCourseName = ""
 
     private var mDownloadsFilesAdapter: DownloadsFilesAdapter? = null
     private var mOfflineListener: OfflineManager.OfflineListener? = null
@@ -49,7 +48,6 @@ class DownloadsFilesActivity : AppCompatActivity(), CoroutineScope {
         setContentView(binding.root)
 
         mCourseId = intent.getLongExtra(EXTRA_COURSE_ID, -1L)
-        mCourseName = intent.getStringExtra(EXTRA_COURSE_NAME) ?: ""
 
         initView()
 
@@ -87,7 +85,7 @@ class DownloadsFilesActivity : AppCompatActivity(), CoroutineScope {
 
     private fun initView() {
         binding.toolbar.setupAsBackButton { finish() }
-        binding.toolbar.title = mCourseName
+        binding.toolbar.setTitle(R.string.download_course_files)
 
         ColorKeeper.cachedThemedColors["course_$mCourseId"]?.let { themedColor ->
             ViewStyler.themeToolbarColored(
@@ -157,13 +155,11 @@ class DownloadsFilesActivity : AppCompatActivity(), CoroutineScope {
     companion object {
 
         private const val EXTRA_COURSE_ID = "EXTRA_COURSE_ID"
-        private const val EXTRA_COURSE_NAME = "EXTRA_COURSE_NAME"
 
         @JvmStatic
-        fun newIntent(context: Context, courseId: Long, courseName: String): Intent {
+        fun newIntent(context: Context, courseId: Long): Intent {
             return Intent(context, DownloadsFilesActivity::class.java)
                 .putExtra(EXTRA_COURSE_ID, courseId)
-                .putExtra(EXTRA_COURSE_NAME, courseName)
         }
     }
 }

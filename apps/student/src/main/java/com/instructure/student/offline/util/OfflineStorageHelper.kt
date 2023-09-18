@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 object OfflineStorageHelper {
 
     private const val PLAYER_SPEED = "playerSpeed"
+    private const val DEVICE_TOKEN = "deviceToken"
 
     private var mSharedPreferences: SharedPreferences? = null
 
@@ -25,6 +26,14 @@ object OfflineStorageHelper {
         set(value) {
             _speedState.update { value }
             storeValue(PLAYER_SPEED, value.toString())
+        }
+
+    var deviceToken: String
+        get() {
+            return getValue(DEVICE_TOKEN) ?: ""
+        }
+        set(value) {
+            storeValue(DEVICE_TOKEN, value)
         }
 
 

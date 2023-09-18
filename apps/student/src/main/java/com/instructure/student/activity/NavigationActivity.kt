@@ -93,6 +93,7 @@ import com.instructure.student.navigation.NavigationBehavior
 import com.instructure.student.navigation.NavigationMenuItem
 import com.instructure.student.navigation.OptionsMenuItem
 import com.instructure.student.offline.activity.DownloadsCoursesActivity
+import com.instructure.student.offline.util.OfflineNotificationHelper
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.router.RouteResolver
 import com.instructure.student.tasks.StudentLogoutTask
@@ -190,6 +191,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                     AlertDialog.Builder(this@NavigationActivity)
                             .setTitle(R.string.logout_warning)
                             .setPositiveButton(android.R.string.yes) { _, _ ->
+                                OfflineNotificationHelper.unsubscribeUserFromSNS()
                                 StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior).execute()
                             }
                             .setNegativeButton(android.R.string.no, null)

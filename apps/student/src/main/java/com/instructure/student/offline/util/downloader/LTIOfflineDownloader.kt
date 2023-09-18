@@ -162,6 +162,10 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+
+                processError(
+                    OfflineDownloadException(message = "Something went wrong")
+                )
             }
         }
     }

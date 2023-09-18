@@ -48,9 +48,7 @@
         <ImageView
             android:id="@+id/iconImageView"
             style="@style/AdapterItemIcon"
-            android:layout_marginBottom="12dp"
             android:importantForAccessibility="no"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:srcCompat="@drawable/ic_assignment" />
@@ -60,25 +58,26 @@
             style="@style/AdapterItemTitleText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
             android:maxLines="2"
             android:paddingLeft="@dimen/card_header_margins"
             android:paddingRight="@dimen/card_header_margins"
             android:typeface="normal"
-            app:layout_constraintBottom_toBottomOf="@+id/iconImageView"
+            android:paddingBottom="14dp"
             app:layout_constraintEnd_toStartOf="@+id/downloadItemView"
             app:layout_constraintStart_toEndOf="@+id/iconImageView"
-            app:layout_constraintTop_toTopOf="@+id/iconImageView"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="Module Name" />
 
         <com.twou.offline.view.DownloadItemView
             android:id="@+id/downloadItemView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
             android:padding="8dp"
-            app:layout_constraintBottom_toBottomOf="@+id/iconImageView"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/iconImageView" />
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>

@@ -4,12 +4,7 @@ import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.mobileconnectors.lambdainvoker.LambdaFunction
 import com.amazonaws.mobileconnectors.lambdainvoker.LambdaInvokerFactory
-import com.amazonaws.regions.Region
 import com.amazonaws.regions.Regions
-import com.amazonaws.services.sns.AmazonSNSClient
-import com.amazonaws.services.sns.model.CreatePlatformEndpointRequest
-import com.amazonaws.services.sns.model.CreateTopicRequest
-import com.amazonaws.services.sns.model.SubscribeRequest
 import com.google.firebase.messaging.FirebaseMessaging
 import com.instructure.canvasapi2.managers.CommunicationChannelsManager
 import com.instructure.canvasapi2.managers.NotificationPreferencesManager
@@ -53,7 +48,7 @@ object OfflineNotificationHelper {
 
                 FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                     tryWeave(background = true) {
-                        if (task.isSuccessful) subscribeToUserSNSTopic(task.result, user.id)
+                        if (task.isSuccessful) subscribeUserToSNS(task.result, user.id)
                     } catch {
                         it.printStackTrace()
                     }
@@ -64,24 +59,25 @@ object OfflineNotificationHelper {
         }
     }
 
+    fun unsubscribeUserFromSNS() {
+        val userId = ApiPrefs.user?.id ?: return
+        val domain = ApiPrefs.domain
+        val token = OfflineStorageHelper.deviceToken
+
+        try {
+            getLambdaInvoker()
+                .deletePlatformEndpoint(DeletePlatformRequest("$userId", domain, token))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private suspend fun createUserChannel(userId: Long, pushChannelId: Long) {
         val domain = ApiPrefs.domain
 
-        val provider = object : AWSCredentialsProvider {
-            override fun getCredentials() = getAmazonCredentials()
-
-            override fun refresh() {
-
-            }
-        }
-        val factory = LambdaInvokerFactory.builder()
-            .context(ContextKeeper.appContext)
-            .region(Regions.US_EAST_1)
-            .credentialsProvider(provider)
-
         try {
-            val response = factory.build().build(ILambda::class.java)
-                .createUserChannel(UserChannelRequest("$userId", domain))
+            val response =
+                getLambdaInvoker().createUserChannel(UserChannelRequest("$userId", domain))
 
             val jo = JSONObject(response.body)
             val channelId = jo.getLong("id")
@@ -124,25 +120,16 @@ object OfflineNotificationHelper {
         ).await().dataOrThrow
     }
 
-    private fun subscribeToUserSNSTopic(token: String, userId: Long) {
-        val snsClient = AmazonSNSClient(getAmazonCredentials())
-        snsClient.setRegion(Region.getRegion(Regions.US_EAST_1))
+    private fun subscribeUserToSNS(token: String, userId: Long) {
+        OfflineStorageHelper.deviceToken = token
+        val domain = ApiPrefs.domain
 
-        val endpointRequest = CreatePlatformEndpointRequest()
-        endpointRequest.platformApplicationArn = BuildConfig.AWS_ARN
-        endpointRequest.token = token
-
-        val domain = ApiPrefs.domain.replace(".", "_").replace("-", "_")
-        val topicName = "icanvas_mobile_${domain}_$userId"
-
-        val platformEndpointRequest = snsClient.createPlatformEndpoint(endpointRequest)
-        val topicRequest = CreateTopicRequest(topicName)
-        val createTopicResult = snsClient.createTopic(topicRequest)
-
-        val subscribeRequest = SubscribeRequest(
-            createTopicResult.topicArn, "application", platformEndpointRequest.endpointArn
-        )
-        val subscribeResult = snsClient.subscribe(subscribeRequest)
+        try {
+            getLambdaInvoker()
+                .createPlatformEndpoint(CreatePlatformRequest("$userId", domain, token))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun getAmazonCredentials() = object : AWSCredentials {
@@ -155,6 +142,21 @@ object OfflineNotificationHelper {
         }
     }
 
+    private fun getLambdaInvoker(): ILambda {
+        val provider = object : AWSCredentialsProvider {
+            override fun getCredentials() = getAmazonCredentials()
+
+            override fun refresh() {
+
+            }
+        }
+        return LambdaInvokerFactory.builder()
+            .context(ContextKeeper.appContext)
+            .region(Regions.US_EAST_1)
+            .credentialsProvider(provider)
+            .build().build(ILambda::class.java)
+    }
+
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface OfflineNotificationEntryPoint {
@@ -165,8 +167,23 @@ object OfflineNotificationHelper {
 
         @LambdaFunction
         fun createUserChannel(request: UserChannelRequest): UserChannelResponse
+
+        @LambdaFunction
+        fun createPlatformEndpoint(request: CreatePlatformRequest)
+
+        @LambdaFunction
+        fun deletePlatformEndpoint(request: DeletePlatformRequest)
     }
 
     data class UserChannelRequest(val userid: String, val domain: String)
     data class UserChannelResponse(val body: String)
+
+    data class CreatePlatformRequest(
+        val userid: String, val domain: String, val deviceToken: String,
+        val osType: String = "android"
+    )
+
+    data class DeletePlatformRequest(
+        val userid: String, val domain: String, val deviceToken: String
+    )
 }

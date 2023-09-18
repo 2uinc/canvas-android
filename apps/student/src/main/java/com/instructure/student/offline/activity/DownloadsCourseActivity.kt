@@ -176,7 +176,7 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
                 modulesLayout.setOnClickListener {
                     startActivity(
                         DownloadsModulesActivity.newIntent(
-                            this@DownloadsCourseActivity, courseItem.courseId, courseItem.title
+                            this@DownloadsCourseActivity, courseItem.courseId
                         )
                     )
                 }
@@ -189,7 +189,7 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
                 pagesLayout.setOnClickListener {
                     startActivity(
                         DownloadsPagesActivity.newIntent(
-                            this@DownloadsCourseActivity, courseItem.courseId, courseItem.title
+                            this@DownloadsCourseActivity, courseItem.courseId
                         )
                     )
                 }
@@ -202,7 +202,7 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
                 filesLayout.setOnClickListener {
                     startActivity(
                         DownloadsFilesActivity.newIntent(
-                            this@DownloadsCourseActivity, courseItem.courseId, courseItem.title
+                            this@DownloadsCourseActivity, courseItem.courseId
                         )
                     )
                 }
