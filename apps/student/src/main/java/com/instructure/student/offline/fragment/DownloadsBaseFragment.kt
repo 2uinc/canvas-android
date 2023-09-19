@@ -5,16 +5,13 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
-import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import com.instructure.canvasapi2.utils.APIHelper
 import com.instructure.pandautils.utils.DP
-import com.instructure.student.R
 import com.instructure.student.offline.view.CustomPlayerView
 
 open class DownloadsBaseFragment : Fragment() {
@@ -22,7 +19,7 @@ open class DownloadsBaseFragment : Fragment() {
     lateinit var mContext: Context
 
     private val mOfflineHandler = Handler(Looper.getMainLooper())
-    private val mVideoViewList = mutableMapOf<String, View>()
+    private val mVideoViewList = mutableMapOf<String, CustomPlayerView>()
 
     private var mCurrentVideoIdToPlay = ""
 
@@ -52,29 +49,24 @@ open class DownloadsBaseFragment : Fragment() {
                 return APIHelper.hasNetworkConnection()
             }
 
-            @SuppressLint("InflateParams")
+            @SuppressLint("InflateParams", "ClickableViewAccessibility")
             @Suppress("UNUSED_PARAMETER", "unused")
             @JavascriptInterface
             fun onProcessVideoPlayer(
                 url: String, subtitleUrl: String, id: String, x: Int, y: Int
             ) {
                 mOfflineHandler.post {
-                    var videoLayout = mVideoViewList[id]
+                    var videoView = mVideoViewList[id]
 
-                    if (videoLayout == null) {
-                        videoLayout = LayoutInflater.from(mContext)
-                            .inflate(R.layout.layout_offline_video, null)
-
-                        val videoView =
-                            videoLayout.findViewById<CustomPlayerView>(R.id.customPlayerView)
+                    if (videoView == null) {
+                        videoView = CustomPlayerView(mContext)
                         videoView.linkActivity(activity)
-                        videoLayout.id = "video_layout_$id".hashCode()
                         videoView.id = "video_view_$id".hashCode()
 
-                        mVideoViewList[id] = videoLayout
+                        mVideoViewList[id] = videoView
 
                         webView.addView(
-                            videoLayout,
+                            videoView,
                             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                         )
 
@@ -123,7 +115,7 @@ open class DownloadsBaseFragment : Fragment() {
                         }
                     }
 
-                    videoLayout?.setPadding(0, mContext.DP(y).toInt(), 0, 0)
+                    videoView.y = mContext.DP(y)
                 }
             }
 
@@ -190,13 +182,17 @@ open class DownloadsBaseFragment : Fragment() {
     }
 
     open fun onBackPressed(): Boolean {
+        getFullscreenVideoPlayer()?.let {
+            it.exitFullscreen()
+            return true
+        }
+
         return false
     }
 
     private fun pauseAllOtherVideosExceptTheCurrentOne(videoId: String) {
         mVideoViewList.entries.forEach { entry ->
-            val childView = (entry.value as ViewGroup).children.firstOrNull()
-            val playerView = childView as? CustomPlayerView
+            val playerView = entry.value as? CustomPlayerView
             if (entry.key != videoId && playerView?.isVideoPlay() == true) {
                 playerView.pause()
             }
@@ -205,11 +201,17 @@ open class DownloadsBaseFragment : Fragment() {
 
     private fun getCurrentVideoPlayer(): CustomPlayerView? {
         mVideoViewList.values.forEach { view ->
-            val childView = (view as ViewGroup).children.firstOrNull()
-            val playerView = childView as? CustomPlayerView
+            val playerView = view as? CustomPlayerView
             if (playerView?.isVideoPlay() == true) return playerView
         }
+        return null
+    }
 
+    private fun getFullscreenVideoPlayer(): CustomPlayerView? {
+        mVideoViewList.values.forEach { view ->
+            val playerView = view as? CustomPlayerView
+            if (playerView?.isInFullscreenMode == true) return playerView
+        }
         return null
     }
 }

@@ -1,5 +1,6 @@
 package com.instructure.student.offline.view
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
@@ -7,10 +8,7 @@ import android.content.res.Resources
 import android.graphics.Rect
 import android.net.Uri
 import android.util.AttributeSet
-import android.view.KeyEvent
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.FrameLayout
 import android.widget.PopupWindow
 import android.widget.TextView
@@ -48,6 +46,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlin.math.abs
 
+@SuppressLint("ClickableViewAccessibility")
 class CustomPlayerView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -66,8 +65,6 @@ class CustomPlayerView @JvmOverloads constructor(
 
     private var mCurrentVolume = 0f
     private var mActivity: Activity? = null
-
-    private var mCustomView: View? = null
 
     private var mListener: Listener? = null
     var isInFullscreenMode = false
@@ -119,7 +116,7 @@ class CustomPlayerView @JvmOverloads constructor(
 
         mExitFullscreenButton = binding.playerView.findViewById(R.id.exitFullscreenButton)
         mExitFullscreenButton.setOnClickListener { exitFullscreen() }
-        binding.fullscreenVideoLayout.setOnClickListener { }
+        binding.playerView.isClickable = false
 
         settingsView =
             RecyclerView(ContextThemeWrapper(context, R.style.ScrollbarRecyclerView)).apply {
@@ -186,6 +183,18 @@ class CustomPlayerView @JvmOverloads constructor(
             )
 
             mListener?.onIsPlayingChanged(false)
+        }
+
+        binding.playerView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                if (binding.playerView.isControllerVisible) {
+                    binding.playerView.hideController()
+
+                } else {
+                    binding.playerView.showController()
+                }
+            }
+            isInFullscreenMode
         }
     }
 
@@ -334,14 +343,12 @@ class CustomPlayerView @JvmOverloads constructor(
     fun enterFullscreen() {
         if (isInFullscreenMode) return
 
-        mCustomView = binding.fullscreenVideoLayout
-
         hideBars()
 
-        binding.parentVideoLayout.removeView(mCustomView)
+        removeView(binding.playerView)
 
         (mActivity?.window?.decorView as FrameLayout).addView(
-            mCustomView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            binding.playerView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         )
 
         mExitFullscreenButton.visibility = View.VISIBLE
@@ -355,7 +362,7 @@ class CustomPlayerView @JvmOverloads constructor(
     fun exitFullscreen() {
         if (!isInFullscreenMode) return
 
-        (mActivity?.window?.decorView as FrameLayout).removeView(mCustomView)
+        (mActivity?.window?.decorView as FrameLayout).removeView(binding.playerView)
         mActivity?.window?.let { window ->
             WindowCompat.setDecorFitsSystemWindows(window, true)
             WindowInsetsControllerCompat(
@@ -364,11 +371,9 @@ class CustomPlayerView @JvmOverloads constructor(
             ).show(WindowInsetsCompat.Type.systemBars())
         }
 
-        binding.parentVideoLayout.addView(
-            mCustomView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+        addView(
+            binding.playerView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         )
-
-        mCustomView = null
 
         mExitFullscreenButton.visibility = View.GONE
         mEnterFullscreenButton.visibility = View.VISIBLE
@@ -401,29 +406,19 @@ class CustomPlayerView @JvmOverloads constructor(
     }
 
     private fun updateVideoSize() {
-        if (isPiPMode && isInFullscreenMode) {
-            binding.playerView.layoutParams =
-                LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-            return
-        }
+        if (isPiPMode && isInFullscreenMode) return
 
         val screenWidth = Resources.getSystem().displayMetrics.widthPixels
         val screenHeight = Resources.getSystem().displayMetrics.heightPixels
 
-        if (screenWidth < screenHeight) {
-            val height = 9 * screenWidth / 16
-            binding.playerView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, height)
+        val videoHeight = if (screenWidth < screenHeight) 9 * screenWidth / 16 else screenHeight
 
-            if (!isInFullscreenMode) mListener?.onSizeChanged(context.PX(height))
-
-        } else {
-            binding.playerView.layoutParams = LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                if (isInFullscreenMode) LayoutParams.MATCH_PARENT else screenHeight
-            )
-
-            if (!isInFullscreenMode) mListener?.onSizeChanged(context.PX(screenHeight))
+        layoutParams?.apply {
+            height = videoHeight
+            layoutParams = this
         }
+
+        if (!isInFullscreenMode) mListener?.onSizeChanged(context.PX(videoHeight))
     }
 
     private fun displaySettingsWindow() {

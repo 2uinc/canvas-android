@@ -47,7 +47,7 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
             return true
         }
 
-        return false
+        return super.onBackPressed()
     }
 
     private fun initWebViewForOffline() {

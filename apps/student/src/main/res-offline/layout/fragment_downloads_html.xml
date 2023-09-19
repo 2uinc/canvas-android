@@ -4,17 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollView"
+    <FrameLayout
+        android:id="@+id/webViewLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-
-        <FrameLayout
-            android:id="@+id/webViewLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </androidx.core.widget.NestedScrollView>
+        android:layout_height="match_parent" />
 
     <RelativeLayout
         android:id="@+id/progressBar"
