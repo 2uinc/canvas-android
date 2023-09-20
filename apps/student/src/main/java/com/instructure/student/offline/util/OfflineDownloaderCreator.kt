@@ -79,7 +79,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
             mCanvasContext = canvasContext
 
             var logoPath = ""
-            canvasContext.imageUrl?.let { logoPath = downloadCourseImage(it) }
+            canvasContext.imageUrl?.let { logoPath = downloadCourseImage(it, courseId) }
 
             when (getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_CONTENT_MODULE_TYPE)) {
                 OfflineConst.MODULE_TYPE_MODULES -> {
@@ -238,7 +238,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
         mOfflineDownloader?.destroy()
     }
 
-    private fun downloadCourseImage(url: String): String {
+    private fun downloadCourseImage(url: String, courseId: Long): String {
         val client = OkHttpClient.Builder()
             .readTimeout(60, TimeUnit.SECONDS)
             .connectTimeout(60, TimeUnit.SECONDS)
@@ -263,7 +263,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
         if (!schoolDir.exists()) schoolDir.mkdirs()
 
         val downloadFile =
-            File(OfflineDownloaderUtils.getGeneralDirPath() + "/${schoolId}/logo.png")
+            File(OfflineDownloaderUtils.getGeneralDirPath() + "/${schoolId}/logo_$courseId.png")
         if (downloadFile.exists()) {
             body?.close()
             return downloadFile.path

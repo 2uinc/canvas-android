@@ -79,11 +79,16 @@ object DownloadsRepository : CoroutineScope {
     fun addModuleItem(courseItem: DownloadsCourseItem, moduleItem: DownloadsModuleItem) {
         if (!isLoaded) loadData()
 
-        if (mCourseItems.firstOrNull { it.courseId == courseItem.courseId } == null) {
+        val currentCourseItem = mCourseItems.firstOrNull { it.courseId == courseItem.courseId }
+        if (currentCourseItem == null) {
             mCourseItems.add(courseItem)
             mCourseItems.sortBy { it.index }
-            saveCourseData()
+
+        } else {
+            currentCourseItem.logoPath = courseItem.logoPath
         }
+
+        saveCourseData()
 
         if (mModuleItems.firstOrNull { it?.key == moduleItem.key } == null) {
             mModuleItems.add(moduleItem)
