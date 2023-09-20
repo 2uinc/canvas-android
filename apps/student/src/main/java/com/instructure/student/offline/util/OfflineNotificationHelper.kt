@@ -12,6 +12,7 @@ import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
+import com.instructure.canvasapi2.utils.weave.weave
 import com.instructure.student.BuildConfig
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -64,11 +65,15 @@ object OfflineNotificationHelper {
         val domain = ApiPrefs.domain
         val token = OfflineStorageHelper.deviceToken
 
-        try {
-            getLambdaInvoker()
-                .deletePlatformEndpoint(DeletePlatformRequest("$userId", domain, token))
-        } catch (e: Exception) {
-            e.printStackTrace()
+        weave {
+            inBackground {
+                try {
+                    getLambdaInvoker()
+                        .deletePlatformEndpoint(DeletePlatformRequest("$userId", domain, token))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
