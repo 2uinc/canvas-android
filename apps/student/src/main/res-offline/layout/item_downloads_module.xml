@@ -43,27 +43,29 @@
         android:id="@+id/mainLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:foreground="?attr/selectableItemBackground">
+        android:foreground="?attr/selectableItemBackground"
+        android:paddingVertical="8dp">
 
         <ImageView
             android:id="@+id/iconImageView"
-            style="@style/AdapterItemIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="16dp"
             android:importantForAccessibility="no"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:srcCompat="@drawable/ic_assignment" />
+            tools:srcCompat="@drawable/ic_lti" />
 
         <TextView
             android:id="@+id/moduleItemTextView"
             style="@style/AdapterItemTitleText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_height="match_parent"
             android:maxLines="2"
-            android:paddingLeft="@dimen/card_header_margins"
-            android:paddingRight="@dimen/card_header_margins"
+            android:paddingHorizontal="@dimen/card_header_margins"
             android:typeface="normal"
-            android:paddingBottom="14dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/downloadItemView"
             app:layout_constraintStart_toEndOf="@+id/iconImageView"
             app:layout_constraintTop_toTopOf="parent"
@@ -73,9 +75,9 @@
             android:id="@+id/downloadItemView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
             android:padding="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
