@@ -217,6 +217,11 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                         OfflineDownloadException(message = "Failed to create Offline Downloader")
                     )
 
+                } else if (url.contains("voicethread")) {
+                    unit(
+                        null, OfflineUnsupportedException(message = "No support for VoiceThread")
+                    )
+
                 } else {
                     mOfflineDownloader = LTIOfflineDownloader(url, getKeyOfflineItem())
                 }

@@ -1,6 +1,7 @@
 package com.instructure.student.offline.util
 
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.isNullOrEmpty
 import com.instructure.student.offline.item.DownloadsCourseItem
 import com.instructure.student.offline.item.DownloadsFileItem
 import com.instructure.student.offline.item.DownloadsModuleItem
@@ -302,7 +303,9 @@ object DownloadsRepository : CoroutineScope {
     }
 
     private fun checkIfNeedToRemoveCourse(courseId: Long, isWithSave: Boolean = true) {
-        if (mModuleItemsMap[courseId].isNullOrEmpty() && mPageItemsMap[courseId].isNullOrEmpty()) {
+        if (mModuleItemsMap[courseId].isNullOrEmpty() && mPageItemsMap[courseId].isNullOrEmpty() &&
+            mFileItemsMap[courseId].isNullOrEmpty()
+        ) {
             mCourseItems.removeIf { it.courseId == courseId }
             if (isWithSave) saveCourseData()
         }

@@ -1,10 +1,10 @@
 package com.instructure.student.offline.activity
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
@@ -16,10 +16,20 @@ import com.instructure.student.offline.adapter.DownloadsCoursesAdapter
 import com.instructure.student.offline.item.DownloadsCourseItem
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.util.StudentPrefs
+import com.twou.offline.Offline
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
 
-class DownloadsCoursesActivity : AppCompatActivity() {
+class DownloadsCoursesActivity : AppCompatActivity(), CoroutineScope {
 
     private lateinit var binding: ActivityDownloadsCoursesBinding
+
+    private var mAlertDialog: AlertDialog? = null
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +47,11 @@ class DownloadsCoursesActivity : AppCompatActivity() {
         binding.recyclerView.adapter?.notifyDataSetChanged()
 
         checkForEmptyState()
+    }
+
+    override fun onDestroy() {
+        mAlertDialog?.dismiss()
+        super.onDestroy()
     }
 
     private fun initView() {
@@ -84,6 +99,20 @@ class DownloadsCoursesActivity : AppCompatActivity() {
         val padding = resources.getDimensionPixelSize(R.dimen.courseListPadding)
         binding.recyclerView.setPaddingRelative(padding, padding, padding, padding)
         binding.recyclerView.clipToPadding = false
+
+        binding.removeAllTextView.setOnClickListener {
+            if (mAlertDialog == null) {
+                mAlertDialog = AlertDialog.Builder(this)
+                    .setPositiveButton(R.string.delete) { _, _ ->
+                        removeAllContents()
+                    }
+                    .setNegativeButton(R.string.cancel) { _, _ -> }
+                    .setMessage(R.string.download_modules_remove_all_dialog_title)
+                    .show()
+            }
+
+            mAlertDialog?.show()
+        }
     }
 
     private fun checkForEmptyState() {
@@ -93,7 +122,34 @@ class DownloadsCoursesActivity : AppCompatActivity() {
             binding.emptyView.setMessageText(R.string.download_no_courses_subtext)
             binding.emptyView.setListEmpty()
             binding.emptyView.setVisible()
-            binding.recyclerView.visibility = View.GONE
+            binding.recyclerView.setGone()
+            binding.removeAllTextView.setGone()
+        }
+    }
+
+    private fun removeAllContents() {
+        binding.progressBar.setVisible()
+
+        launch {
+            val keys = mutableListOf<String>()
+            DownloadsRepository.getCourses().forEach { courseItem ->
+                DownloadsRepository.getModuleItems(courseItem.courseId)?.forEach {
+                    keys.add(it.key)
+                }
+                DownloadsRepository.getPageItems(courseItem.courseId)?.forEach {
+                    keys.add(it.key)
+                }
+                DownloadsRepository.getFileItems(courseItem.courseId)?.forEach {
+                    keys.add(it.key)
+                }
+            }
+
+            Offline.getOfflineManager().remove(keys)
+
+            launch(Dispatchers.Main) {
+                checkForEmptyState()
+                binding.progressBar.setGone()
+            }
         }
     }
 
