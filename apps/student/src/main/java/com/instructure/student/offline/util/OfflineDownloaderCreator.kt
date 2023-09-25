@@ -1,6 +1,8 @@
 package com.instructure.student.offline.util
 
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.webkit.CookieManager
 import com.instructure.canvasapi2.managers.CourseManager
 import com.instructure.canvasapi2.models.Course
@@ -51,6 +53,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
     private var isPrepared = false
     private var mCanvasContext: Course? = null
     private var mOfflineDownloader: BaseOfflineDownloader? = null
+    private var mHandler = Handler(Looper.getMainLooper())
 
     override fun getKeyOfflineItem(): KeyOfflineItem {
         return offlineQueueItem.keyItem
@@ -167,7 +170,7 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                     )
 
                 } else {
-                    createOfflineDownloader(unit)
+                    mHandler.post { createOfflineDownloader(unit) }
                 }
             }
             return

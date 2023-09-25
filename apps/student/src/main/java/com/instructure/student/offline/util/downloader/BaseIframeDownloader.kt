@@ -62,32 +62,41 @@ abstract class BaseIframeDownloader(keyItem: KeyOfflineItem) : BaseHtmlOnePageDo
     }
 
     private fun loadIframe() {
-        val link = mIframeLinks[mCurrentIframePosition].link
-        val html = downloadFileContent(link)
+        try {
+            val link = mIframeLinks[mCurrentIframePosition].link
+            val html = downloadFileContent(link)
 
-        val iFrameDocument = Jsoup.parse(html)
-        mIframeLinks[mCurrentIframePosition].element.replaceWith(iFrameDocument)
+            val iFrameDocument = Jsoup.parse(html)
+            mIframeLinks[mCurrentIframePosition].element.replaceWith(iFrameDocument)
 
-        mCurrentIframePosition++
+            mCurrentIframePosition++
 
-        getAllVideosAndDownload(
-            iFrameDocument, object : OfflineHtmlVideoChecker.OnVideoProcessListener() {
-                override fun onVideoLoaded(videoLinks: List<OfflineHtmlVideoChecker.VideoLink>) {
-                    if (isDestroyed.get()) return
+            getAllVideosAndDownload(
+                iFrameDocument, object : OfflineHtmlVideoChecker.OnVideoProcessListener() {
+                    override fun onVideoLoaded(videoLinks: List<OfflineHtmlVideoChecker.VideoLink>) {
+                        if (isDestroyed.get()) return
 
-                    if (mCurrentIframePosition >= mIframeLinks.size) {
-                        launch { checkForIFrames(isWithVideoCheck = false) }
+                        if (mCurrentIframePosition >= mIframeLinks.size) {
+                            launch {
+                                mInitHtmlDocument?.let { document -> removeUnusedIframes(document) }
+                            }
 
-                    } else {
-                        launch { loadIframe() }
+                        } else {
+                            launch { loadIframe() }
+                        }
                     }
-                }
 
-                override fun onError(e: Exception) {
-                    processError(e)
-                }
-            }, isNeedReplaceIframes = false
-        )
+                    override fun onError(e: Exception) {
+                        processError(e)
+                    }
+                }, isNeedReplaceIframes = false
+            )
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+
+            processError(e)
+        }
     }
 
     private fun removeUnusedIframes(document: Document) {

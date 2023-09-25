@@ -143,6 +143,7 @@ class DownloadsCoursesActivity : AppCompatActivity(), CoroutineScope {
                     keys.add(it.key)
                 }
             }
+            keys.addAll(Offline.getOfflineRepository().getAllModules().map { it.key })
 
             Offline.getOfflineManager().remove(keys)
 

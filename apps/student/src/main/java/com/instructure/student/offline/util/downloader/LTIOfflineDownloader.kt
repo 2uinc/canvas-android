@@ -156,6 +156,11 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                     isGetAuthUrl = true
                     handler.post { getWebView(mHtmlListener)?.loadUrl(mUrl) }
 
+                } else if (text.contains("unauthorized")) {
+                    processError(
+                        OfflineUnsupportedException(message = "No support for Unauthorized content")
+                    )
+
                 } else {
                     val ltiItem = Gson().fromJson(text, LTIItem::class.java)
                     processLTIItem(ltiItem)
@@ -230,6 +235,11 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 } else if (redirectUrl.contains("leap")) {
                     processError(
                         OfflineUnsupportedException(message = "No support for Leap")
+                    )
+
+                } else if (redirectUrl.contains("inscribe.education")) {
+                    processError(
+                        OfflineUnsupportedException(message = "No support for inscribe education")
                     )
 
                 } else if (redirectUrl.contains("course-player?auth_token=")) {
@@ -316,7 +326,7 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
         } else {
             val element = coursePlayerItem.segment.elements.firstOrNull()
-            if (element?.typeId == 21 || element?.typeId == 2) {
+            if (element?.typeId == 21 || element?.typeId == 2 || element?.typeId == 1) {
                 try {
                     processCoursePlayerVideoElement(element, host, token)
                 } catch (e: Exception) {

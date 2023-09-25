@@ -245,7 +245,10 @@ class CustomPlayerView @JvmOverloads constructor(
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
-        if (playbackState == Player.STATE_ENDED) {
+        if (playbackState == Player.STATE_READY) {
+            binding.playerView.showController()
+
+        } else if (playbackState == Player.STATE_ENDED) {
             isFromTts = false
             mListener?.onVideoEnded()
         }

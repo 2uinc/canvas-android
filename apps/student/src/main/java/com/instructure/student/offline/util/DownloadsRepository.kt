@@ -257,14 +257,6 @@ object DownloadsRepository : CoroutineScope {
                 if (isNeedSaveFiles) saveFileData()
             }
 
-            override fun onItemError(key: String, error: Throwable) {
-                when (OfflineUtils.getModuleType(key)) {
-                    OfflineConst.MODULE_TYPE_MODULES -> removeModuleItem(key)
-                    OfflineConst.MODULE_TYPE_PAGES -> removePageItem(key)
-                    OfflineConst.MODULE_TYPE_FILES -> removeFileItem(key)
-                }
-            }
-
             private fun removeModuleItem(key: String, isWithSave: Boolean = true) {
                 val courseId = OfflineUtils.getCourseId(key)
 
