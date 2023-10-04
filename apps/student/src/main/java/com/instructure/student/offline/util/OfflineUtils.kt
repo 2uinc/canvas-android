@@ -12,6 +12,7 @@ import androidx.core.graphics.drawable.toBitmap
 import com.google.gson.Gson
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
+import com.instructure.pandautils.utils.toast
 import com.instructure.student.R
 import com.instructure.student.offline.item.FileOfflineItem
 import com.twou.offline.item.OfflineModule
@@ -130,6 +131,7 @@ object OfflineUtils {
         try {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
+            context.toast(R.string.noApps)
             return false
         }
 

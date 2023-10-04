@@ -59,9 +59,6 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
                 webView.webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView?, url: String?) {
                         if (!isAdded) return
-                        /*mWebView?.let { webView ->
-                            addResizeObserverToWebView(webView)
-                        }*/
                         binding.progressBar.visibility = View.GONE
                     }
 

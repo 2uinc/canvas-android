@@ -291,9 +291,10 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
         )
         val oysterItem =
             Gson().fromJson(oysterContent, DownloadsContentPlayerItem::class.java)
+        val oysterElement = oysterItem.segment.elements.firstOrNull()
 
         val videoContent = downloadFileContent(
-            "${host}/content/files-api/files/bundler/cit-oyster?videoUUID=${oysterItem.segment.elements.firstOrNull()?.videoUuid}",
+            "${host}/content/files-api/files/bundler/cit-oyster?videoUUID=${oysterElement?.videoUuid}",
             mapOf("Authorization" to token)
         )
         val videoItem = Gson().fromJson(videoContent, DownloadsOysterVideoItem::class.java)
@@ -326,9 +327,9 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
 
         } else {
             val element = coursePlayerItem.segment.elements.firstOrNull()
-            if (element?.typeId == 21 || element?.typeId == 2 || element?.typeId == 1) {
+            if (!element?.videoUuid.isNullOrEmpty()) {
                 try {
-                    processCoursePlayerVideoElement(element, host, token)
+                    processCoursePlayerVideoElement(element!!, host, token)
                 } catch (e: Exception) {
                     e.printStackTrace()
 
@@ -336,7 +337,9 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
                 }
 
             } else {
-                handler.post { getWebView(mHtmlListener)?.loadUrl(redirectUrl) }
+                processError(
+                    OfflineUnsupportedException(message = "No support for Course Player without videoUUID for type " + element?.typeId)
+                )
             }
         }
     }
@@ -412,7 +415,9 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
         val call = client.newCall(request)
 
         val response = call.execute()
-        return response.headers.find { it.first.equals("location", true) }?.second ?: ""
+        val location = response.headers.find { it.first.equals("location", true) }?.second ?: ""
+        response.body?.close()
+        return location
     }
 
     data class IframeElement(val link: String, val element: Element)
