@@ -28,6 +28,8 @@ class PageOfflineDownloader(
     private var mLoadHtmlJob: Job? = null
 
     override fun startPreparation() {
+        processDebug("start prepare Page content")
+
         mFetchDataJob = tryWeave {
             val response = awaitApiResponse {
                 PageManager.getPageDetails(mCanvasContext, mUrl, true, it)

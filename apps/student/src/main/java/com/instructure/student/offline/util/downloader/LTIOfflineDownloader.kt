@@ -118,6 +118,8 @@ class LTIOfflineDownloader(private var mUrl: String, keyItem: KeyOfflineItem) :
     }
 
     override fun startPreparation() {
+        processDebug("start prepare LTI content")
+
         sessionAuthJob = weave {
             if (ApiPrefs.domain in mUrl) {
                 try {

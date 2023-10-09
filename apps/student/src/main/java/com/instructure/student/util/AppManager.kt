@@ -31,6 +31,10 @@ import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.tasks.StudentLogoutTask
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
+import com.twou.offline.data.IOfflineLoggerInterceptor
+import com.twou.offline.item.KeyOfflineItem
+import com.twou.offline.util.OfflineLoggerType
+import com.twou.offline.util.OfflineLogs
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -50,6 +54,16 @@ class AppManager : BaseAppManager() {
         Offline.init(
             this, Offline.Builder().setHtmlErrorOverlay(OfflineUtils.getHtmlErrorOverlay())
                 .setHtmlErrorScript("").setHtmlErrorCSS("")
+                .setOfflineLoggerInterceptor(object : IOfflineLoggerInterceptor {
+                    override fun onLogMessage(
+                        keyItem: KeyOfflineItem?, type: OfflineLoggerType, message: String
+                    ) {
+                        OfflineLogs.w(
+                            "Offline",
+                            keyItem?.key + "; " + keyItem?.title + "; " + type + "; " + message
+                        )
+                    }
+                })
         ) { OfflineDownloaderCreator(it) }
 
         Offline.getOfflineManager().addListener(object : OfflineManager.OfflineListener() {
