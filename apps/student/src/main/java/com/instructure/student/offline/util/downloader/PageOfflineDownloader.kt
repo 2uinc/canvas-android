@@ -1,6 +1,5 @@
 package com.instructure.student.offline.util.downloader
 
-import androidx.annotation.ColorRes
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.managers.PageManager
@@ -12,7 +11,6 @@ import com.instructure.canvasapi2.utils.FileUtils
 import com.instructure.canvasapi2.utils.weave.*
 import com.instructure.pandautils.utils.HtmlContentFormatter
 import com.instructure.pandautils.views.CanvasWebView
-import com.instructure.pandautils.views.HtmlFormatColors
 import com.instructure.student.R
 import com.twou.offline.error.OfflineDownloadException
 import com.twou.offline.item.KeyOfflineItem
@@ -84,20 +82,9 @@ class PageOfflineDownloader(
                 val htmlWrapper =
                     FileUtils.getAssetsFile(ContextKeeper.appContext, htmlWrapperFileName)
 
-                val htmlFormatColors = HtmlFormatColors()
-
                 val result = htmlWrapper
                     .replace("{\$CONTENT$}", formatted)
                     .replace("{\$TITLE$}", page.title ?: "")
-                    .replace(
-                        "{\$BACKGROUND$}", colorResToHexString(htmlFormatColors.backgroundColorRes)
-                    )
-                    .replace("{\$COLOR$}", colorResToHexString(htmlFormatColors.textColor))
-                    .replace("{\$LINK_COLOR$}", colorResToHexString(htmlFormatColors.linkColor))
-                    .replace(
-                        "{\$VISITED_LINK_COLOR\$}",
-                        colorResToHexString(htmlFormatColors.visitedLinkColor)
-                    )
 
                 if (isDestroyed.get()) return@weave
 
@@ -137,9 +124,5 @@ class PageOfflineDownloader(
         </script>$content"""
         }
         return content
-    }
-
-    private fun colorResToHexString(@ColorRes colorRes: Int): String {
-        return "#" + Integer.toHexString(ContextKeeper.appContext.getColor(colorRes)).substring(2)
     }
 }

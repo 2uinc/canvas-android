@@ -8,11 +8,16 @@ import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.annotation.ColorRes
+import com.instructure.canvasapi2.utils.ContextKeeper
+import com.instructure.pandautils.views.HtmlFormatColors
 import com.instructure.student.databinding.FragmentDownloadsHtmlBinding
 import com.instructure.student.offline.util.DownloadsUtils
+import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
 import com.twou.offline.Offline
 import com.twou.offline.util.OfflineDownloaderUtils
+import java.io.File
 
 class DownloadsHtmlFragment : DownloadsBaseFragment() {
 
@@ -52,7 +57,6 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
 
     private fun initWebViewForOffline() {
         mOfflineRepository.getOfflineModule(mKey)?.let {
-            val url = OfflineDownloaderUtils.getStartPagePath(mKey)
             mWebView = DownloadsUtils.getWebView(mContext)
 
             mWebView?.let { webView ->
@@ -90,8 +94,31 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
             }
             binding.webViewLayout.addView(mWebView)
 
-            mWebView?.loadUrl(url)
+            val indexPath = OfflineDownloaderUtils.getStartPagePath(mKey)
+            if (OfflineUtils.getKeyType(mKey) == OfflineConst.TYPE_PAGE) {
+                val htmlFormatColors = HtmlFormatColors()
+
+                var content = File(indexPath).readText()
+                content = content
+                    .replace(
+                        "{\$BACKGROUND$}", colorResToHexString(htmlFormatColors.backgroundColorRes)
+                    )
+                    .replace("{\$COLOR$}", colorResToHexString(htmlFormatColors.textColor))
+                    .replace("{\$LINK_COLOR$}", colorResToHexString(htmlFormatColors.linkColor))
+                    .replace(
+                        "{\$VISITED_LINK_COLOR\$}",
+                        colorResToHexString(htmlFormatColors.visitedLinkColor)
+                    )
+                mWebView?.loadDataWithBaseURL(null, content, "text/html", "UTF-8", null)
+
+            } else {
+                mWebView?.loadUrl(indexPath)
+            }
         }
+    }
+
+    private fun colorResToHexString(@ColorRes colorRes: Int): String {
+        return "#" + Integer.toHexString(ContextKeeper.appContext.getColor(colorRes)).substring(2)
     }
 
     companion object {
