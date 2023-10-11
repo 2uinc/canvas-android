@@ -9,7 +9,6 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.annotation.ColorRes
-import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.pandautils.views.HtmlFormatColors
 import com.instructure.student.databinding.FragmentDownloadsHtmlBinding
 import com.instructure.student.offline.util.DownloadsUtils
@@ -118,7 +117,7 @@ class DownloadsHtmlFragment : DownloadsBaseFragment() {
     }
 
     private fun colorResToHexString(@ColorRes colorRes: Int): String {
-        return "#" + Integer.toHexString(ContextKeeper.appContext.getColor(colorRes)).substring(2)
+        return "#" + Integer.toHexString(mContext.getColor(colorRes)).substring(2)
     }
 
     companion object {
