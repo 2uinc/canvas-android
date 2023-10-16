@@ -131,6 +131,8 @@ android {
             buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
             buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
             buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
+            buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
+            buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
         }
 
         release {
@@ -162,6 +164,8 @@ android {
             buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
             buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
             buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
+            buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_RELEASE + "\""
+            buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_RELEASE + "\""
         }
     }
 
@@ -373,6 +377,7 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-core:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"
+    implementation("io.intercom.android:intercom-sdk:14.0.1")
 }
 
 // Comment out this line if the reporting logic starts going wonky.

@@ -295,6 +295,23 @@
                 android:background="@color/backgroundMedium" />
 
             <LinearLayout
+                android:id="@+id/navigationDrawerItem_liveChat"
+                style="@style/NavigationDrawerItem"
+                tools:ignore="UseCompoundDrawables">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    style="@style/NavigationDrawerIcon"
+                    app:srcCompat="@drawable/ic_questionmark_bubble" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/live_chat"
+                    android:textSize="16sp"
+                    android:textColor="@color/textDarkest"/>
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/navigationDrawerItem_help"
                 style="@style/NavigationDrawerItem"
                 tools:ignore="UseCompoundDrawables">

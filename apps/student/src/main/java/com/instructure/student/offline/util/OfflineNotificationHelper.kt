@@ -1,5 +1,6 @@
 package com.instructure.student.offline.util
 
+import android.app.Application
 import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.mobileconnectors.lambdainvoker.LambdaFunction
@@ -18,6 +19,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import io.intercom.android.sdk.push.IntercomPushClient
 import org.json.JSONObject
 
 
@@ -49,7 +51,13 @@ object OfflineNotificationHelper {
 
                 FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                     tryWeave(background = true) {
-                        if (task.isSuccessful) subscribeUserToSNS(task.result, user.id)
+                        if (task.isSuccessful) {
+                            subscribeUserToSNS(task.result, user.id)
+                            IntercomPushClient().sendTokenToIntercom(
+                                ContextKeeper.appContext.applicationContext as Application,
+                                task.result
+                            )
+                        }
                     } catch {
                         it.printStackTrace()
                     }

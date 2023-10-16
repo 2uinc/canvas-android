@@ -35,6 +35,7 @@ import com.instructure.canvasapi2.managers.CourseNicknameManager
 import com.instructure.canvasapi2.managers.UserManager
 import com.instructure.canvasapi2.models.*
 import com.instructure.canvasapi2.utils.APIHelper
+import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageView
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
@@ -63,6 +64,9 @@ import com.instructure.student.offline.util.OfflineNotificationHelper
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.util.StudentPrefs
 import com.twou.offline.Offline
+import io.intercom.android.sdk.Intercom
+import io.intercom.android.sdk.UserAttributes
+import io.intercom.android.sdk.identity.Registration
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 
@@ -102,6 +106,7 @@ class DashboardFragment : ParentFragment() {
         applyTheme()
 
         Offline.getOfflineManager().start()
+        initIntercom()
     }
 
 
@@ -318,6 +323,19 @@ class DashboardFragment : ParentFragment() {
     override fun onDestroy() {
         recyclerAdapter?.cancel()
         super.onDestroy()
+    }
+
+    private fun initIntercom() {
+        val user = ApiPrefs.user ?: return
+        val registration = Registration.create().withUserId("${user.id}")
+        Intercom.client().loginIdentifiedUser(registration)
+
+        val userAttributes = UserAttributes.Builder()
+            .withName(user.shortName)
+            .withCustomAttribute("email", user.email)
+            .build()
+        Intercom.client().updateUser(userAttributes)
+        Intercom.client().handlePushMessage()
     }
 
     companion object {
