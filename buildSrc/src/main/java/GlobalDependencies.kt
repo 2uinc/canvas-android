@@ -75,6 +75,7 @@ object Libs {
 
     /* Firebase */
     const val FIREBASE_BOM = "com.google.firebase:firebase-bom:31.2.3"
+    const val FIREBASE_ANALYTICS = "com.google.firebase:firebase-analytics-ktx"
     const val FIREBASE_CRASHLYTICS = "com.google.firebase:firebase-crashlytics"
     const val FIREBASE_MESSAGING = "com.google.firebase:firebase-messaging"
     const val FIREBASE_CONFIG = "com.google.firebase:firebase-config"
