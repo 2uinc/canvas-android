@@ -69,6 +69,7 @@ class AppManager : BaseAppManager() {
         Offline.getOfflineManager().addListener(object : OfflineManager.OfflineListener() {
             override fun onItemAdded(key: String) {
                 onItemStartedDownload(key)
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeStarted)
             }
 
             override fun onItemStartedDownload(key: String) {
@@ -78,6 +79,34 @@ class AppManager : BaseAppManager() {
                         Intent(this@AppManager, OfflineModeService::class.java)
                     )
                 }
+            }
+
+            override fun onItemRemoved(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeDeleted)
+            }
+
+            override fun onItemsRemoved(keys: List<String>) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeDeletedAll)
+            }
+
+            override fun onItemPaused(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModePaused)
+            }
+
+            override fun onItemResumed(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeResumed)
+            }
+
+            override fun onItemDownloaded(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeCompleted)
+            }
+
+            override fun onPausedAll() {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModePausedAll)
+            }
+
+            override fun onResumedAll() {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeResumedAll)
             }
         })
 

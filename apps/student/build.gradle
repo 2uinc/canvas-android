@@ -50,8 +50,8 @@ android {
         applicationId "com.instructure.candroid.twou"
         minSdkVersion Versions.MIN_SDK
         targetSdkVersion Versions.TARGET_SDK
-        versionCode = 255
-        versionName = '6.26.1'
+        versionCode = OfflineDependencies.versionCode
+        versionName = OfflineDependencies.versionName
 
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true
@@ -294,8 +294,9 @@ dependencies {
 
     /* Firebase */
     implementation platform(Libs.FIREBASE_BOM) {
-        exclude group: 'com.google.firebase', module: 'firebase-analytics'
+        exclude group: 'com.google.firebase'
     }
+    implementation Libs.FIREBASE_ANALYTICS
     implementation Libs.FIREBASE_MESSAGING
     implementation Libs.FIREBASE_CRASHLYTICS_NDK
     implementation (Libs.FIREBASE_CRASHLYTICS) {
