@@ -16,6 +16,11 @@
 #   public *;
 #}
 
+#Offline Mode
+-keep public class com.instructure.student.offline.item.** { *; }
+-keep public class com.instructure.student.offline.util.** { *; }
+-keep public class com.twou.offline.** { *; }
+
 -dontoptimize
 -verbose
 
