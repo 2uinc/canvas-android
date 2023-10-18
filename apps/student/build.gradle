@@ -47,11 +47,11 @@ android {
     buildToolsVersion Versions.BUILD_TOOLS
 
     defaultConfig {
-        applicationId "com.instructure.candroid.twou"
+        applicationId "com.instructure.candroid"
         minSdkVersion Versions.MIN_SDK
         targetSdkVersion Versions.TARGET_SDK
-        versionCode = OfflineDependencies.versionCode
-        versionName = OfflineDependencies.versionName
+        versionCode = 255
+        versionName = '6.26.1'
 
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true
@@ -124,13 +124,8 @@ android {
             buildConfigField "String", "HEAP_APP_ID", "\"$heapStagingId\""
 
             ext {
-                heapEnabled = true
+                heapEnabled = false
             }
-
-            buildConfigField "String", "EMAIL_DOMAIN", "\"" + Keys.EMAIL_DOMAIN + "\""
-            buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
-            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
-            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
         }
 
         release {
@@ -155,13 +150,8 @@ android {
             buildConfigField "String", "HEAP_APP_ID", "\"$heapProductionId\""
 
             ext {
-                heapEnabled = true
+                heapEnabled = false
             }
-
-            buildConfigField "String", "EMAIL_DOMAIN", "\"" + Keys.EMAIL_DOMAIN + "\""
-            buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
-            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
-            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
         }
     }
 
@@ -179,6 +169,16 @@ android {
 
         prod {
             dimension 'default'
+        }
+
+        twou {
+            applicationId = 'com.instructure.candroid.twou'
+            buildConfigField "String", "EMAIL_DOMAIN", "\"" + Keys.EMAIL_DOMAIN + "\""
+            buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
+            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
+            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
+            versionCode = OfflineDependencies.versionCode
+            versionName = OfflineDependencies.versionName
         }
     }
 
