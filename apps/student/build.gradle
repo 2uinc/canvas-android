@@ -94,16 +94,17 @@ android {
 
     signingConfigs {
         release {
-            storeFile file('../candroid.keystore')
-            storePassword System.getenv('KEYSTORE_PASSWORD')
-            keyAlias System.getenv('KEY_ALIAS')
-            keyPassword System.getenv('KEY_PASSWORD')
+            storeFile file('../../buildSrc/src/main/java/candroid.keystore')
+            storePassword Keys.KEYSTORE_PASSWORD
+            keyAlias Keys.KEYSTORE_ALIAS
+            keyPassword Keys.KEYSTORE_PASSWORD
         }
     }
 
     buildTypes {
 
         debug {
+            applicationIdSuffix = '.debug'
             testCoverageEnabled = coverageEnabled
             debuggable true
             minifyEnabled false
