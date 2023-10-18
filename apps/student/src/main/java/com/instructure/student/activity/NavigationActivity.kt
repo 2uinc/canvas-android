@@ -101,6 +101,8 @@ import com.instructure.student.util.Analytics
 import com.instructure.student.util.AppShortcutManager
 import com.instructure.student.util.StudentPrefs
 import dagger.hilt.android.AndroidEntryPoint
+import io.intercom.android.sdk.Intercom
+import io.intercom.android.sdk.IntercomSpace
 import kotlinx.coroutines.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -156,6 +158,9 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             closeNavigationDrawer()
             delay(250)
             when (v.id) {
+                R.id.navigationDrawerItem_liveChat -> {
+                    Intercom.client().present(IntercomSpace.Home)
+                }
                 R.id.navigationDrawerItem_help -> {
                     HelpDialogFragment.show(this@NavigationActivity)
                 }
@@ -192,6 +197,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                             .setTitle(R.string.logout_warning)
                             .setPositiveButton(android.R.string.yes) { _, _ ->
                                 OfflineNotificationHelper.unsubscribeUserFromSNS()
+                                Intercom.client().logout()
                                 StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior).execute()
                             }
                             .setNegativeButton(android.R.string.no, null)
@@ -479,6 +485,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         navigationDrawerBinding.navigationDrawerItemStudio.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerBinding.navigationDrawerItemBookmarks.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerBinding.navigationDrawerItemChangeUser.setOnClickListener(mNavigationDrawerItemClickListener)
+        navigationDrawerBinding.navigationDrawerItemLiveChat.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerBinding.navigationDrawerItemHelp.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerBinding.navigationDrawerItemDownloads.setOnClickListener(mNavigationDrawerItemClickListener)
         navigationDrawerBinding.navigationDrawerItemLogout.setOnClickListener(mNavigationDrawerItemClickListener)

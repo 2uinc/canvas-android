@@ -24,6 +24,7 @@ import androidx.work.WorkerFactory
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.typeface.TypefaceBehavior
+import com.instructure.student.BuildConfig
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineDownloaderCreator
 import com.instructure.student.offline.util.OfflineModeService
@@ -36,6 +37,7 @@ import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.util.OfflineLoggerType
 import com.twou.offline.util.OfflineLogs
 import dagger.hilt.android.HiltAndroidApp
+import io.intercom.android.sdk.Intercom
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -111,6 +113,8 @@ class AppManager : BaseAppManager() {
         })
 
         DownloadsRepository.loadData()
+
+        Intercom.initialize(this, BuildConfig.INTERCOM_API_KEY, BuildConfig.INTERCOM_AP_ID)
     }
 
     override fun performLogoutOnAuthError() {
