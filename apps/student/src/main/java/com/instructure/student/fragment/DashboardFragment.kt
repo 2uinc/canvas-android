@@ -327,14 +327,16 @@ class DashboardFragment : ParentFragment() {
 
     private fun initIntercom() {
         val user = ApiPrefs.user ?: return
-        val registration = Registration.create().withUserId("${user.id}")
-        Intercom.client().loginIdentifiedUser(registration)
-
         val userAttributes = UserAttributes.Builder()
             .withName(user.shortName)
-            .withCustomAttribute("email", user.email)
             .build()
-        Intercom.client().updateUser(userAttributes)
+
+        val registration = Registration.create()
+            .withUserId("${user.id}")
+            .withEmail("${user.email}")
+            .withUserAttributes(userAttributes)
+
+        Intercom.client().loginIdentifiedUser(registration)
         Intercom.client().handlePushMessage()
     }
 
