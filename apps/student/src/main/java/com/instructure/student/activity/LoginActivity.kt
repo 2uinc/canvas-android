@@ -31,6 +31,7 @@ import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.utils.Const
 import com.instructure.pandautils.utils.Utils
 import com.instructure.student.R
+import com.instructure.student.offline.activity.OfflineLoginLandingPageActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 @ScreenView(SCREEN_VIEW_LOGIN)
@@ -38,7 +39,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class LoginActivity : BaseLoginInitActivity() {
 
     override fun beginLoginFlowIntent(): Intent {
-        return LoginLandingPageActivity.createIntent(this);
+        return OfflineLoginLandingPageActivity.createIntent(this);
     }
 
     override fun themeColor(): Int {

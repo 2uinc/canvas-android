@@ -114,6 +114,10 @@
         </activity>
 
         <activity
+            android:name=".offline.activity.OfflineLoginLandingPageActivity"
+            android:launchMode="singleTop"
+            android:theme="@style/LoginFlowTheme.NoActionBar" />
+        <activity
             android:name=".offline.activity.DownloadsContentActivity"
             android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:theme="@style/CanvasMaterialTheme_Default" />
