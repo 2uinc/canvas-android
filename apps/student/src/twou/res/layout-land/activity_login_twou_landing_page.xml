@@ -7,65 +7,72 @@
     android:layout_height="match_parent"
     android:background="@color/licorice">
 
-    <ImageView
-        android:id="@+id/iconLogo"
-        android:layout_width="85dp"
-        android:layout_height="45dp"
-        android:layout_marginTop="70dp"
-        android:importantForAccessibility="no"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_logo" />
-
-    <ImageView
-        android:id="@+id/iconName"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/iconContainer"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:importantForAccessibility="no"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:layout_marginHorizontal="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/actionContainer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iconLogo"
-        app:srcCompat="@drawable/ic_name" />
+        app:layout_constraintTop_toBottomOf="@id/appName">
+
+        <ImageView
+            android:id="@+id/iconLogo"
+            android:layout_width="85dp"
+            android:layout_height="45dp"
+            android:layout_marginTop="20dp"
+            android:importantForAccessibility="no"
+            app:srcCompat="@drawable/ic_logo" />
+
+        <ImageView
+            android:id="@+id/iconName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:importantForAccessibility="no"
+            app:srcCompat="@drawable/ic_name" />
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/appName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="70dp"
+        android:layout_marginTop="50dp"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
-        app:layout_constraintBottom_toTopOf="@id/actionContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_app_name" />
 
     <LinearLayout
         android:id="@+id/actionContainer"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="48dp"
-        android:layout_marginBottom="70dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toEndOf="@id/iconContainer"
+        app:layout_constraintTop_toBottomOf="@id/appName">
 
         <Button
             android:id="@+id/findMySchool"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:padding="0dp"
             android:layout_marginTop="20dp"
-            app:backgroundTint="@color/loginButton"
             android:elevation="0dp"
             android:foreground="?selectableItemBackground"
             android:gravity="center"
+            android:padding="0dp"
             android:text="@string/findMySchool"
             android:textAllCaps="true"
             android:textColor="@color/licorice"
             android:textStyle="bold"
+            app:backgroundTint="@color/loginButton"
             app:cornerRadius="5dp" />
 
         <LinearLayout
