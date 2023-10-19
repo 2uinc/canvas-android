@@ -11,6 +11,7 @@ import com.instructure.canvasapi2.models.FileFolder
 import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.models.ModuleObject
 import com.instructure.canvasapi2.models.Page
+import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.interactions.router.Route
@@ -90,7 +91,9 @@ fun DownloadItemView.initWithPageData(page: Page, courseColor: Int) {
 }
 
 fun DownloadItemView.initWithFileData(item: FileFolder, courseId: Long, courseColor: Int) {
-    visibility = if (courseId == -1L || !item.displayName.isValid()) {
+    val userId = ApiPrefs.user?.id ?: 0L
+
+    visibility = if (courseId == -1L || courseId == userId || !item.displayName.isValid()) {
         View.GONE
 
     } else {

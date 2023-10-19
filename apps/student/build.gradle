@@ -128,6 +128,8 @@ android {
                 heapEnabled = false
             }
 
+            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY_DEBUG + "\""
+            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
         }
@@ -157,6 +159,8 @@ android {
                 heapEnabled = false
             }
 
+            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY_RELEASE + "\""
+            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY_RELEASE + "\""
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_RELEASE + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_RELEASE + "\""
         }
@@ -182,8 +186,6 @@ android {
             applicationId = 'com.instructure.candroid.twou'
             buildConfigField "String", "EMAIL_DOMAIN", "\"" + Keys.EMAIL_DOMAIN + "\""
             buildConfigField "String", "AWS_ARN", "\"" + Keys.AWS_ARN + "\""
-            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY + "\""
-            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY + "\""
             versionCode = OfflineDependencies.versionCode
             versionName = OfflineDependencies.versionName
         }

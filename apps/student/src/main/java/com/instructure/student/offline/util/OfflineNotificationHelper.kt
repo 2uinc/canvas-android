@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName", "SpellCheckingInspection")
+
 package com.instructure.student.offline.util
 
 import android.app.Application
@@ -76,8 +78,7 @@ object OfflineNotificationHelper {
         weave {
             inBackground {
                 try {
-                    getLambdaInvoker()
-                        .deletePlatformEndpoint(DeletePlatformRequest("$userId", domain, token))
+                    deletePlatformEndpoint(DeletePlatformRequest("$userId", domain, token))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -89,8 +90,7 @@ object OfflineNotificationHelper {
         val domain = ApiPrefs.domain
 
         try {
-            val response =
-                getLambdaInvoker().createUserChannel(UserChannelRequest("$userId", domain))
+            val response = createUserChannel(UserChannelRequest("$userId", domain))
 
             val jo = JSONObject(response.body)
             val channelId = jo.getLong("id")
@@ -138,8 +138,7 @@ object OfflineNotificationHelper {
         val domain = ApiPrefs.domain
 
         try {
-            getLambdaInvoker()
-                .createPlatformEndpoint(CreatePlatformRequest("$userId", domain, token))
+            createPlatformEndpoint(CreatePlatformRequest("$userId", domain, token))
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -155,7 +154,34 @@ object OfflineNotificationHelper {
         }
     }
 
-    private fun getLambdaInvoker(): ILambda {
+    private fun createUserChannel(request: UserChannelRequest): UserChannelResponse {
+        return if (BuildConfig.DEBUG) {
+            getLambdaDebugInvoker().mobilecanvas_createUserChannel_stg(request)
+
+        } else {
+            getLambdaReleaseInvoker().mobilecanvas_createUserChannel_prod(request)
+        }
+    }
+
+    private fun createPlatformEndpoint(request: CreatePlatformRequest) {
+        if (BuildConfig.DEBUG) {
+            getLambdaDebugInvoker().mobilecanvas_createPlatformEndpoint_stg(request)
+
+        } else {
+            getLambdaReleaseInvoker().mobilecanvas_createPlatformEndpoint_prod(request)
+        }
+    }
+
+    private fun deletePlatformEndpoint(request: DeletePlatformRequest) {
+        if (BuildConfig.DEBUG) {
+            getLambdaDebugInvoker().mobilecanvas_deletePlatformEndpoint_stg(request)
+
+        } else {
+            getLambdaReleaseInvoker().mobilecanvas_deletePlatformEndpoint_prod(request)
+        }
+    }
+
+    private fun getLambdaDebugInvoker(): ILambdaDebug {
         val provider = object : AWSCredentialsProvider {
             override fun getCredentials() = getAmazonCredentials()
 
@@ -165,9 +191,24 @@ object OfflineNotificationHelper {
         }
         return LambdaInvokerFactory.builder()
             .context(ContextKeeper.appContext)
-            .region(Regions.US_EAST_1)
+            .region(Regions.US_WEST_2)
             .credentialsProvider(provider)
-            .build().build(ILambda::class.java)
+            .build().build(ILambdaDebug::class.java)
+    }
+
+    private fun getLambdaReleaseInvoker(): ILambdaRelease {
+        val provider = object : AWSCredentialsProvider {
+            override fun getCredentials() = getAmazonCredentials()
+
+            override fun refresh() {
+
+            }
+        }
+        return LambdaInvokerFactory.builder()
+            .context(ContextKeeper.appContext)
+            .region(Regions.US_WEST_2)
+            .credentialsProvider(provider)
+            .build().build(ILambdaRelease::class.java)
     }
 
     @EntryPoint
@@ -176,16 +217,28 @@ object OfflineNotificationHelper {
         fun getNotificationPreferencesManager(): NotificationPreferencesManager
     }
 
-    interface ILambda {
+    interface ILambdaDebug {
 
         @LambdaFunction
-        fun createUserChannel(request: UserChannelRequest): UserChannelResponse
+        fun mobilecanvas_createUserChannel_stg(request: UserChannelRequest): UserChannelResponse
 
         @LambdaFunction
-        fun createPlatformEndpoint(request: CreatePlatformRequest)
+        fun mobilecanvas_createPlatformEndpoint_stg(request: CreatePlatformRequest)
 
         @LambdaFunction
-        fun deletePlatformEndpoint(request: DeletePlatformRequest)
+        fun mobilecanvas_deletePlatformEndpoint_stg(request: DeletePlatformRequest)
+    }
+
+    interface ILambdaRelease {
+
+        @LambdaFunction
+        fun mobilecanvas_createUserChannel_prod(request: UserChannelRequest): UserChannelResponse
+
+        @LambdaFunction
+        fun mobilecanvas_createPlatformEndpoint_prod(request: CreatePlatformRequest)
+
+        @LambdaFunction
+        fun mobilecanvas_deletePlatformEndpoint_prod(request: DeletePlatformRequest)
     }
 
     data class UserChannelRequest(val userid: String, val domain: String)

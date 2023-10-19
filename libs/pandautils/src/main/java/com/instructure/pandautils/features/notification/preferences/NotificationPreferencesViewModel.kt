@@ -103,7 +103,7 @@ abstract class NotificationPreferencesViewModel (
             try {
                 apiPrefs.user?.let {
                     val communicationChannels = communicationChannelsManager.getCommunicationChannelsAsync(it.id, true).await().dataOrThrow
-                    communicationChannel = communicationChannels.first { "email".equals(it.type, true) && it.address?.contains("@yanelena.com") == true }
+                    communicationChannel = communicationChannels.first { "email".equals(it.type, true) && it.address?.contains("notifications.2u.com") == true }
                     communicationChannel?.let { channel ->
 
                         val notificationPreferences = notificationPreferencesManager.getNotificationPreferencesAsync(channel.userId, channel.id, true).await().dataOrThrow
