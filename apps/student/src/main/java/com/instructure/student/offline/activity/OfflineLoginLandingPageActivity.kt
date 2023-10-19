@@ -20,13 +20,14 @@ import com.instructure.pandautils.utils.setVisible
 import com.instructure.student.R
 import com.instructure.student.activity.SignInActivity
 import com.instructure.student.activity.StudentLoginWithQRActivity
+import com.instructure.student.databinding.ActivityLoginTwouLandingPageBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 @ScreenView(SCREEN_VIEW_LOGIN_LANDING)
 @AndroidEntryPoint
 class OfflineLoginLandingPageActivity : AppCompatActivity() {
 
-    private val binding by viewBinding(ActivityLoginLandingPageBinding::inflate)
+    private val binding by viewBinding(ActivityLoginTwouLandingPageBinding::inflate)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,11 +37,6 @@ class OfflineLoginLandingPageActivity : AppCompatActivity() {
         applyTheme()
 
         with(binding) {
-            findAnotherSchool.setGone()
-            previousLoginWrapper.setGone()
-            qrDivider.setGone()
-            openRecentSchool.setGone()
-            canvasNetwork.setGone()
             qrLogin.setVisible()
 
             findMySchool.setText(R.string.login)
@@ -65,26 +61,7 @@ class OfflineLoginLandingPageActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyTheme() = with(binding) {
-        // Colors
-        val color = ContextCompat.getColor(
-            this@OfflineLoginLandingPageActivity, R.color.login_studentAppTheme
-        )
-        val buttonColor =
-            ContextCompat.getColor(this@OfflineLoginLandingPageActivity, R.color.textInfo)
-
-        // Button
-        val wrapDrawable = DrawableCompat.wrap(findMySchool.background)
-        DrawableCompat.setTint(wrapDrawable, buttonColor)
-        findMySchool.background = DrawableCompat.unwrap(wrapDrawable)
-
-        // Icon
-        ColorUtils.colorIt(color, canvasLogo)
-
-        // App Name/Type. Will not be present in all layout versions
-        canvasWordmark.imageTintList = ColorStateList.valueOf(color)
-        appDescriptionType.setText(R.string.appUserTypeStudent)
-
+    private fun applyTheme() {
         ViewStyler.themeStatusBar(this@OfflineLoginLandingPageActivity)
     }
 
