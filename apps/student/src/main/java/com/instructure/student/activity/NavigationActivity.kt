@@ -666,7 +666,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     private fun setupBottomNavigation() = with(binding) {
         Logger.d("NavigationActivity:setupBottomNavigation()")
-        bottomBar.applyTheme(ThemePrefs.brandColor, ContextCompat.getColor(this@NavigationActivity, R.color.textDarkest))
+        bottomBar.applyTheme(ThemePrefs.brandColor, ContextCompat.getColor(this@NavigationActivity, R.color.licorice))
         bottomBar.setOnNavigationItemSelectedListener(bottomBarItemSelectedListener)
         bottomBar.setOnNavigationItemReselectedListener(bottomBarItemReselectedListener)
         updateBottomBarContentDescriptions()
@@ -838,7 +838,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     private fun selectBottomNavFragment(fragmentClass: Class<out Fragment>) {
         val selectedFragment = supportFragmentManager.findFragmentByTag(fragmentClass.name)
 
-        if (selectedFragment == null) {
+        if (selectedFragment == null || selectedFragment.tag?.contains(CalendarFragment::class.java.name) == true) {
             val fragment = createBottomNavFragment(fragmentClass.name)
             val newArguments = if (fragment?.arguments != null) fragment.requireArguments() else Bundle()
             newArguments.putBoolean(BOTTOM_NAV_SCREEN, true)

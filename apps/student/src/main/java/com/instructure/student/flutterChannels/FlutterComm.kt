@@ -106,9 +106,9 @@ object FlutterComm {
 
     fun sendUpdatedTheme() {
         val data = mutableMapOf<String, Any?>()
-        data["primaryColor"] = Integer.toHexString(ThemePrefs.primaryColor)
-        data["accentColor"] = Integer.toHexString(ThemePrefs.brandColor)
-        data["buttonColor"] = Integer.toHexString(ThemePrefs.buttonColor)
+        data["primaryColor"] = "ff00262b"
+        data["accentColor"] = "ff00262b"
+        data["buttonColor"] = "ff00262b"
         data["textButtonColor"] = Integer.toHexString(ThemePrefs.textButtonColor)
         data["primaryTextColor"] = Integer.toHexString(ThemePrefs.primaryTextColor)
         data["contextColors"] = ColorKeeper.cachedThemedColors.map {

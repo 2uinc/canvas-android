@@ -25,7 +25,7 @@ class StudentColors {
   static bool darkMode = false;
 
   /// Default Canvas primary color
-  static const defaultPrimary = Color(0xFF2D3B45);
+  static const defaultPrimary = Color(0xff00262b);
 
   /// Default Canvas accent color
   static get defaultAccent => darkMode ? DarkColors.defaultAccent : LightColors.defaultAccent;

@@ -34,6 +34,7 @@ import com.instructure.loginapi.login.view.CanvasLoadingView
 import com.instructure.loginapi.login.viewmodel.LoginViewModel
 import com.instructure.pandautils.mvvm.Event
 import com.instructure.pandautils.utils.Utils
+import com.instructure.pandautils.utils.ViewStyler
 import javax.inject.Inject
 
 abstract class BaseLoginInitActivity : AppCompatActivity() {
@@ -109,6 +110,7 @@ abstract class BaseLoginInitActivity : AppCompatActivity() {
     }
 
     private fun applyTheme() {
+        ViewStyler.setStatusBarDark(this, getColor(R.color.licorice))
         val loadingView = findViewById<CanvasLoadingView>(R.id.progress_bar)
         loadingView?.setOverrideColor(themeColor())
     }

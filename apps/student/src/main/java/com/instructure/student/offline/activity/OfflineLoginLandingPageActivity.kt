@@ -62,7 +62,7 @@ class OfflineLoginLandingPageActivity : AppCompatActivity() {
     }
 
     private fun applyTheme() {
-        ViewStyler.themeStatusBar(this@OfflineLoginLandingPageActivity)
+        ViewStyler.setStatusBarDark(this, getColor(R.color.licorice))
     }
 
     companion object {

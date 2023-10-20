@@ -51,7 +51,7 @@ class CalendarFragment : ParentFragment() {
         if (color == Color.WHITE) {
             ViewStyler.setStatusBarLight(requireActivity())
         } else {
-            ViewStyler.setStatusBarDark(requireActivity(), color)
+            ViewStyler.setStatusBarDark(requireActivity(), requireActivity().getColor(R.color.licorice))
         }
     }
 

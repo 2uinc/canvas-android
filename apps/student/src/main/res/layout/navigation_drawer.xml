@@ -301,7 +301,7 @@
 
                 <androidx.appcompat.widget.AppCompatImageView
                     style="@style/NavigationDrawerIcon"
-                    app:srcCompat="@drawable/ic_questionmark_bubble" />
+                    app:srcCompat="@drawable/ic_live_help" />
 
                 <TextView
                     android:layout_width="wrap_content"

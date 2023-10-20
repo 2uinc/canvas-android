@@ -140,7 +140,11 @@ object ViewStyler {
     }
 
     private fun themeToolbar(activity: Activity, toolbar: Toolbar, @ColorInt backgroundColor: Int, @ColorInt contentColor: Int) {
-        toolbar.setBackgroundColor(backgroundColor)
+        if (backgroundColor == ThemePrefs.primaryColor) {
+            toolbar.setBackgroundColor(activity.getColor(R.color.licorice))
+        } else {
+            toolbar.setBackgroundColor(backgroundColor)
+        }
         toolbar.setTitleTextAppearance(activity, R.style.ToolbarStyle)
         toolbar.setSubtitleTextAppearance(activity, R.style.ToolbarStyle_Subtitle)
         colorToolbarIconsAndText(activity, toolbar, contentColor)
@@ -181,7 +185,11 @@ object ViewStyler {
     }
 
     fun setStatusBarDark(activity: Activity, @ColorInt color: Int) {
-        activity.window.statusBarColor = ThemePrefs.darker(color)
+        if (color == ThemePrefs.primaryColor) {
+            activity.window.statusBarColor = activity.getColor(R.color.licorice)
+        } else {
+            activity.window.statusBarColor = ThemePrefs.darker(color)
+        }
         var flags = activity.window.decorView.systemUiVisibility
         flags = flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
         activity.window.decorView.systemUiVisibility = flags
