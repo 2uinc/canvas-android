@@ -62,6 +62,7 @@ import com.instructure.student.interfaces.CourseAdapterToFragmentCallback
 import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineNotificationHelper
 import com.instructure.student.router.RouteMatcher
+import com.instructure.student.util.FirebaseAnalytics
 import com.instructure.student.util.StudentPrefs
 import com.twou.offline.Offline
 import io.intercom.android.sdk.Intercom
@@ -107,6 +108,7 @@ class DashboardFragment : ParentFragment() {
 
         Offline.getOfflineManager().start()
         initIntercom()
+        initFirebase()
     }
 
 
@@ -338,6 +340,11 @@ class DashboardFragment : ParentFragment() {
 
         Intercom.client().loginIdentifiedUser(registration)
         Intercom.client().handlePushMessage()
+    }
+
+    private fun initFirebase() {
+        val user = ApiPrefs.user ?: return
+        FirebaseAnalytics.identifyUser(user.id)
     }
 
     companion object {

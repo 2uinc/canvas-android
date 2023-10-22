@@ -16,6 +16,10 @@ object FirebaseAnalytics {
         analytics.logEvent(analyticsEvent.eventName, setupBundle())
     }
 
+    fun identifyUser(userId: Long) {
+        analytics.setUserId(userId.toString())
+    }
+
     private fun setupBundle(): Bundle? = null
 }
 
