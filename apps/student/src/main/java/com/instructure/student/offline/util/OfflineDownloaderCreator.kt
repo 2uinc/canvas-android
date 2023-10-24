@@ -24,6 +24,8 @@ import com.twou.offline.error.OfflineUnsupportedException
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineQueueItem
 import com.twou.offline.util.OfflineDownloaderUtils
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.BufferedInputStream
@@ -54,6 +56,8 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
     private var mCanvasContext: Course? = null
     private var mOfflineDownloader: BaseOfflineDownloader? = null
     private var mHandler = Handler(Looper.getMainLooper())
+
+    private val mSaveMutex = Mutex()
 
     override fun getKeyOfflineItem(): KeyOfflineItem {
         return offlineQueueItem.keyItem
@@ -101,31 +105,37 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                         getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_MODULE_ITEM_ID) as? Long
                             ?: -1L
 
-                    DownloadsRepository.addModuleItem(
-                        DownloadsCourseItem(
-                            courseIndex, courseId, canvasContext.name,
-                            canvasContext.courseCode ?: "", logoPath, canvasContext.term?.name ?: ""
-                        ),
-                        DownloadsModuleItem(
-                            moduleIndex, getKeyOfflineItem().key, courseId, moduleId, moduleName,
-                            moduleItemId, offlineQueueItem.keyItem.title, type
+                    mSaveMutex.withLock {
+                        DownloadsRepository.addModuleItem(
+                            DownloadsCourseItem(
+                                courseIndex, courseId, canvasContext.name,
+                                canvasContext.courseCode ?: "", logoPath,
+                                canvasContext.term?.name ?: ""
+                            ),
+                            DownloadsModuleItem(
+                                moduleIndex, getKeyOfflineItem().key, courseId, moduleId,
+                                moduleName, moduleItemId, offlineQueueItem.keyItem.title, type
+                            )
                         )
-                    )
+                    }
 
                     isPrepared = true
                     unit(null)
                 }
 
                 OfflineConst.MODULE_TYPE_PAGES -> {
-                    DownloadsRepository.addPageItem(
-                        DownloadsCourseItem(
-                            courseIndex, courseId, canvasContext.name,
-                            canvasContext.courseCode ?: "", logoPath, canvasContext.term?.name ?: ""
-                        ),
-                        DownloadsPageItem(
-                            getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title
+                    mSaveMutex.withLock {
+                        DownloadsRepository.addPageItem(
+                            DownloadsCourseItem(
+                                courseIndex, courseId, canvasContext.name,
+                                canvasContext.courseCode ?: "", logoPath,
+                                canvasContext.term?.name ?: ""
+                            ),
+                            DownloadsPageItem(
+                                getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title
+                            )
                         )
-                    )
+                    }
 
                     isPrepared = true
                     unit(null)
@@ -136,17 +146,19 @@ class OfflineDownloaderCreator(offlineQueueItem: OfflineQueueItem) :
                         getKeyOfflineItem().extras?.get(OfflineConst.KEY_EXTRA_FILE_TYPE) as? String
                             ?: ""
 
-                    DownloadsRepository.addFileItem(
-                        DownloadsCourseItem(
-                            courseIndex, courseId, mCanvasContext?.name ?: "",
-                            mCanvasContext?.courseCode ?: "", logoPath,
-                            mCanvasContext?.term?.name ?: ""
-                        ),
-                        DownloadsFileItem(
-                            getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title,
-                            contentType
+                    mSaveMutex.withLock {
+                        DownloadsRepository.addFileItem(
+                            DownloadsCourseItem(
+                                courseIndex, courseId, mCanvasContext?.name ?: "",
+                                mCanvasContext?.courseCode ?: "", logoPath,
+                                mCanvasContext?.term?.name ?: ""
+                            ),
+                            DownloadsFileItem(
+                                getKeyOfflineItem().key, courseId, offlineQueueItem.keyItem.title,
+                                contentType
+                            )
                         )
-                    )
+                    }
 
                     isPrepared = true
                     unit(null)
