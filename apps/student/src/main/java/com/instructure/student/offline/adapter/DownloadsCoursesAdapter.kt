@@ -1,5 +1,6 @@
 package com.instructure.student.offline.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,10 +15,11 @@ import com.instructure.student.offline.item.DownloadsCourseItem
 import com.instructure.student.util.StudentPrefs
 
 class DownloadsCoursesAdapter(
-    private val mCourses: List<DownloadsCourseItem>,
     private val mOnDownloadsCoursesListener: OnDownloadsCoursesListener
 ) :
     RecyclerView.Adapter<DownloadsCoursesAdapter.BaseViewHolder>() {
+
+    private var mCourses: List<DownloadsCourseItem>? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         return if (viewType == COURSE_HEADER) {
@@ -42,11 +44,11 @@ class DownloadsCoursesAdapter(
         return if (position == 0) COURSE_HEADER else COURSE
     }
 
-    override fun getItemCount(): Int = mCourses.size + 1
+    override fun getItemCount(): Int = (mCourses?.size ?: 0) + 1
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
         if (holder is CourseViewHolder) {
-            val item = mCourses[position - 1]
+            val item = mCourses?.getOrNull(position - 1) ?: return
 
             holder.binding.apply {
                 gradeLayout.setGone()
@@ -69,6 +71,12 @@ class DownloadsCoursesAdapter(
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun setCourses(courses: List<DownloadsCourseItem>) {
+        mCourses = courses
+        notifyDataSetChanged()
+    }
+
     open class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
     inner class CourseHeaderViewHolder(val binding: ViewholderCourseHeaderBinding) :
@@ -84,7 +92,7 @@ class DownloadsCoursesAdapter(
 
         init {
             binding.cardView.setOnClickListener {
-                val item = mCourses[layoutPosition - 1]
+                val item = mCourses?.getOrNull(layoutPosition - 1) ?: return@setOnClickListener
 
                 mOnDownloadsCoursesListener.onCourseClick(item)
             }

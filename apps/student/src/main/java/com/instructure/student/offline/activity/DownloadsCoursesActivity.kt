@@ -44,7 +44,8 @@ class DownloadsCoursesActivity : AppCompatActivity(), CoroutineScope {
     override fun onResume() {
         super.onResume()
 
-        binding.recyclerView.adapter?.notifyDataSetChanged()
+        (binding.recyclerView.adapter as? DownloadsCoursesAdapter)
+            ?.setCourses(DownloadsRepository.getCourses())
 
         checkForEmptyState()
     }
@@ -85,7 +86,6 @@ class DownloadsCoursesActivity : AppCompatActivity(), CoroutineScope {
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.itemAnimator = DefaultItemAnimator()
         binding.recyclerView.adapter = DownloadsCoursesAdapter(
-            DownloadsRepository.getCourses(),
             object : DownloadsCoursesAdapter.OnDownloadsCoursesListener {
                 override fun onCourseClick(courseItem: DownloadsCourseItem) {
                     startActivity(

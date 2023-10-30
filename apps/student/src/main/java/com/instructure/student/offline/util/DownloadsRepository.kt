@@ -56,7 +56,7 @@ object DownloadsRepository : CoroutineScope {
     fun getCourses(): List<DownloadsCourseItem> {
         if (!isLoaded) loadData()
 
-        return mCourseItems
+        return mCourseItems.distinctBy { it.courseId }
     }
 
     fun getModuleItems(courseId: Long): List<DownloadsModuleItem>? {
