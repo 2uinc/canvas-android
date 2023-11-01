@@ -396,7 +396,7 @@ class FileUploadWorker @AssistedInject constructor(
         createNotificationChannel(notificationManager)
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(
                 String.format(
                     Locale.US,
@@ -415,7 +415,7 @@ class FileUploadWorker @AssistedInject constructor(
 
     private fun updateNotificationComplete(notificationId: Int) {
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setProgress(0, 0, false)
             .setOngoing(false)
             .setContentTitle(context.getString(R.string.filesUploadedSuccessfully))
@@ -425,7 +425,7 @@ class FileUploadWorker @AssistedInject constructor(
 
     private fun updateSubmissionComplete(notificationId: Int) {
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setProgress(0, 0, false)
             .setOngoing(false)
             .setContentTitle(context.getString(R.string.filesSubmittedSuccessfully))

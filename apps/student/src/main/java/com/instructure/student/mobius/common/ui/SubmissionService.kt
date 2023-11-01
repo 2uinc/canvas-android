@@ -280,7 +280,7 @@ class SubmissionService : IntentService(SubmissionService::class.java.simpleName
             createNotificationChannel(notificationManager, COMMENT_CHANNEL_ID)
             val notification = NotificationCompat.Builder(this@SubmissionService, COMMENT_CHANNEL_ID)
                 .setOngoing(true)
-                .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+                .setSmallIcon(R.drawable.canvas_logo_white)
                 .setContentTitle(getString(R.string.assignmentSubmissionCommentUpload, comment.assignmentName))
                 .setProgress(0, 0, true)
 
@@ -478,7 +478,7 @@ class SubmissionService : IntentService(SubmissionService::class.java.simpleName
     private fun showProgressNotification(assignmentName: String?, submissionId: Long, inForeground: Boolean = true, alertOnlyOnce: Boolean = false) {
         createNotificationChannel(notificationManager)
         notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(getString(R.string.assignmentSubmissionUpload, assignmentName))
             .setProgress(0, 0, true)
             .setOnlyAlertOnce(alertOnlyOnce)
@@ -565,7 +565,7 @@ class SubmissionService : IntentService(SubmissionService::class.java.simpleName
     ) {
         val pendingIntent = getSubmissionIntent(context, submission.canvasContext, submission.assignmentId)
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(context.getString(R.string.assignmentSubmissionError, submission.assignmentName ?: ""))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -581,7 +581,7 @@ class SubmissionService : IntentService(SubmissionService::class.java.simpleName
     ) {
         val pendingIntent = getSubmissionIntent(context, submission.canvasContext, submission.assignmentId)
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(context.getString(R.string.assignmentSubmissionComplete, submission.assignmentName ?: ""))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

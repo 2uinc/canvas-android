@@ -104,7 +104,7 @@ class NotoriousUploadService : IntentService(NotoriousUploadService::class.java.
         }
 
         builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(getString(R.string.notificationTitle))
             .setContentText(getString(R.string.preparingUpload))
             .setOngoing(true)

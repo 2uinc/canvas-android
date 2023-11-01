@@ -130,7 +130,7 @@ class FileDownloadWorker @AssistedInject constructor(
 
     private fun createForegroundInfo(notificationId: Int, fileName: String, progress: Int): ForegroundInfo {
         val notification = NotificationCompat.Builder(applicationContext, FileUploadWorker.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(context.getString(R.string.downloadingFile))
             .setContentText(fileName)
             .setOnlyAlertOnce(true)
@@ -146,7 +146,7 @@ class FileDownloadWorker @AssistedInject constructor(
         val pendingIntent = PendingIntent.getActivity(context, 0, viewDownloadIntent, PendingIntent.FLAG_IMMUTABLE)
 
         val notification = NotificationCompat.Builder(applicationContext, FileUploadWorker.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(context.getString(R.string.downloadSuccessful))
             .setContentText(fileName)
             .setContentIntent(pendingIntent)
@@ -156,7 +156,7 @@ class FileDownloadWorker @AssistedInject constructor(
 
     private fun updateNotificationFailed(notificationId: Int, fileName: String) {
         val notification = NotificationCompat.Builder(applicationContext, FileUploadWorker.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+            .setSmallIcon(R.drawable.canvas_logo_white)
             .setContentTitle(context.getString(R.string.downloadFailed))
             .setContentText(fileName)
             .build()

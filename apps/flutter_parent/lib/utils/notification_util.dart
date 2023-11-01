@@ -42,7 +42,7 @@ class NotificationUtil {
 
   static Future<void> init(Completer<void>? appCompleter) async {
     var initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('ic_notification_canvas_logo')
+      android: AndroidInitializationSettings('canvas_logo_white')
     );
 
     if (_plugin == null) {
