@@ -666,7 +666,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     private fun setupBottomNavigation() = with(binding) {
         Logger.d("NavigationActivity:setupBottomNavigation()")
-        bottomBar.applyTheme(ThemePrefs.brandColor, ContextCompat.getColor(this@NavigationActivity, R.color.licorice))
+        bottomBar.applyTheme(ThemePrefs.brandColor, ContextCompat.getColor(this@NavigationActivity, R.color.textDarkest))
         bottomBar.setOnNavigationItemSelectedListener(bottomBarItemSelectedListener)
         bottomBar.setOnNavigationItemReselectedListener(bottomBarItemReselectedListener)
         updateBottomBarContentDescriptions()
