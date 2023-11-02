@@ -172,14 +172,17 @@ object ViewStyler {
     }
 
     fun themeFAB(fab: FloatingActionButton) {
-        val color = ThemePrefs.buttonColor
+        val color = Color.parseColor("#00262B")
         fab.backgroundTintList = makeColorStateList(color, ThemePrefs.darker(color))
         fab.setImageDrawable(ColorUtils.colorIt(ThemePrefs.buttonTextColor, fab.drawable))
     }
 
     fun themeButton(button: Button) {
         val drawable = button.background
-        drawable.mutate().colorFilter = PorterDuffColorFilter(ThemePrefs.buttonColor, PorterDuff.Mode.SRC_ATOP)
+        val color = Color.parseColor("#00262B")
+        drawable.mutate().colorFilter = PorterDuffColorFilter(
+            color, PorterDuff.Mode.SRC_ATOP
+        )
         button.background = drawable
         button.setTextColor(ThemePrefs.buttonTextColor)
     }
