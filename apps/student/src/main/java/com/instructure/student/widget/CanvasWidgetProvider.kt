@@ -23,14 +23,14 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.ContextCompat
+import android.graphics.Color
 import android.widget.RemoteViews
+import com.instructure.canvasapi2.utils.Logger
 import com.instructure.student.R
 import com.instructure.student.activity.LoginActivity
 import com.instructure.student.activity.WidgetSetupActivity
 import com.instructure.student.util.Analytics
 import com.instructure.student.util.StudentPrefs
-import com.instructure.canvasapi2.utils.Logger
 
 abstract class CanvasWidgetProvider : AppWidgetProvider() {
 
@@ -85,8 +85,8 @@ abstract class CanvasWidgetProvider : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             val remoteViews = RemoteViews(context.packageName, R.layout.widget_homescreen)
             val textColor = BaseRemoteViewsService.getWidgetTextColor(appWidgetId, context)
-            val logoColor = ContextCompat.getColor(context, R.color.login_studentAppTheme)
-            remoteViews.setImageViewResource(R.id.widget_logo, R.drawable.ic_canvas_logo_red)
+            val logoColor = Color.parseColor("#ED5C13")
+            remoteViews.setImageViewResource(R.id.widget_logo, R.drawable.ic_logo)
             remoteViews.setInt(R.id.widget_logo, "setColorFilter", logoColor)
             setWidgetDependentViews(context, remoteViews, appWidgetId, appWidgetManager, textColor)
 

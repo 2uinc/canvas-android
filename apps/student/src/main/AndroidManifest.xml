@@ -279,7 +279,7 @@
 
         <activity
             android:name=".activity.BookmarkShortcutActivity"
-            android:icon="@drawable/ic_bookmark_shortcut"
+            android:icon="@mipmap/ic_launcher_round"
             android:label="@string/student_app_name"
             android:theme="@style/CanvasMaterialTheme_DefaultNoTransparency"
             android:exported="true">

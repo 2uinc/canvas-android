@@ -28,6 +28,7 @@
         tools:visibility="visible"
         android:layout_centerInParent="true"
         android:layout_gravity="center"
+        app:cardBackgroundColor="@color/licorice"
         app:cardElevation="6dp"
         app:cardCornerRadius="8dp"
         app:cardUseCompatPadding="true"
@@ -37,14 +38,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/loading"
+            android:textColor="@color/textInfo"
             android:layout_gravity="center_horizontal|bottom"
             style="@style/TextFont.Medium"/>
 
-        <com.instructure.loginapi.login.view.CanvasLoadingView
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            app:clv_override_color="@color/login_studentAppTheme"
-            android:layout_gravity="center"/>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="40dp"
+            app:srcCompat="@drawable/ic_logo" />
 
     </androidx.cardview.widget.CardView>
 

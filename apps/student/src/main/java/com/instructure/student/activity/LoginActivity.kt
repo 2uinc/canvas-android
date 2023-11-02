@@ -43,7 +43,7 @@ class LoginActivity : BaseLoginInitActivity() {
     }
 
     override fun themeColor(): Int {
-        return ContextCompat.getColor(this, R.color.login_studentAppTheme)
+        return ContextCompat.getColor(this, R.color.textInfo)
     }
 
     override fun userAgent(): String = Const.STUDENT_USER_AGENT
