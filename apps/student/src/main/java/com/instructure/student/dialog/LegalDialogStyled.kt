@@ -45,55 +45,28 @@ import kotlinx.coroutines.Job
 @ScreenView(SCREEN_VIEW_LEGAL)
 class LegalDialogStyled : AppCompatDialogFragment() {
 
-    private val binding by viewBinding(LegalBinding::bind)
-
-    private var termsJob: Job? = null
-    private var html: String = ""
-
-    init {
-        retainInstance = true
-    }
-
     @SuppressLint("InflateParams")
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val binding = LegalBinding.inflate(layoutInflater, null, false)
 
         binding.root.descendants<ImageView>().forEach {
-            it.setColorFilter(ThemePrefs.brandColor)
-        }
-
-        // different institutions can have different terms of service, we need to get them from the api
-        termsJob = tryWeave {
-
-            val terms = awaitApi<TermsOfService> { UserManager.getTermsOfService(it,true) }
-            terms.content?.let { html = it }
-
-
-            // if the institution has set terms and conditions to be "no terms", just keep the item gone
-            binding.termsOfUse.setVisible(html.isNotBlank())
-            // now set the rest of the items visible
-            binding.privacyPolicy.setVisible()
-            binding.openSource.setVisible()
-        } catch {
-            // something went wrong, make everything visible
-            binding.root.descendants.forEach { it.setVisible()}
+            it.setColorFilter(requireContext().getColor(R.color.licorice))
         }
 
         binding.termsOfUse.onClick {
-
-            val intent = InternalWebViewActivity.createIntent(activity, "http://www.canvaslms.com/policies/terms-of-use", html, getString(R.string.termsOfUse), false)
+            val intent = InternalWebViewActivity.createIntent(activity, "https://essential.2u.com/terms-of-use", getString(R.string.termsOfUse), false)
             requireContext().startActivity(intent)
             dialog?.dismiss()
         }
 
         binding.privacyPolicy.onClick {
-            val intent = InternalWebViewActivity.createIntent(activity, "https://www.instructure.com/canvas/privacy", getString(R.string.privacyPolicy), false)
+            val intent = InternalWebViewActivity.createIntent(activity, "https://essential.2u.com/privacy-policy", getString(R.string.privacyPolicy), false)
             requireContext().startActivity(intent)
             dialog?.dismiss()
         }
 
         binding.openSource.onClick {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/instructure/canvas-android"))
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/2uinc/canvas-android"))
             requireContext().startActivity(intent)
             dialog?.dismiss()
         }
@@ -109,13 +82,7 @@ class LegalDialogStyled : AppCompatDialogFragment() {
         super.onDestroyView()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        termsJob?.cancel()
-    }
-
     companion object {
-        val TAG = "legalDialog"
+        const val TAG = "legalDialog"
     }
-
 }

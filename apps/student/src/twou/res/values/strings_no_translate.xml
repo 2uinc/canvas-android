@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="student_app_name" translatable="false">Degrees edX</string>
+    <string name="degrees_edx_on_github" translatable="false">Degrees edX on GitHub</string>
 </resources>
