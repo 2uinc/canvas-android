@@ -15,6 +15,8 @@ import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.pandautils.utils.toast
 import com.instructure.student.R
 import com.instructure.student.offline.item.FileOfflineItem
+import com.instructure.student.offline.util.OfflineConst.Companion.KEY_EXTRA_URL
+import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.item.OfflineModule
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -160,5 +162,21 @@ object OfflineUtils {
         }
 
         return ""
+    }
+
+    fun getPrettyOfflineKey(offlineQueueItem: KeyOfflineItem): String {
+        val parsedKey = parseKey(offlineQueueItem.key)
+        return when (parsedKey.getOrNull(0)) {
+            "digitalcampus" -> {
+                "content: \"${offlineQueueItem.title}\", " +
+                        "courseId: ${parsedKey.getOrNull(3)}, " +
+                        "moduleId: ${parsedKey.getOrNull(4)}, " +
+                        "link: ${
+                            offlineQueueItem.extras?.getOrDefault(KEY_EXTRA_URL, "") ?: ""
+                        }"
+            }
+
+            else -> offlineQueueItem.key
+        }
     }
 }

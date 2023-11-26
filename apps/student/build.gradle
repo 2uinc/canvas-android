@@ -58,6 +58,8 @@ android {
         testInstrumentationRunner 'com.instructure.student.espresso.StudentHiltTestRunner'
         testInstrumentationRunnerArguments disableAnalytics: 'true'
         buildConfigField "boolean", "IS_TESTING", "false"
+        buildConfigField "String", "BUGFENDER_KEY", "\"${Keys.BUGFENDER_KEY}\""
+
 
         /* Add private data */
         PrivateData.merge(project, "student")
@@ -384,6 +386,7 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"
     implementation("io.intercom.android:intercom-sdk:14.0.1")
+    implementation("com.bugfender.sdk:android:3.0.17")
 }
 
 // Comment out this line if the reporting logic starts going wonky.

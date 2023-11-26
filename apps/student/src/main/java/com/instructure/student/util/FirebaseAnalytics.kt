@@ -30,6 +30,7 @@ sealed class AnalyticsEvent(val eventName: String) {
     object OfflineModeResumed : AnalyticsEvent(OFFLINE_MODE_RESUMED)
     object OfflineModeResumedAll : AnalyticsEvent(OFFLINE_MODE_RESUMED_ALL)
     object OfflineModeCompleted : AnalyticsEvent(OFFLINE_MODE_COMPLETED)
+    object OfflineModeError : AnalyticsEvent(OFFLINE_MODE_ERROR)
     object OfflineModeDeleted : AnalyticsEvent(OFFLINE_MODE_DELETED)
     object OfflineModeDeletedAll : AnalyticsEvent(OFFLINE_MODE_DELETED_ALL)
 
@@ -40,6 +41,7 @@ sealed class AnalyticsEvent(val eventName: String) {
         const val OFFLINE_MODE_RESUMED = "offline_mode_resumed"
         const val OFFLINE_MODE_RESUMED_ALL = "offline_mode_resumedAll"
         const val OFFLINE_MODE_COMPLETED = "offline_mode_completed"
+        const val OFFLINE_MODE_ERROR = "offline_mode_error"
         const val OFFLINE_MODE_DELETED = "offline_mode_deleted"
         const val OFFLINE_MODE_DELETED_ALL = "offline_mode_deletedAll"
     }
