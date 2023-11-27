@@ -204,6 +204,12 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
             val body = """<script>window.ENV = { COURSE: { id: "${canvasContext.id}" } };</script>""" + page.body.orEmpty()
 
             // Load the html with the helper function to handle iframe cases
+            canvasWebViewWrapper.webView.settings.apply {
+                userAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0.1 Mobile/15E148 Safari/604.1"
+                allowFileAccess = true
+                allowFileAccessFromFileURLs = true
+                allowUniversalAccessFromFileURLs = true
+            }
             loadHtmlJob = canvasWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), body, {
                 canvasWebViewWrapper.loadHtml(it, page.title, baseUrl = page.htmlUrl)
             }) {
