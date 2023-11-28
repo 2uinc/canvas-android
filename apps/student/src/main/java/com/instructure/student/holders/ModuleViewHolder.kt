@@ -39,6 +39,7 @@ private const val MODULE_INDENT_IN_DP = 10
 class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     fun bind(
+        itemPosition: Int,
         moduleObject: ModuleObject?,
         moduleItem: ModuleItem,
         context: Context,
@@ -173,7 +174,7 @@ class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         }
         BinderUtils.updateShadows(isFirstItem, isLastItem, shadowTop, shadowBottom)
 
-        downloadItemView.initWithModuleData(layoutPosition, moduleObject, moduleItem, courseColor)
+        downloadItemView.initWithModuleData(itemPosition, moduleObject, moduleItem, courseColor)
     }
 
     companion object {

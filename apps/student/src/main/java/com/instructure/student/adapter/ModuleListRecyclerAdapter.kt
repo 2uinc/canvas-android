@@ -112,7 +112,7 @@ open class ModuleListRecyclerAdapter(
             val itemPosition = storedIndexOfItem(moduleObject, moduleItem)
 
             (holder as ModuleViewHolder).bind(
-                moduleObject, moduleItem, context, adapterToFragmentCallback, courseColor, itemPosition == 0,
+                itemPosition, moduleObject, moduleItem, context, adapterToFragmentCallback, courseColor, itemPosition == 0,
                 itemPosition == groupItemCount - 1, courseSettings?.restrictQuantitativeData.orDefault()
             )
         }
