@@ -24,6 +24,7 @@ import androidx.work.WorkerFactory
 import com.bugfender.sdk.Bugfender
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
+import com.instructure.pandautils.room.offline.DatabaseProvider
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.BuildConfig
 import com.instructure.student.offline.util.DownloadsRepository
@@ -51,9 +52,14 @@ class AppManager : BaseAppManager() {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var databaseProvider: DatabaseProvider
+
     override fun onCreate() {
         super.onCreate()
-        MasqueradeHelper.masqueradeLogoutTask = Runnable { StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior).execute() }
+        MasqueradeHelper.masqueradeLogoutTask = Runnable {
+            StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior, databaseProvider = databaseProvider).execute()
+        }
 
         Offline.init(
             this, Offline.Builder().setHtmlErrorOverlay(OfflineUtils.getHtmlErrorOverlay())
@@ -173,7 +179,7 @@ class AppManager : BaseAppManager() {
     }
 
     override fun performLogoutOnAuthError() {
-        StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior).execute()
+        StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior, databaseProvider = databaseProvider).execute()
     }
 
     override fun getWorkManagerFactory(): WorkerFactory = workerFactory

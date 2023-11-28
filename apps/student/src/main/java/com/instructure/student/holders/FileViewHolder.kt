@@ -26,10 +26,11 @@ import com.instructure.canvasapi2.utils.NumberHelper
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.pandautils.utils.*
 import com.instructure.student.R
-import com.instructure.student.adapter.FileFolderCallback
+import com.instructure.student.features.files.list.FileFolderCallback
 import com.instructure.student.databinding.ViewholderFileBinding
 import com.instructure.student.fragment.FileListFragment
 import com.instructure.student.offline.initWithFileData
+import com.instructure.student.features.files.list.FileListFragment
 
 class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
@@ -44,7 +45,9 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         root.onClick { callback.onItemClicked(item) }
         root.onLongClick { overflowButton.performClick() }
 
-        if (hasOptions.isNotEmpty()) {
+        val fileUnavailable = item.isFile && item.url == null
+
+        if (hasOptions.isNotEmpty() && !fileUnavailable) {
             // User has options
             overflowButton.setVisible()
             overflowButton.onClick { callback.onOpenItemMenu(item, overflowButton) }
@@ -84,6 +87,10 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fileSize.text = context.resources.getQuantityString(R.plurals.item_count, itemCount, itemCount);
             fileIcon.setColoredResource(R.drawable.ic_folder_solid, tint)
         }
+
+        fileFolderLayout.isEnabled = fileUnavailable.not()
+        fileIcon.alpha = if (fileUnavailable) 0.5f else 1f
+        textContainer.alpha = if (fileUnavailable) 0.5f else 1f
 
         downloadItemView.initWithFileData(item, courseId, tint)
         downloadFreeSpaceView.visibility = if (downloadItemView.visibility == View.VISIBLE && hasOptions.isEmpty()) View.VISIBLE else View.GONE
