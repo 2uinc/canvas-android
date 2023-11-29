@@ -42,10 +42,12 @@ import com.instructure.student.fragment.InternalWebviewFragment
 import com.instructure.student.fragment.InternalWebviewFragment.Companion.makeRoute
 import com.instructure.student.fragment.MasteryPathSelectionFragment
 import com.instructure.student.fragment.MasteryPathSelectionFragment.Companion.makeRoute
+import com.instructure.student.offline.addOfflineDataForModule
 import java.util.Date
 
 object ModuleUtility {
     fun getFragment(
+        position: Int,
         item: ModuleItem,
         course: Course,
         moduleObject: ModuleObject?,
@@ -58,7 +60,7 @@ object ModuleUtility {
     ): Fragment? = when (item.type) {
         "Page" -> {
             createFragmentWithOfflineCheck(isOnline, course, item, syncedTabs, context, setOf(Tab.PAGES_ID)) {
-                PageDetailsFragment.newInstance(PageDetailsFragment.makeRoute(course, item.title, item.pageUrl, navigatedFromModules))
+                PageDetailsFragment.newInstance(PageDetailsFragment.makeRoute(course, item.title, item.pageUrl, navigatedFromModules).addOfflineDataForModule(position, item, moduleObject))
             }
         }
         "Assignment" -> {
@@ -91,7 +93,7 @@ object ModuleUtility {
         }
         "ExternalUrl", "ExternalTool" -> {
             if (item.isLocked()) {
-                LockedModuleItemFragment.newInstance(LockedModuleItemFragment.makeRoute(course, item.title!!, item.moduleDetails?.lockExplanation ?: ""))
+                LockedModuleItemFragment.newInstance(LockedModuleItemFragment.makeRoute(course, item.title!!, item.moduleDetails?.lockExplanation ?: "").addOfflineDataForModule(position, item, moduleObject))
             } else {
                 createFragmentWithOfflineCheck(isOnline, course, item, syncedTabs, context) {
                     val uri = Uri.parse(item.htmlUrl).buildUpon().appendQueryParameter("display", "borderless").build()
@@ -101,7 +103,7 @@ object ModuleUtility {
             }
         }
         "File" -> { // TODO Handle offline availability after files sync
-            createFileDetailsFragmentWithOfflineCheck(isOnline, course, item, moduleObject, syncedFileIds, context)
+            createFileDetailsFragmentWithOfflineCheck(position, isOnline, course, item, moduleObject, syncedFileIds, context)
         }
         else -> null
     }
@@ -124,6 +126,7 @@ object ModuleUtility {
     }
 
     private fun createFileDetailsFragmentWithOfflineCheck(
+        position: Int,
         isOnline: Boolean,
         course: Course,
         item: ModuleItem,
@@ -149,7 +152,7 @@ object ModuleUtility {
                         item.id,
                         url!!,
                         item.contentId
-                    )
+                    ).addOfflineDataForModule(position, item, moduleObject)
                 )
             }
         } else {

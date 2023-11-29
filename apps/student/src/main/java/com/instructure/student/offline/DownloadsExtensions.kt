@@ -15,9 +15,9 @@ import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.interactions.router.Route
+import com.instructure.student.features.modules.util.ModuleUtility
 import com.instructure.student.offline.util.OfflineConst
 import com.instructure.student.offline.util.OfflineUtils
-import com.instructure.student.util.ModuleUtility
 import com.twou.offline.item.KeyOfflineItem
 import com.twou.offline.view.DownloadItemView
 import java.net.URL

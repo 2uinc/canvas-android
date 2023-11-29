@@ -57,6 +57,7 @@ import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentFileListBinding
 import com.instructure.student.dialog.EditTextDialog
+import com.instructure.student.features.files.details.FileDetailsFragment
 import com.instructure.student.features.files.search.FileSearchFragment
 import com.instructure.student.offline.addOfflineDataForFile
 import com.instructure.student.fragment.InternalWebviewFragment
@@ -214,7 +215,7 @@ class FileListFragment : ParentFragment(), Bookmarkable, FileUploadDialogParent 
                 if (item.fullName == null && canvasContext.type == CanvasContext.Type.COURSE) {
                     item.url?.let {
                         val fileUrl = "courses/${canvasContext.id}/files/${item.id}"
-                        RouteMatcher.route(requireContext(), FileDetailsFragment.makeRoute(canvasContext, ModuleObject(), item.id, fileUrl).addOfflineDataForFile(item.id, item.contentType.orEmpty(), fileUrl))
+                        RouteMatcher.route(requireActivity(), FileDetailsFragment.makeRoute(canvasContext, fileUrl, item.id).addOfflineDataForFile(item.id, item.contentType.orEmpty(), fileUrl))
                         return
                     }
                 }

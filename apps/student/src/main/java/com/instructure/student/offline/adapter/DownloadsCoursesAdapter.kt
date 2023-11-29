@@ -54,6 +54,7 @@ class DownloadsCoursesAdapter(
                 gradeLayout.setGone()
                 courseColorIndicator.setGone()
                 overflow.setGone()
+                offlineSyncIcon.setGone()
 
                 titleTextView.text = item.title
                 courseCode.text = item.courseCode

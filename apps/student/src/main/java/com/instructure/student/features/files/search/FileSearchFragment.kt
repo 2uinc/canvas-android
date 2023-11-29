@@ -32,11 +32,10 @@ import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_FILE_SEARCH
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
-import com.instructure.pandautils.room.offline.daos.FileFolderDao
 import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentFileSearchBinding
-import com.instructure.student.fragment.FileDetailsFragment
+import com.instructure.student.features.files.details.FileDetailsFragment
 import com.instructure.student.fragment.ParentFragment
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -149,7 +148,7 @@ class FileSearchFragment : ParentFragment(), FileSearchView {
     override fun fileClicked(file: FileFolder) {
         file.url?.let {
             val fileUrl = "courses/${canvasContext.id}/files/${file.id}"
-            RouteMatcher.route(requireContext(), FileDetailsFragment.makeRoute(canvasContext, ModuleObject(), file.id, fileUrl).addOfflineDataForFile(file.id, file.contentType.orEmpty(), fileUrl))
+            RouteMatcher.route(requireActivity(), FileDetailsFragment.makeRoute(canvasContext, fileUrl, file.id).addOfflineDataForFile(file.id, file.contentType.orEmpty(), fileUrl))
             return
         }
 

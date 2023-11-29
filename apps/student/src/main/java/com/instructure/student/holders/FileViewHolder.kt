@@ -28,7 +28,6 @@ import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.features.files.list.FileFolderCallback
 import com.instructure.student.databinding.ViewholderFileBinding
-import com.instructure.student.fragment.FileListFragment
 import com.instructure.student.offline.initWithFileData
 import com.instructure.student.features.files.list.FileListFragment
 

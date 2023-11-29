@@ -20,7 +20,6 @@ import com.instructure.student.R
 import com.instructure.student.databinding.ViewholderModuleBinding
 import com.instructure.student.features.modules.util.ModuleUtility
 import com.instructure.student.util.BinderUtils
-import com.instructure.student.util.ModuleUtility
 import com.instructure.student.offline.initWithModuleData
 
 private const val MODULE_INDENT_IN_DP = 10
