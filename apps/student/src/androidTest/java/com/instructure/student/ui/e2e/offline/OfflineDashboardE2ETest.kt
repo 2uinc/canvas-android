@@ -19,13 +19,15 @@ package com.instructure.student.ui.e2e.offline
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.instructure.canvas.espresso.FeatureCategory
 import com.instructure.canvas.espresso.OfflineE2E
-import com.instructure.panda_annotations.FeatureCategory
-import com.instructure.panda_annotations.Priority
-import com.instructure.panda_annotations.SecondaryFeatureCategory
-import com.instructure.panda_annotations.TestCategory
-import com.instructure.panda_annotations.TestMetaData
+import com.instructure.canvas.espresso.Priority
+import com.instructure.canvas.espresso.SecondaryFeatureCategory
+import com.instructure.canvas.espresso.TestCategory
+import com.instructure.canvas.espresso.TestMetaData
 import com.instructure.student.ui.e2e.offline.utils.OfflineTestUtils
+import com.instructure.student.ui.e2e.offline.utils.OfflineTestUtils.waitForNetworkToGoOffline
 import com.instructure.student.ui.utils.StudentTest
 import com.instructure.student.ui.utils.seedData
 import com.instructure.student.ui.utils.tokenLogin
@@ -35,13 +37,14 @@ import org.junit.Test
 
 @HiltAndroidTest
 class OfflineDashboardE2ETest : StudentTest() {
+
     override fun displaysPageObjects() = Unit
 
     override fun enableAndConfigureAccessibilityChecks() = Unit
 
     @OfflineE2E
     @Test
-    @TestMetaData(Priority.MANDATORY, FeatureCategory.DASHBOARD, TestCategory.E2E)
+    @TestMetaData(Priority.MANDATORY, FeatureCategory.DASHBOARD, TestCategory.E2E, SecondaryFeatureCategory.OFFLINE_MODE)
     fun testOfflineDashboardE2E() {
 
         Log.d(PREPARATION_TAG,"Seeding data.")
@@ -51,32 +54,27 @@ class OfflineDashboardE2ETest : StudentTest() {
         val course2 = data.coursesList[1]
         val testAnnouncement = data.announcementsList[0]
 
-        Log.d(PREPARATION_TAG, "Get the device to be able to perform app-independent actions on it.")
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
-        Log.d(STEP_TAG,"Login with user: ${student.name}, login id: ${student.loginId}.")
+        Log.d(STEP_TAG,"Login with user: '${student.name}', login id: '${student.loginId}'.")
         tokenLogin(student)
         dashboardPage.waitForRender()
 
         Log.d(STEP_TAG, "Open global 'Manage Offline Content' page via the more menu of the Dashboard Page.")
         dashboardPage.openGlobalManageOfflineContentPage()
 
+        Log.d(STEP_TAG, "Assert that the '${course1.name}' course's checkbox state is 'Unchecked'.")
+        manageOfflineContentPage.assertCheckedStateOfItem(course1.name, MaterialCheckBox.STATE_UNCHECKED)
+
         Log.d(STEP_TAG, "Select the entire '${course1.name}' course for sync. Click on the 'Sync' button.")
         manageOfflineContentPage.changeItemSelectionState(course1.name)
         manageOfflineContentPage.clickOnSyncButtonAndConfirm()
 
-        Log.d(STEP_TAG, "Wait for the 'Download Started' dashboard notification to be displayed, and the to disappear.")
-        dashboardPage.waitForRender()
-        dashboardPage.waitForSyncProgressDownloadStartedNotification()
-        dashboardPage.waitForSyncProgressDownloadStartedNotificationToDisappear()
-
-        Log.d(STEP_TAG, "Wait for the 'Syncing Offline Content' dashboard notification to be displayed, and the to disappear. (It should be displayed after the 'Download Started' notification immediately.)")
-        dashboardPage.waitForSyncProgressStartingNotification()
-        dashboardPage.waitForSyncProgressStartingNotificationToDisappear()
+        Log.d(STEP_TAG, "Assert that the offline sync icon only displayed on the synced course's course card.")
+        dashboardPage.assertCourseOfflineSyncIconVisible(course1.name)
+        device.waitForIdle()
 
         Log.d(PREPARATION_TAG, "Turn off the Wi-Fi and Mobile Data on the device, so it will go offline.")
         turnOffConnectionViaADB()
-        device.waitForIdle()
+        waitForNetworkToGoOffline(device)
 
         Log.d(STEP_TAG, "Wait for the Dashboard Page to be rendered. Refresh the page.")
         dashboardPage.waitForRender()
@@ -98,7 +96,7 @@ class OfflineDashboardE2ETest : StudentTest() {
 
     @OfflineE2E
     @Test
-    @TestMetaData(Priority.MANDATORY, FeatureCategory.DASHBOARD, TestCategory.E2E, false, SecondaryFeatureCategory.OFFLINE_MODE)
+    @TestMetaData(Priority.MANDATORY, FeatureCategory.DASHBOARD, TestCategory.E2E, SecondaryFeatureCategory.OFFLINE_MODE)
     fun testOfflineDashboardUnavailableFeaturesE2E() {
 
         Log.d(PREPARATION_TAG,"Seeding data.")
@@ -120,18 +118,13 @@ class OfflineDashboardE2ETest : StudentTest() {
         manageOfflineContentPage.changeItemSelectionState(course.name)
         manageOfflineContentPage.clickOnSyncButtonAndConfirm()
 
-        Log.d(STEP_TAG, "Wait for the 'Download Started' dashboard notification to be displayed, and the to disappear.")
-        dashboardPage.waitForRender()
-        dashboardPage.waitForSyncProgressDownloadStartedNotification()
-        dashboardPage.waitForSyncProgressDownloadStartedNotificationToDisappear()
-
-        Log.d(STEP_TAG, "Wait for the 'Syncing Offline Content' dashboard notification to be displayed, and the to disappear. (It should be displayed after the 'Download Started' notification immediately.)")
-        dashboardPage.waitForSyncProgressStartingNotification()
-        dashboardPage.waitForSyncProgressStartingNotificationToDisappear()
+        Log.d(STEP_TAG, "Assert that the offline sync icon only displayed on the synced course's course card.")
+        dashboardPage.assertCourseOfflineSyncIconVisible(course.name)
+        device.waitForIdle()
 
         Log.d(PREPARATION_TAG, "Turn off the Wi-Fi and Mobile Data on the device, so it will go offline.")
         turnOffConnectionViaADB()
-        device.waitForIdle()
+        waitForNetworkToGoOffline(device)
 
         Log.d(STEP_TAG, "Wait for the Dashboard Page to be rendered. Refresh the page.")
         dashboardPage.waitForRender()
