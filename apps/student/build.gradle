@@ -50,8 +50,8 @@ android {
         applicationId "com.instructure.candroid"
         minSdkVersion Versions.MIN_SDK
         targetSdkVersion Versions.TARGET_SDK
-        versionCode = 255
-        versionName = '6.26.1'
+        versionCode = 259
+        versionName = '7.1.0'
 
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true
@@ -134,6 +134,14 @@ android {
             buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
+        }
+
+        debugMinify {
+            initWith debug
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            matchingFallbacks = ['debug']
         }
 
         release {
@@ -261,6 +269,7 @@ android {
     hilt {
         enableTransformForLocalTests = true
         enableAggregatingTask = false
+        enableExperimentalClasspathAggregation = true
     }
 
     sourceSets {
@@ -271,8 +280,6 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':panda_annotations')
-    kaptAndroidTestQa project(path: ':panda_processor')
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -348,7 +355,8 @@ dependencies {
     implementation Libs.SQLDELIGHT
 
     /* Qr Code */
-    implementation Libs.JOURNEY_ZXING
+    implementation (Libs.JOURNEY_ZXING) { transitive = false }
+    implementation Libs.JOURNEY_ZXING_CORE
 
     /* AAC */
     implementation Libs.VIEW_MODEL
@@ -377,6 +385,10 @@ dependencies {
     implementation Libs.ROOM
     kapt Libs.ROOM_COMPILER
     implementation Libs.ROOM_COROUTINES
+
+    testImplementation Libs.HAMCREST
+
+    androidTestImplementation Libs.COMPOSE_UI_TEST
 
     implementation project(path: ':mobile-offline-downloader-android')
     implementation "org.jsoup:jsoup:1.13.1"

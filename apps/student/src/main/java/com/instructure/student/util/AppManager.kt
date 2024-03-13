@@ -31,6 +31,7 @@ import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineDownloaderCreator
 import com.instructure.student.offline.util.OfflineModeService
 import com.instructure.student.offline.util.OfflineUtils
+import com.instructure.student.features.assignments.reminder.AlarmScheduler
 import com.instructure.student.tasks.StudentLogoutTask
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
@@ -55,10 +56,18 @@ class AppManager : BaseAppManager() {
     @Inject
     lateinit var databaseProvider: DatabaseProvider
 
+    @Inject
+    lateinit var alarmScheduler: AlarmScheduler
+
     override fun onCreate() {
         super.onCreate()
         MasqueradeHelper.masqueradeLogoutTask = Runnable {
-            StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior, databaseProvider = databaseProvider).execute()
+            StudentLogoutTask(
+                LogoutTask.Type.LOGOUT,
+                typefaceBehavior = typefaceBehavior,
+                databaseProvider = databaseProvider,
+                alarmScheduler = alarmScheduler
+            ).execute()
         }
 
         Offline.init(
@@ -179,7 +188,12 @@ class AppManager : BaseAppManager() {
     }
 
     override fun performLogoutOnAuthError() {
-        StudentLogoutTask(LogoutTask.Type.LOGOUT, typefaceBehavior = typefaceBehavior, databaseProvider = databaseProvider).execute()
+        StudentLogoutTask(
+            LogoutTask.Type.LOGOUT,
+            typefaceBehavior = typefaceBehavior,
+            databaseProvider = databaseProvider,
+            alarmScheduler = alarmScheduler
+        ).execute()
     }
 
     override fun getWorkManagerFactory(): WorkerFactory = workerFactory
