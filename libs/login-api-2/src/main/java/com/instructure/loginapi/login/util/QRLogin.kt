@@ -32,6 +32,7 @@ import com.instructure.loginapi.login.model.SignedInUser
 object QRLogin {
 
     const val QR_DOMAIN_VALUE = "digitalcampus.instructure.com"
+    const val QR_DOMAIN_VALUE_BETA = "digitalcampus.beta.instructure.com"
     private const val QR_DOMAIN = "domain"
     private const val QR_AUTH_CODE_STUDENT = "code_android"
     private const val QR_AUTH_CODE_TEACHER = "code_android_teacher"
@@ -109,6 +110,7 @@ object QRLogin {
         return hostList.contains(uri.host.orEmpty())
                 && uri.queryParameterNames.contains(QR_DOMAIN)
                 && uri.queryParameterNames.contains(codeParam)
-                && uri.getQueryParameter(QR_DOMAIN) == QR_DOMAIN_VALUE
+                && (uri.getQueryParameter(QR_DOMAIN) == QR_DOMAIN_VALUE
+                || uri.getQueryParameter(QR_DOMAIN) == QR_DOMAIN_VALUE_BETA)
     }
 }
