@@ -17,6 +17,7 @@
 package com.instructure.pandautils.utils
 
 import android.content.Context
+import android.net.Uri
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.models.AuthenticatedSession
@@ -54,7 +55,16 @@ class HtmlContentFormatter(
                         // Snag that src
                         val srcUrl = matcher.group(1)
 
-                        if (hasExternalTools(srcUrl)) {
+                        if (iframe.contains("name=\"wistia_embed\"")) {
+                            // Replace the Wistia iFrame with the Wistia divs
+                            val srcUri = Uri.parse(srcUrl)
+                            val iFrameIndex = srcUri.pathSegments.indexOf("iframe")
+                            if (iFrameIndex != -1 && srcUri.pathSegments.size > iFrameIndex + 1) {
+                                val wistiaId = srcUri.pathSegments[iFrameIndex + 1]
+                                val wistiaDivs = "<script src=\"//fast.wistia.com/embed/medias/{ID}.jsonp\" async></script><script src=\"//fast.wistia.com/assets/external/E-v1.js\" async></script><div class=\"wistia_embed wistia_async_{ID}\" style=\"margin-top:10px;height:100%;width:100%\">&nbsp;</div><script src=\"https://fast.wistia.net/assets/external/transcript.js\" async=\"\"></script><wistia-transcript media-id=\"{ID}\" style=\"height:400px;\"></wistia-transcript>"
+                                newHTML = newHTML.replace(iframe, wistiaDivs.replace("{ID}", wistiaId))
+                            }
+                        } else if (hasExternalTools(srcUrl)) {
                             // Handle the LTI case
                             val newIframe = externalToolIframe(srcUrl, iframe, context)
                             newHTML = newHTML.replace(iframe, newIframe)
