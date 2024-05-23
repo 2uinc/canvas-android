@@ -32,8 +32,18 @@ import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_TO_DO_LIST
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.features.calendarevent.details.EventFragment
 import com.instructure.pandautils.features.discussion.router.DiscussionRouterFragment
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.children
+import com.instructure.pandautils.utils.isTablet
+import com.instructure.pandautils.utils.makeBundle
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.withArgs
 import com.instructure.student.R
 import com.instructure.student.adapter.TodoListRecyclerAdapter
 import com.instructure.student.databinding.FragmentListTodoBinding
@@ -168,19 +178,17 @@ class ToDoListFragment : ParentFragment() {
         when {
             toDo?.assignment != null -> { // Launch assignment details fragment.
                 if (toDo.assignment!!.discussionTopicHeader != null) {
-                    val groupTopic = toDo.assignment!!.discussionTopicHeader!!.groupTopicChildren.firstOrNull()
-                    if (groupTopic == null) { // Launch discussion details fragment
-                        RouteMatcher.route(requireActivity(), DiscussionRouterFragment.makeRoute(toDo.canvasContext!!, toDo.assignment!!.discussionTopicHeader!!))
-                    } else { // Launch discussion details fragment with the group
-                        RouteMatcher.route(requireActivity(), DiscussionRouterFragment.makeRoute(CanvasContext.emptyGroupContext(groupTopic.groupId), groupTopic.id))
-                    }
+                    RouteMatcher.route(
+                        requireActivity(),
+                        DiscussionRouterFragment.makeRoute(toDo.canvasContext!!, toDo.assignment!!.discussionTopicHeader!!)
+                    )
                 } else {
                     // Launch assignment details fragment.
                     RouteMatcher.route(requireActivity(), AssignmentDetailsFragment.makeRoute(toDo.canvasContext!!, toDo.assignment!!.id))
                 }
             }
             toDo?.scheduleItem != null -> // It's a Calendar event from the Upcoming API.
-                RouteMatcher.route(requireActivity(), CalendarEventFragment.makeRoute(toDo.canvasContext!!, toDo.scheduleItem!!))
+                RouteMatcher.route(requireActivity(), EventFragment.makeRoute(toDo.canvasContext!!, toDo.scheduleItem!!))
             toDo?.quiz != null -> // It's a Quiz let's launch the quiz details fragment
                 RouteMatcher.route(requireActivity(), BasicQuizViewFragment.makeRoute(toDo.canvasContext!!, toDo.quiz!!, toDo.quiz!!.url!!))
         }

@@ -21,10 +21,8 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import android.view.View
 import androidx.core.content.FileProvider
-import androidx.hilt.work.HiltWorkerFactory
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
@@ -35,13 +33,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.instructure.canvas.espresso.CanvasTest
 import com.instructure.espresso.InstructureActivityTestRule
+import com.instructure.espresso.ModuleItemInteractions
 import com.instructure.espresso.Searchable
 import com.instructure.espresso.swipeRight
 import com.instructure.pandautils.utils.Const
 import com.instructure.student.BuildConfig
 import com.instructure.student.R
 import com.instructure.student.activity.LoginActivity
-import com.instructure.student.espresso.StudentHiltTestApplication_Application
 import com.instructure.student.ui.pages.AboutPage
 import com.instructure.student.ui.pages.AllCoursesPage
 import com.instructure.student.ui.pages.AnnotationCommentListPage
@@ -49,7 +47,6 @@ import com.instructure.student.ui.pages.AnnouncementListPage
 import com.instructure.student.ui.pages.AssignmentDetailsPage
 import com.instructure.student.ui.pages.AssignmentListPage
 import com.instructure.student.ui.pages.BookmarkPage
-import com.instructure.student.ui.pages.CalendarEventPage
 import com.instructure.student.ui.pages.CanvasWebViewPage
 import com.instructure.student.ui.pages.ConferenceDetailsPage
 import com.instructure.student.ui.pages.ConferenceListPage
@@ -62,6 +59,7 @@ import com.instructure.student.ui.pages.ElementaryCoursePage
 import com.instructure.student.ui.pages.ElementaryDashboardPage
 import com.instructure.student.ui.pages.FileListPage
 import com.instructure.student.ui.pages.FileUploadPage
+import com.instructure.student.ui.pages.GoToQuizPage
 import com.instructure.student.ui.pages.GradesPage
 import com.instructure.student.ui.pages.GroupBrowserPage
 import com.instructure.student.ui.pages.HelpPage
@@ -78,6 +76,7 @@ import com.instructure.student.ui.pages.ModuleProgressionPage
 import com.instructure.student.ui.pages.ModulesPage
 import com.instructure.student.ui.pages.NewMessagePage
 import com.instructure.student.ui.pages.NotificationPage
+import com.instructure.student.ui.pages.PageDetailsPage
 import com.instructure.student.ui.pages.PageListPage
 import com.instructure.student.ui.pages.PairObserverPage
 import com.instructure.student.ui.pages.PandaAvatarPage
@@ -102,58 +101,28 @@ import com.instructure.student.ui.pages.UrlSubmissionUploadPage
 import com.instructure.student.ui.pages.offline.ManageOfflineContentPage
 import com.instructure.student.ui.pages.offline.OfflineSyncSettingsPage
 import com.instructure.student.ui.pages.offline.SyncProgressPage
-import dagger.hilt.android.testing.HiltAndroidRule
 import instructure.rceditor.RCETextEditor
 import org.hamcrest.Matcher
 import org.hamcrest.core.AllOf
-import org.junit.Before
-import org.junit.Rule
 import java.io.File
-import javax.inject.Inject
 
 abstract class StudentTest : CanvasTest() {
 
     val device: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
+    override val isTesting = BuildConfig.IS_TESTING
+
     override val activityRule: InstructureActivityTestRule<out Activity> =
         StudentActivityTestRule(LoginActivity::class.java)
-
-    lateinit var originalActivity : Activity
-
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
-
-    @get:Rule(order = 0)
-    var hiltRule = HiltAndroidRule(this)
-
-    // Sometimes activityRule.activity can get nulled out over time, probably as we
-    // navigate away from the original login screen.  Capture the activity here so
-    // that we can reference it safely later.
-    @Before
-    fun recordOriginalActivity() {
-        originalActivity = activityRule.activity
-        try {
-            hiltRule.inject()
-        } catch (e: IllegalStateException) {
-            // Catch this exception to avoid multiple injection
-            Log.w("Test Inject", e.message ?: "")
-        }
-
-        val application = originalActivity.application as? StudentHiltTestApplication_Application
-        application?.workerFactory = workerFactory
-    }
-
-    override val isTesting = BuildConfig.IS_TESTING
 
     /**
      * Required for auto complete of page objects within tests
      */
     val annotationCommentListPage = AnnotationCommentListPage()
     val announcementListPage = AnnouncementListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
-    val assignmentDetailsPage = AssignmentDetailsPage()
+    val assignmentDetailsPage = AssignmentDetailsPage(ModuleItemInteractions(R.id.moduleName, R.id.next_item, R.id.prev_item))
     val assignmentListPage = AssignmentListPage(Searchable(R.id.search, R.id.search_src_text))
     val bookmarkPage = BookmarkPage()
-    val calendarEventPage = CalendarEventPage()
     val canvasWebViewPage = CanvasWebViewPage()
     val courseBrowserPage = CourseBrowserPage()
     val groupBrowserPage = GroupBrowserPage()
@@ -163,7 +132,7 @@ abstract class StudentTest : CanvasTest() {
     val courseGradesPage = CourseGradesPage()
     val dashboardPage = DashboardPage()
     val leftSideNavigationDrawerPage = LeftSideNavigationDrawerPage()
-    val discussionDetailsPage = DiscussionDetailsPage()
+    val discussionDetailsPage = DiscussionDetailsPage(ModuleItemInteractions(R.id.moduleName, R.id.next_item, R.id.prev_item))
     val discussionListPage = DiscussionListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
     val allCoursesPage = AllCoursesPage()
     val fileListPage = FileListPage(Searchable(R.id.search, R.id.queryInput, R.id.clearButton, R.id.backButton))
@@ -181,6 +150,7 @@ abstract class StudentTest : CanvasTest() {
     val newMessagePage = NewMessagePage()
     val notificationPage = NotificationPage()
     val pageListPage = PageListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
+    val pageDetailsPage = PageDetailsPage(ModuleItemInteractions(R.id.moduleName, R.id.next_item, R.id.prev_item))
     val pairObserverPage = PairObserverPage()
     val pandaAvatarPage = PandaAvatarPage()
     val peopleListPage = PeopleListPage()
@@ -190,6 +160,7 @@ abstract class StudentTest : CanvasTest() {
     val qrLoginPage = QRLoginPage()
     val quizListPage = QuizListPage()
     val quizTakingPage = QuizTakingPage()
+    val goToQuizPage = GoToQuizPage(ModuleItemInteractions(R.id.moduleName, R.id.next_item, R.id.prev_item))
     val remoteConfigSettingsPage = RemoteConfigSettingsPage()
     val settingsPage = SettingsPage()
     val submissionDetailsPage = SubmissionDetailsPage()
