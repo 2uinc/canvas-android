@@ -30,7 +30,6 @@ import com.instructure.pandautils.room.offline.DatabaseProvider
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.activity.LoginActivity
 import com.instructure.student.features.assignments.reminder.AlarmScheduler
-import com.instructure.student.flutterChannels.FlutterComm
 import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.StudentPrefs
 import com.instructure.student.widget.WidgetUpdater
@@ -47,7 +46,6 @@ class StudentLogoutTask(
 
     override fun onCleanup() {
         OfflineUtils.logout()
-        FlutterComm.reset()
         StudentPrefs.safeClearPrefs()
         WidgetUpdater.updateWidgets()
         Heap.setTrackingEnabled(false)

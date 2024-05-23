@@ -65,13 +65,12 @@ import com.instructure.student.databinding.CourseGridRecyclerRefreshLayoutBindin
 import com.instructure.student.databinding.FragmentCourseGridBinding
 import com.instructure.student.decorations.VerticalGridSpacingDecoration
 import com.instructure.student.dialog.ColorPickerDialog
-import com.instructure.student.dialog.EditCourseNicknameDialog
+import com.instructure.pandautils.dialogs.EditCourseNicknameDialog
 import com.instructure.student.events.CoreDataFinishedLoading
 import com.instructure.student.events.CourseColorOverlayToggledEvent
 import com.instructure.student.events.ShowGradesToggledEvent
 import com.instructure.student.features.coursebrowser.CourseBrowserFragment
 import com.instructure.student.features.dashboard.DashboardRepository
-import com.instructure.student.flutterChannels.FlutterComm
 import com.instructure.student.holders.CourseViewHolder
 import com.instructure.student.interfaces.CourseAdapterToFragmentCallback
 import com.instructure.student.offline.util.DownloadsRepository
@@ -237,25 +236,18 @@ class DashboardFragment : ParentFragment() {
                     )
                 }
 
-                @Suppress("EXPERIMENTAL_FEATURE_WARNING")
-                override fun onPickCourseColor(course: Course) {
-                    ColorPickerDialog.newInstance(requireFragmentManager(), course) { color ->
-                        tryWeave {
-                            awaitApi<CanvasColor> {
-                                UserManager.setColors(
-                                    it,
-                                    course.contextId,
-                                    color
-                                )
-                            }
-                            ColorKeeper.addToCache(course.contextId, color)
-                            FlutterComm.sendUpdatedTheme()
-                            recyclerAdapter?.notifyDataSetChanged()
-                        } catch {
-                            toast(R.string.colorPickerError)
-                        }
-                    }.show(requireFragmentManager(), ColorPickerDialog::class.java.simpleName)
-                }
+            @Suppress("EXPERIMENTAL_FEATURE_WARNING")
+            override fun onPickCourseColor(course: Course) {
+                ColorPickerDialog.newInstance(requireFragmentManager(), course) { color ->
+                    tryWeave {
+                        awaitApi<CanvasColor> { UserManager.setColors(it, course.contextId, color) }
+                        ColorKeeper.addToCache(course.contextId, color)
+                        recyclerAdapter?.notifyDataSetChanged()
+                    } catch {
+                        toast(R.string.colorPickerError)
+                    }
+                }.show(requireFragmentManager(), ColorPickerDialog::class.java.simpleName)
+            }
 
                 override fun onManageOfflineContent(course: Course) {
                     RouteMatcher.route(requireActivity(), OfflineContentFragment.makeRoute(course))

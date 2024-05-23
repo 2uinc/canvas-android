@@ -267,6 +267,3 @@
 -dontwarn okio.**
 -keep class retrofit2.** { *; }
 -dontwarn retrofit2.**
-
-# Flutter embed
--keep class io.flutter.** { *; }
