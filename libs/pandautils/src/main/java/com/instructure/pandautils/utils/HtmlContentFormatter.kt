@@ -47,20 +47,12 @@ class HtmlContentFormatter(
                 if (isWistiaIFrame(element.outerHtml())) {
                     // Replace the Wistia iFrame with the Wistia divs
                     var stringToReplace = ""
-                    val v1Link = "https://fast.wistia.com/assets/external/E-v1.js"
-                    if (!newHTML.contains(v1Link)) {
-                        stringToReplace += "<script src=\"$v1Link\" async></script>\n"
-                    }
-                    val transcriptLink = "https://fast.wistia.net/assets/external/transcript.js"
-                    if (!newHTML.contains(transcriptLink)) {
-                        stringToReplace += "<script src=\"$transcriptLink\" async></script>\n"
-                    }
-
-                    val srcUri = Uri.parse(element.attr("src"))
+                    val src = element.attr("src")
+                    val srcUri = Uri.parse(src)
                     val iFrameIndex = srcUri.pathSegments.indexOf("iframe")
                     if (iFrameIndex != -1 && srcUri.pathSegments.size > iFrameIndex + 1) {
                         val wistiaId = srcUri.pathSegments[iFrameIndex + 1]
-                        stringToReplace += "<script src=\"//fast.wistia.com/embed/medias/$wistiaId.jsonp\" async></script><div class=\"wistia_embed wistia_async_$wistiaId\" style=\"margin-top:10px;height:100%;width:100%\"></div>\n"
+                        stringToReplace += "<script src=\"//fast.wistia.com/embed/medias/$wistiaId.jsonp\" async></script><div class=\"wistia_embed wistia_async_$wistiaId\" src=\"$src\" style=\"margin-top:10px;height:100%;width:100%\"></div>\n"
                         val wistiaTranscriptionTag =
                             "<wistia-transcript media-id=\"$wistiaId\" style=\"padding-top: 40px;height:400px;\"></wistia-transcript>"
                         val parent = element.parent()
@@ -76,6 +68,14 @@ class HtmlContentFormatter(
                             stringToReplace = "<div class=\"wistia_responsive_padding\" style=\"padding: 56.25% 0 0 0; position: relative;\"> \n" +
                                     "<div class=\"wistia_responsive_wrapper\" style=\"height: 100%; left: 0; position: absolute; top: 0; width: 100%;\">$stringToReplace</div></div>" +
                                     wistiaTranscriptionTag
+                        }
+                        val v1Link = "https://fast.wistia.com/assets/external/E-v1.js"
+                        if (!newHTML.contains(v1Link)) {
+                            stringToReplace += "<script src=\"$v1Link\" async></script>\n"
+                        }
+                        val transcriptLink = "https://fast.wistia.net/assets/external/transcript.js"
+                        if (!newHTML.contains(transcriptLink)) {
+                            stringToReplace += "<script src=\"$transcriptLink\" async></script>\n"
                         }
                         element.replaceWith(Jsoup.parse(stringToReplace))
 

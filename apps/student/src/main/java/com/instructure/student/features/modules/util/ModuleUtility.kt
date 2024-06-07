@@ -91,7 +91,7 @@ object ModuleUtility {
             } else {
                 createFragmentWithOfflineCheck(isOnline, course, item, syncedTabs, context) {
                     val uri = Uri.parse(item.htmlUrl).buildUpon().appendQueryParameter("display", "borderless").build()
-                    val route = makeRoute(course, uri.toString(), item.title!!, true, true, true)
+                    val route = makeRoute(course, uri.toString(), item.title!!, true, true, true).addOfflineDataForModule(position, item, moduleObject)
                     InternalWebviewFragment.newInstance(route)
                 }
             }
