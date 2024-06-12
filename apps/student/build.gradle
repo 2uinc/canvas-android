@@ -122,8 +122,6 @@ android {
                 heapEnabled = false
             }
 
-            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY_DEBUG + "\""
-            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
         }
@@ -155,9 +153,7 @@ android {
             ext {
                 heapEnabled = false
             }
-
-            buildConfigField "String", "AWS_ACCESS_KEY", "\"" + Keys.AWS_ACCESS_KEY_RELEASE + "\""
-            buildConfigField "String", "AWS_SECRET_KEY", "\"" + Keys.AWS_SECRET_KEY_RELEASE + "\""
+            
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_RELEASE + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_RELEASE + "\""
         }

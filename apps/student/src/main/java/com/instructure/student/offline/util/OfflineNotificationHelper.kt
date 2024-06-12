@@ -13,6 +13,7 @@ import com.instructure.canvasapi2.managers.CommunicationChannelsManager
 import com.instructure.canvasapi2.managers.NotificationPreferencesManager
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
+import com.instructure.canvasapi2.utils.RemoteConfigPrefs
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
 import com.instructure.canvasapi2.utils.weave.weave
@@ -23,7 +24,6 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import io.intercom.android.sdk.push.IntercomPushClient
 import org.json.JSONObject
-
 
 object OfflineNotificationHelper {
 
@@ -144,13 +144,17 @@ object OfflineNotificationHelper {
         }
     }
 
-    private fun getAmazonCredentials() = object : AWSCredentials {
+    private fun getAmazonCredentials(debug: Boolean = false) = object : AWSCredentials {
         override fun getAWSAccessKeyId(): String {
-            return BuildConfig.AWS_ACCESS_KEY
+            val param = if (debug) "aws_key_debug" else "aws_key_release"
+            val value = RemoteConfigPrefs.getString(param).orEmpty()
+            return value
         }
 
         override fun getAWSSecretKey(): String {
-            return BuildConfig.AWS_SECRET_KEY
+            val param = if (debug) "aws_secret_key_debug" else "aws_secret_key_release"
+            val value = RemoteConfigPrefs.getString(param).orEmpty()
+            return value
         }
     }
 
