@@ -1,5 +1,5 @@
 object OfflineDependencies {
-    const val versionCode = 5
+    const val versionCode = 6
     const val versionName = "1.2"
     const val constraintLayout = "2.1.0"
     const val appCompat = "1.5.0"
