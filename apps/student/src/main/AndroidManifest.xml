@@ -292,7 +292,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.StudentLoginWithQRActivity" />
-        <activity android:name=".activity.Five9SupportActivity" />
+        <activity android:name=".activity.Five9SupportActivity"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".activity.StudentViewStarterActivity"
