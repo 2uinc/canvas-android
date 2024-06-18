@@ -236,7 +236,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             delay(250)
             when (v.id) {
                 R.id.navigationDrawerItem_liveChat -> {
-                    Intercom.client().present(IntercomSpace.Home)
+                    startActivity(Five9SupportActivity.newInstance(this@NavigationActivity))
                 }
 
                 R.id.navigationDrawerItem_help -> {
@@ -288,7 +288,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                         .setTitle(R.string.logout_warning)
                         .setPositiveButton(android.R.string.ok) { _, _ ->
                             OfflineNotificationHelper.unsubscribeUserFromSNS()
-                            Intercom.client().logout()
+                            //Intercom.client().logout()
                             StudentLogoutTask(
                                 LogoutTask.Type.LOGOUT,
                                 typefaceBehavior = typefaceBehavior,

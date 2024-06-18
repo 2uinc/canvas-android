@@ -292,6 +292,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.StudentLoginWithQRActivity" />
+        <activity android:name=".activity.Five9SupportActivity" />
 
         <activity
             android:name=".activity.StudentViewStarterActivity"
