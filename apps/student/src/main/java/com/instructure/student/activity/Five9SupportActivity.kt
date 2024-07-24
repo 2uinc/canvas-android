@@ -25,6 +25,8 @@ class Five9SupportActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityFive9Binding
     private val name = ApiPrefs.user?.name.orEmpty()
+    private val firstName = ApiPrefs.user?.sortableName?.split(",")?.last()?.trim().orEmpty()
+    private val lastName = ApiPrefs.user?.sortableName?.split(",")?.first()?.trim().orEmpty()
     private val email = ApiPrefs.user?.run { primaryEmail ?: email }.orEmpty()
     private val segmentKey = RemoteConfigPrefs.getString(SEGMENT_KEY_TAG).orEmpty()
     private val five9ConfigId =
@@ -32,63 +34,79 @@ class Five9SupportActivity : AppCompatActivity() {
     private val personalInfo =
         RemoteConfigPrefs.getString(PERSONAL_INFO_TAG, DEFAULT_PERSONAL_INFO) ?: DEFAULT_PERSONAL_INFO
 
-    private fun getFormData(name: String, email: String) = """
-        [
-            {
-                "type": "hidden",
-                "formType": "both",
-                "required": false
-            },
-            {
-                "label": "Name",
-                "cav": "contact.name",
-                "formType": "both",
-                "type": "text",
-                "required": true,
-                "readOnly": false,
-                "value": "$name"
-            },
-            {
-                "type": "hidden",
-                "formType": "both",
-                "required": false
-            },
-            {
-                "label": "Email",
-                "cav": "contact.email",
-                "formType": "both",
-                "type": "email",
-                "required": true,
-                "value": "$email"
-            },
-            {
-                "type": "hidden",
-                "formType": "both",
-                "required": false
-            },
-            {
-                "label": "Question",
-                "cav": "Question",
-                "formType": "both",
-                "type": "textarea",
-                "required": true,
-                "readOnly": false
-            },
-            {
-                "type": "hidden",
-                "formType": "both",
-                "required": false
-            },
-            {
-                "type": "static text",
-                "formType": "both",
-                "required": false,
-                "label": "$personalInfo"
-            }
-        ]
+    private fun getFormData() = """[
+        {
+            "type": "static text",
+            "formType": "both",
+            "required": false,
+            "cav": ""
+        },
+        {
+            "label": "First Name",
+            "cav": "contact.firstName",
+            "formType": "both",
+            "type": "text",
+            "required": true,
+            "readOnly": false,
+            "pos": "",
+            "value": "$firstName"
+        },
+        {
+            "type": "static text",
+            "formType": "both",
+            "required": false
+        },
+        {
+            "type": "text",
+            "formType": "both",
+            "required": true,
+            "label": "Last Name",
+            "cav": "contact.lastName",
+            "value": "$lastName"
+        },
+        {
+            "type": "static text",
+            "formType": "both",
+            "required": false,
+            "label": ""
+        },
+        {
+            "label": "University Email or Email Address on Record",
+            "cav": "contact.email",
+            "formType": "both",
+            "type": "email",
+            "required": true,
+            "value": "$email"
+        },
+        {
+            "type": "static text",
+            "formType": "both",
+            "required": false
+        },
+        {
+            "label": "Question/Describe your Issue",
+            "cav": "Question",
+            "formType": "both",
+            "type": "textarea",
+            "required": true,
+            "readOnly": false
+        },
+        {
+            "type": "static text",
+            "formType": "both",
+            "required": false
+        },
+        {
+            "type": "static text",
+            "formType": "none",
+            "required": false,
+            "label": "Please note that Online Campus Support will process your personal information in accordance with its <a href=\"https://www.oneidentity.com/legal/privacy.aspx\" target=\"_blank\">privacy policy</a> <br><br/> You may receive transactional emails containing your chat conversation with Online Campus Support. <br> <br/>",
+            "cav": ""
+        }
+    ]
     """
 
-    private fun getFiveNineScript(name: String, email: String) = """
+    private fun getFiveNineScript() = """
         <html>
             <body>
                 <script src="https://live-chat.ps.five9.com/Five9ChatPlugin.js" type="text/javascript"></script>
@@ -131,7 +149,7 @@ class Five9SupportActivity : AppCompatActivity() {
                       "email": "$email",
                       "name": "$name"
                     },
-                    "formData": ${getFormData(name, email)}
+                    "formData": ${getFormData()}
                   };
                   options.callback = callback;
                   Five9ChatPlugin(options);
@@ -140,7 +158,7 @@ class Five9SupportActivity : AppCompatActivity() {
         </html>
     """.trimIndent()
 
-    private fun getExpertScript(name: String, email: String) = """
+    private fun getExpertScript() = """
          <html>
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
@@ -153,7 +171,6 @@ class Five9SupportActivity : AppCompatActivity() {
             </head>
             <body>
                 <script>
-                    const formData = ${getFormData(name, email)};
                     window.XpertChatbotFrontend = {
                         xpertKey: '${EXPERT_KEY}',
                         configurations: {
@@ -166,8 +183,6 @@ class Five9SupportActivity : AppCompatActivity() {
                                 liveChat: {
                                     options: {
                                         appId: '${APP_ID}',
-                                        configId: '${five9ConfigId}',
-                                        formData: formData,
                                     },
                                 },
                             },
@@ -291,10 +306,7 @@ class Five9SupportActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     webView.loadDataWithBaseURL(
                         BASE_URL,
-                        getFiveNineScript(
-                            name = name,
-                            email = email,
-                        ),
+                        getFiveNineScript(),
                         null,
                         Encoding.UTF_8.name,
                         null,
@@ -305,10 +317,7 @@ class Five9SupportActivity : AppCompatActivity() {
         }, "android")
         webView.loadDataWithBaseURL(
             BASE_URL,
-            getExpertScript(
-                name = name,
-                email = email,
-            ),
+            getExpertScript(),
             null,
             Encoding.UTF_8.name,
             null,
@@ -323,12 +332,10 @@ class Five9SupportActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "Five9Support"
-        const val APP_ID = "2U DEV"
-        //const val APP_ID = "2U Inc"
+        const val APP_ID = "2U Inc"
         const val USE_CASE = "Canvas_Student"
         const val EXPERT_KEY = "degrees-canvas-support"
-        const val BASE_URL = "https://digitalcampus.test.instructure.com/"
-        //const val BASE_URL = "https://digitalcampus.instructure.com/"
+        const val BASE_URL = "https://digitalcampus.instructure.com/"
         const val PERSONAL_INFO_TAG = "five9_formdata_label"
         const val SEGMENT_KEY_TAG = "chat_segment_key"
         const val FIVE9_CONFIG_ID_TAG = "five9_config_id"

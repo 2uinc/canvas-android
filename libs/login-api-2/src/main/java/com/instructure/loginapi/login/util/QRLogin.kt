@@ -31,7 +31,7 @@ import com.instructure.loginapi.login.model.SignedInUser
 
 object QRLogin {
 
-    const val QR_DOMAIN_VALUE = "digitalcampus.test.instructure.com"
+    const val QR_DOMAIN_VALUE = "digitalcampus.instructure.com"
     const val QR_DOMAIN_VALUE_BETA = "digitalcampus.beta.instructure.com"
     private const val QR_DOMAIN = "domain"
     private const val QR_AUTH_CODE_STUDENT = "code_android"
