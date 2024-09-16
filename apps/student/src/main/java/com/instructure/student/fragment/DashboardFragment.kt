@@ -155,7 +155,6 @@ class DashboardFragment : ParentFragment() {
         }
 
         Offline.getOfflineManager().start()
-        initIntercom()
         initFirebase()
 
         lifecycleScope.launch {
