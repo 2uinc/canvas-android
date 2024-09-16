@@ -157,9 +157,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import io.intercom.android.sdk.Intercom
-import io.intercom.android.sdk.IntercomSpace
-import kotlinx.coroutines.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -288,7 +285,6 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                         .setTitle(R.string.logout_warning)
                         .setPositiveButton(android.R.string.ok) { _, _ ->
                             OfflineNotificationHelper.unsubscribeUserFromSNS()
-                            //Intercom.client().logout()
                             StudentLogoutTask(
                                 LogoutTask.Type.LOGOUT,
                                 typefaceBehavior = typefaceBehavior,
