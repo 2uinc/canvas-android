@@ -16,6 +16,7 @@
  */
 package com.instructure.student.di.feature
 
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.instructure.canvasapi2.apis.CourseAPI
 import com.instructure.canvasapi2.apis.GroupAPI
@@ -23,6 +24,7 @@ import com.instructure.canvasapi2.apis.PlannerAPI
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.pandautils.features.calendar.CalendarRepository
 import com.instructure.pandautils.features.calendar.CalendarRouter
+import com.instructure.pandautils.room.calendar.daos.CalendarFilterDao
 import com.instructure.student.features.calendar.StudentCalendarRepository
 import com.instructure.student.features.calendar.StudentCalendarRouter
 import dagger.Module
@@ -36,8 +38,8 @@ import dagger.hilt.android.components.ViewModelComponent
 class CalendarModule {
 
     @Provides
-    fun provideCalendarRouter(activity: FragmentActivity): CalendarRouter {
-        return StudentCalendarRouter(activity)
+    fun provideCalendarRouter(activity: FragmentActivity, fragment: Fragment): CalendarRouter {
+        return StudentCalendarRouter(activity, fragment)
     }
 }
 
@@ -50,8 +52,9 @@ class CalendarViewModelModule {
         plannerApi: PlannerAPI.PlannerInterface,
         coursesApi: CourseAPI.CoursesInterface,
         groupsApi: GroupAPI.GroupInterface,
-        apiPrefs: ApiPrefs
+        apiPrefs: ApiPrefs,
+        calendarFilterDao: CalendarFilterDao
     ): CalendarRepository {
-        return StudentCalendarRepository(plannerApi, coursesApi, groupsApi, apiPrefs)
+        return StudentCalendarRepository(plannerApi, coursesApi, groupsApi, apiPrefs, calendarFilterDao)
     }
 }

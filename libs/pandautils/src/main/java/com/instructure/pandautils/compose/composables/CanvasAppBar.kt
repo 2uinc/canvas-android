@@ -15,6 +15,7 @@
  */
 package com.instructure.pandautils.compose.composables
 
+import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.Icon
@@ -23,6 +24,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -38,6 +40,7 @@ fun CanvasAppBar(
     title: String,
     navigationActionClick: () -> Unit,
     modifier: Modifier = Modifier,
+    @ColorRes backgroundColor: Int = R.color.backgroundLightestElevated,
     @DrawableRes navIconRes: Int = R.drawable.ic_close,
     navIconContentDescription: String = stringResource(id = R.string.close),
     actions: @Composable RowScope.() -> Unit = {}
@@ -47,7 +50,7 @@ fun CanvasAppBar(
             Text(text = title)
         },
         elevation = 2.dp,
-        backgroundColor = colorResource(id = R.color.backgroundLightestElevated),
+        backgroundColor = colorResource(id = backgroundColor),
         contentColor = colorResource(id = R.color.textDarkest),
         navigationIcon = {
             IconButton(onClick = navigationActionClick) {
@@ -57,7 +60,7 @@ fun CanvasAppBar(
                 )
             }
         },
-        modifier = modifier,
+        modifier = modifier.testTag("toolbar"),
         actions = actions
     )
 }

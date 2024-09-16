@@ -24,6 +24,10 @@ import com.instructure.canvas.espresso.mockCanvas.utils.Randomizer
 import com.instructure.canvasapi2.apis.EnrollmentAPI
 import com.instructure.canvasapi2.models.Account
 import com.instructure.canvasapi2.models.AccountNotification
+import com.instructure.canvasapi2.models.Alert
+import com.instructure.canvasapi2.models.AlertThreshold
+import com.instructure.canvasapi2.models.AlertType
+import com.instructure.canvasapi2.models.AlertWorkflowState
 import com.instructure.canvasapi2.models.AnnotationMetadata
 import com.instructure.canvasapi2.models.AnnotationUrls
 import com.instructure.canvasapi2.models.Assignment
@@ -138,6 +142,11 @@ class MockCanvas {
     /** Map of user id to user object */
     val users = mutableMapOf<Long, User>()
 
+    var currentUser: User? = null
+        get() {
+            return field ?: users.values.first()
+        }
+
     /** Map of term id to term object */
     val terms = mutableMapOf<Long, Term>()
 
@@ -149,6 +158,9 @@ class MockCanvas {
 
     /** Map of course ids to course calendar events */
     val courseCalendarEvents = mutableMapOf<Long, MutableList<ScheduleItem>>()
+
+    /** Map of user ids to user calendar events */
+    val userCalendarEvents = mutableMapOf<Long, MutableList<ScheduleItem>>()
 
     /** Map of enrollment id to enrollment object */
     val enrollments = mutableMapOf<Long, Enrollment>()
@@ -289,6 +301,12 @@ class MockCanvas {
     val latestAnnouncements = mutableMapOf<Long, DiscussionTopicHeader>()
 
     val commentLibraryItems = mutableMapOf<Long, List<String>>()
+
+    /** Map of userId to alerts */
+    var observerAlerts = mutableMapOf<Long, List<Alert>>()
+    val observerAlertThresholds = mutableMapOf<Long, List<AlertThreshold>>()
+
+    val pairingCodes = mutableMapOf<String, User>()
 
     //region Convenience functionality
 
@@ -484,6 +502,20 @@ fun MockCanvas.Companion.init(
     return data
 }
 
+fun MockCanvas.addStudent(courses: List<Course>): User {
+    val user = addUser()
+    courses.forEach { course ->
+        addEnrollment(
+            user = user,
+            course = course,
+            enrollmentState = EnrollmentAPI.STATE_ACTIVE,
+            type = Enrollment.EnrollmentType.Student,
+            courseSectionId = if (course.sections.isNotEmpty()) course.sections[0].id else 0
+        )
+    }
+    return user
+}
+
 /** Create a bookmark associated with an assignment */
 fun MockCanvas.addBookmark(user: User, assignment: Assignment, name: String) : Bookmark {
     val bookmark = Bookmark(
@@ -524,8 +556,8 @@ fun MockCanvas.updateUserEnrollments() {
 fun MockCanvas.addCourseWithEnrollment(
     user: User,
     enrollmentType: Enrollment.EnrollmentType,
-    score: Double = 0.0,
-    grade: String = "",
+    score: Double? = 0.0,
+    grade: String? = "",
     isHomeroom: Boolean = false,
     restrictQuantitativeData: Boolean = false
 ): Course {
@@ -620,25 +652,81 @@ fun MockCanvas.addUserPermissions(userId: Long, canUpdateName: Boolean, canUpdat
     user?.permissions = CanvasContextPermission(canUpdateAvatar = canUpdateAvatar, canUpdateName = canUpdateName)
 }
 
-fun MockCanvas.addCourseCalendarEvent(courseId: Long, date: String, title: String, description: String, isImportantDate: Boolean = false) : ScheduleItem {
+fun MockCanvas.addCourseCalendarEvent(
+    course: Course,
+    startDate: String,
+    title: String,
+    description: String,
+    isImportantDate: Boolean = false,
+    endDate: String? = null,
+    rrule: String? = null,
+    location: String? = null,
+    address: String? = null
+): ScheduleItem {
     val newScheduleItem = ScheduleItem(
-            itemId = newItemId().toString(),
-            title = title,
-            description = description,
-            itemType = ScheduleItem.Type.TYPE_CALENDAR,
-            isAllDay = true,
-            allDayAt = date,
-            startAt = date,
-            contextCode = "course_$courseId",
-            importantDates = isImportantDate
+        itemId = newItemId().toString(),
+        title = title,
+        description = description,
+        itemType = ScheduleItem.Type.TYPE_CALENDAR,
+        isAllDay = true,
+        allDayAt = if (endDate != null) null else startDate,
+        startAt = startDate,
+        endAt = endDate ?: startDate,
+        contextCode = "course_${course.id}",
+        contextName = course.name,
+        importantDates = isImportantDate,
+        rrule = rrule,
+        seriesNaturalLanguage = rrule,
+        locationName = location,
+        locationAddress = address,
+        workflowState = "active"
     )
 
-    var calendarEventList = courseCalendarEvents[courseId]
-    if(calendarEventList == null) {
-        calendarEventList = mutableListOf<ScheduleItem>()
-        courseCalendarEvents[courseId] = calendarEventList
+    var calendarEventList = courseCalendarEvents[course.id]
+    if (calendarEventList == null) {
+        calendarEventList = mutableListOf()
+        courseCalendarEvents[course.id] = calendarEventList
     }
     calendarEventList.add(newScheduleItem)
+
+    return newScheduleItem
+}
+
+fun MockCanvas.addUserCalendarEvent(
+    userId: Long,
+    date: String,
+    title: String,
+    description: String,
+    isImportantDate: Boolean = false,
+    rrule: String? = null,
+    location: String? = null,
+    address: String? = null
+): ScheduleItem {
+    val newScheduleItem = ScheduleItem(
+        itemId = newItemId().toString(),
+        title = title,
+        description = description,
+        itemType = ScheduleItem.Type.TYPE_CALENDAR,
+        isAllDay = true,
+        allDayAt = date,
+        startAt = date,
+        endAt = date,
+        contextCode = "user_$userId",
+        contextName = "User $userId",
+        importantDates = isImportantDate,
+        rrule = rrule,
+        seriesNaturalLanguage = rrule,
+        locationName = location,
+        locationAddress = address,
+        workflowState = "active"
+    )
+
+    var eventList = userCalendarEvents[userId]
+    if (eventList == null) {
+        eventList = mutableListOf()
+        userCalendarEvents[userId] = eventList
+    }
+    eventList.add(newScheduleItem)
 
     return newScheduleItem
 }
@@ -946,7 +1034,8 @@ fun MockCanvas.addAssignment(
     lockAt: String? = null,
     unlockAt: String? = null,
     withDescription: Boolean = false,
-    gradingType: String = "percent"
+    gradingType: String = "percent",
+    discussionTopicHeader: DiscussionTopicHeader? = null
 ) : Assignment {
     val assignmentId = newItemId()
     val submissionTypeListRawStrings = submissionTypeList.map { it.apiString }
@@ -966,7 +1055,8 @@ fun MockCanvas.addAssignment(
             unlockAt = unlockAt,
             published = true,
             allDates = listOf(AssignmentDueDate(id = newItemId(), dueAt = dueAt, lockAt = lockAt, unlockAt = unlockAt)),
-            gradingType = gradingType
+            gradingType = gradingType,
+            discussionTopicHeader = discussionTopicHeader
     )
 
     if (isQuizzesNext) {
@@ -1000,6 +1090,17 @@ fun MockCanvas.addAssignment(
 
     // return the new assignment
     return assignment
+}
+
+fun MockCanvas.addDiscussionTopicToAssignment(
+    assignment: Assignment,
+    discussionTopicHeader: DiscussionTopicHeader
+) {
+    val assignmentWithDiscussion = assignment.copy(
+        discussionTopicHeader = discussionTopicHeader
+    )
+
+    assignments[assignment.id] = assignmentWithDiscussion
 }
 
 /**
@@ -1166,8 +1267,8 @@ fun MockCanvas.addEnrollment(
     type: Enrollment.EnrollmentType,
     observedUser: User? = null,
     courseSectionId: Long = 0,
-    currentScore: Double = 88.1,
-    currentGrade: String = "B+",
+    currentScore: Double? = 88.1,
+    currentGrade: String? = "B+",
     enrollmentState: String = EnrollmentAPI.STATE_ACTIVE
 ): Enrollment {
     val enrollment = Enrollment(
@@ -2159,7 +2260,7 @@ fun MockCanvas.addPlannable(name: String, userId: Long, course: Course? = null, 
         course?.id,
         null,
         userId,
-        null,
+        if (course != null) CanvasContext.Type.COURSE.apiString else CanvasContext.Type.USER.apiString,
         course?.name,
         plannableType = type,
         Plannable(newItemId(), name, course?.id, null, userId, null, date, null, date.toApiString(), null, null, details, null),
@@ -2171,4 +2272,70 @@ fun MockCanvas.addPlannable(name: String, userId: Long, course: Course? = null, 
 
     todos.add(todo)
     return todo
+}
+
+fun MockCanvas.addObserverAlert(
+    observer: User,
+    student: User,
+    canvasContext: CanvasContext,
+    alertType: AlertType,
+    workflowState: AlertWorkflowState,
+    actionDate: Date,
+    htmlUrl: String?,
+    lockedForUser: Boolean,
+    threshold: String? = null,
+    observerAlertThresholdId: Long? = null
+): Alert {
+
+    val alerts = observerAlerts[student.id] ?: mutableListOf()
+
+    val thresholdId: Long = observerAlertThresholdId ?: newItemId()
+    if (!observerAlertThresholds.containsKey(thresholdId)) {
+        addObserverAlertThreshold(thresholdId, alertType, observer, student, threshold)
+    }
+
+    val alert = Alert(
+        id = newItemId(),
+        observerId = observer.id,
+        userId = student.id,
+        observerAlertThresholdId = thresholdId,
+        contextType = canvasContext.type.apiString,
+        contextId = canvasContext.id,
+        alertType = alertType,
+        workflowState = workflowState,
+        actionDate = actionDate,
+        title = Randomizer.randomAlertTitle(),
+        htmlUrl = htmlUrl,
+        lockedForUser = lockedForUser
+    )
+
+    val updatedList = alerts.toMutableList().apply {
+        add(alert)
+    }
+
+    observerAlerts[student.id] = updatedList
+
+    return alert
+}
+
+fun MockCanvas.addObserverAlertThreshold(id: Long, alertType: AlertType, observer: User, student: User, threshold: String?) {
+    val thresholds = observerAlertThresholds[student.id]?.toMutableList() ?: mutableListOf()
+
+    thresholds.add(
+        AlertThreshold(
+            id = id,
+            observerId = observer.id,
+            userId = student.id,
+            threshold = threshold,
+            alertType = alertType,
+        )
+    )
+
+    observerAlertThresholds[student.id] = thresholds
+}
+
+fun MockCanvas.addPairingCode(student: User): String {
+    val pairingCode = Randomizer.randomPairingCode()
+    pairingCodes[pairingCode] = student
+    return pairingCode
 }

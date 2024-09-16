@@ -25,7 +25,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.CompoundButton
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.annotation.PluralsRes
@@ -37,12 +36,25 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.instructure.canvasapi2.apis.OAuthAPI
+import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.managers.CourseNicknameManager
 import com.instructure.canvasapi2.managers.ThemeManager
 import com.instructure.canvasapi2.managers.UserManager
-import com.instructure.canvasapi2.models.*
-import com.instructure.canvasapi2.utils.*
+import com.instructure.canvasapi2.models.CanvasColor
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.CanvasTheme
+import com.instructure.canvasapi2.models.Course
+import com.instructure.canvasapi2.models.CourseNickname
+import com.instructure.canvasapi2.models.LaunchDefinition
+import com.instructure.canvasapi2.models.User
+import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.LocaleUtils
+import com.instructure.canvasapi2.utils.Logger
+import com.instructure.canvasapi2.utils.MasqueradeHelper
+import com.instructure.canvasapi2.utils.Pronouns
 import com.instructure.canvasapi2.utils.pageview.PandataInfo
 import com.instructure.canvasapi2.utils.pageview.PandataManager
 import com.instructure.canvasapi2.utils.weave.awaitApi
@@ -52,7 +64,6 @@ import com.instructure.canvasapi2.utils.weave.weave
 import com.instructure.interactions.Identity
 import com.instructure.interactions.InitActivityInteractions
 import com.instructure.interactions.router.Route
-import com.instructure.loginapi.login.dialog.ErrorReportDialog
 import com.instructure.loginapi.login.dialog.MasqueradingDialog
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.activities.BasePresenterActivity
@@ -69,7 +80,20 @@ import com.instructure.pandautils.models.PushNotification
 import com.instructure.pandautils.receivers.PushExternalReceiver
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.pandautils.update.UpdateManager
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.AppType
+import com.instructure.pandautils.utils.CanvasFont
+import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.FeatureFlagProvider
+import com.instructure.pandautils.utils.ProfileUtils
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.applyTheme
+import com.instructure.pandautils.utils.items
+import com.instructure.pandautils.utils.loadUrlIntoHeadlessWebView
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.toast
 import com.instructure.teacher.BuildConfig
 import com.instructure.teacher.R
 import com.instructure.teacher.databinding.ActivityInitBinding
@@ -78,7 +102,13 @@ import com.instructure.teacher.dialog.ColorPickerDialog
 import com.instructure.teacher.events.CourseUpdatedEvent
 import com.instructure.teacher.events.ToDoListUpdatedEvent
 import com.instructure.teacher.factory.InitActivityPresenterFactory
-import com.instructure.teacher.fragments.*
+import com.instructure.teacher.fragments.CourseBrowserFragment
+import com.instructure.teacher.fragments.DashboardFragment
+import com.instructure.teacher.fragments.EmptyFragment
+import com.instructure.teacher.fragments.FileListFragment
+import com.instructure.teacher.fragments.LtiLaunchFragment
+import com.instructure.teacher.fragments.SettingsFragment
+import com.instructure.teacher.fragments.ToDoFragment
 import com.instructure.teacher.presenters.InitActivityPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.router.RouteResolver
@@ -101,7 +131,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityView>(),
     InitActivityView, DashboardFragment.CourseBrowserCallback, InitActivityInteractions,
-    MasqueradingDialog.OnMasqueradingSet, ErrorReportDialog.ErrorReportDialogResultListener, OnUnreadCountInvalidated {
+    MasqueradingDialog.OnMasqueradingSet, OnUnreadCountInvalidated {
 
     private val binding by viewBinding(ActivityInitBinding::inflate)
     private lateinit var navigationDrawerBinding: NavigationDrawerBinding
@@ -114,6 +144,9 @@ class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityVi
 
     @Inject
     lateinit var featureFlagProvider: FeatureFlagProvider
+
+    @Inject
+    lateinit var oAuthApi: OAuthAPI.OAuthInterface
 
     private var selectedTab = 0
     private var drawerItemSelectedJob: Job? = null
@@ -152,7 +185,11 @@ class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityVi
     private val isDrawerOpen: Boolean
         get() = binding.drawerLayout.isDrawerOpen(GravityCompat.START)
 
-    private val notificationsPermissionContract = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    private val notificationsPermissionContract = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        val intent = Intent(Const.COURSE_THING_CHANGED)
+        intent.putExtras(Bundle().apply { putBoolean(Const.COURSE_FAVORITES, true) })
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+    }
 
     override fun onStart() {
         super.onStart()
@@ -221,6 +258,22 @@ class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityVi
         fetchFeatureFlags()
 
         requestNotificationsPermission()
+
+        if (ApiPrefs.isFirstMasqueradingStart) {
+            loadAuthenticatedSession()
+            ApiPrefs.isFirstMasqueradingStart = false
+        }
+    }
+
+    private fun loadAuthenticatedSession() {
+        lifecycleScope.launch {
+            oAuthApi.getAuthenticatedSession(
+                ApiPrefs.fullDomain,
+                RestParams(isForceReadFromNetwork = true)
+            ).dataOrNull?.sessionUrl?.let {
+                loadUrlIntoHeadlessWebView(this@InitActivity, it)
+            }
+        }
     }
 
     private fun requestNotificationsPermission() {
@@ -397,8 +450,8 @@ class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityVi
     }
 
     override fun gotLaunchDefinitions(launchDefinitions: List<LaunchDefinition>?) = with(navigationDrawerBinding) {
-        val arcLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition._STUDIO_DOMAIN }
-        val gaugeLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition._GAUGE_DOMAIN }
+        val arcLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.STUDIO_DOMAIN }
+        val gaugeLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.GAUGE_DOMAIN }
 
         navigationDrawerItemArc.setVisible(arcLaunchDefinition != null)
         navigationDrawerItemArc.tag = arcLaunchDefinition
@@ -449,7 +502,7 @@ class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityVi
         if (count > 0) {
             bottomBar.getOrCreateBadge(menuItemId).number = count
             bottomBar.getOrCreateBadge(menuItemId).backgroundColor = getColor(R.color.backgroundInfo)
-            bottomBar.getOrCreateBadge(menuItemId).badgeTextColor = getColor(R.color.white)
+            bottomBar.getOrCreateBadge(menuItemId).badgeTextColor = getColor(R.color.textLightest)
             if (quantityContentDescription != null) {
                 bottomBar.getOrCreateBadge(menuItemId).setContentDescriptionQuantityStringsResource(quantityContentDescription)
             }
@@ -661,27 +714,6 @@ class InitActivity : BasePresenterActivity<InitActivityPresenter, InitActivityVi
     }
 
     //endregion
-
-    override fun onTicketPost() {
-        dismissHelpDialog()
-        Toast.makeText(applicationContext, R.string.errorReportThankyou, Toast.LENGTH_LONG).show()
-    }
-
-    override fun onTicketError() {
-        dismissHelpDialog()
-        Toast.makeText(applicationContext, R.string.errorOccurred, Toast.LENGTH_LONG).show()
-    }
-
-    private fun dismissHelpDialog() {
-        val fragment = supportFragmentManager.findFragmentByTag(HelpDialogFragment.TAG)
-        if (fragment is HelpDialogFragment) {
-            try {
-                fragment.dismiss()
-            } catch (e: IllegalStateException) {
-                Logger.e("Committing a transaction after activities saved state was called: " + e)
-            }
-        }
-    }
 
     companion object {
         private const val SELECTED_TAB = "selectedTab"

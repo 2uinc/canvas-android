@@ -16,14 +16,13 @@
 package com.instructure.teacher.ui
 
 import android.app.Activity
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.performClick
 import com.instructure.canvas.espresso.common.interaction.ToDoDetailsInteractionTest
 import com.instructure.canvas.espresso.mockCanvas.MockCanvas
 import com.instructure.canvas.espresso.mockCanvas.init
+import com.instructure.canvasapi2.models.User
 import com.instructure.espresso.InstructureActivityTestRule
-import com.instructure.teacher.activities.LoginActivity
 import com.instructure.teacher.BuildConfig
+import com.instructure.teacher.activities.LoginActivity
 import com.instructure.teacher.ui.pages.DashboardPage
 import com.instructure.teacher.ui.utils.TeacherActivityTestRule
 import com.instructure.teacher.ui.utils.tokenLogin
@@ -32,8 +31,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 @HiltAndroidTest
 class TeacherCalendarToDoDetailsPageTest : ToDoDetailsInteractionTest() {
 
-    override val activityRule: InstructureActivityTestRule<out Activity>
-            = TeacherActivityTestRule(LoginActivity::class.java)
+    override val activityRule: InstructureActivityTestRule<out Activity> = TeacherActivityTestRule(LoginActivity::class.java)
 
     override val isTesting = BuildConfig.IS_TESTING
 
@@ -50,9 +48,8 @@ class TeacherCalendarToDoDetailsPageTest : ToDoDetailsInteractionTest() {
 
         val todo = data.todos.first()
 
-        //TODO: Update when the CalendarPage is ready
         composeTestRule.waitForIdle()
-        composeTestRule.onNode(hasText(todo.plannable.title)).performClick()
+        calendarScreenPage.clickOnItem(todo.plannable.title)
     }
 
     override fun initData(): MockCanvas {
@@ -63,4 +60,6 @@ class TeacherCalendarToDoDetailsPageTest : ToDoDetailsInteractionTest() {
             favoriteCourseCount = 1
         )
     }
+
+    override fun getLoggedInUser(): User = MockCanvas.data.teachers.first()
 }

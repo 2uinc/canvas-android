@@ -315,7 +315,7 @@ class CanvasWebView @JvmOverloads constructor(
         }
 
         override fun onPermissionRequest(request: PermissionRequest) {
-            (context as? Activity)?.requestWebPermissions(request)
+            context.getFragmentActivity().requestWebPermissions(request)
         }
 
         override fun onCreateWindow(view: WebView, isDialog: Boolean, isUserGesture: Boolean, msg: Message): Boolean {
@@ -804,5 +804,5 @@ data class HtmlFormatColors(
     @ColorRes val backgroundColorRes: Int = R.color.backgroundLightest,
     @ColorRes val textColor: Int = R.color.textDarkest,
     @ColorRes val linkColor: Int = R.color.textInfo,
-    @ColorRes val visitedLinkColor: Int = R.color.textAlert
+    @ColorRes val visitedLinkColor: Int = R.color.textMasquerade
 )

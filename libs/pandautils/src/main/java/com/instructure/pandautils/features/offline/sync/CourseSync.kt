@@ -43,6 +43,7 @@ import com.instructure.canvasapi2.models.DiscussionTopic
 import com.instructure.canvasapi2.models.DiscussionTopicHeader
 import com.instructure.canvasapi2.models.ModuleItem
 import com.instructure.canvasapi2.models.ScheduleItem
+import com.instructure.canvasapi2.models.StudioMediaMetadata
 import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.DataResult
@@ -59,7 +60,6 @@ import com.instructure.pandautils.room.offline.entities.CourseSyncProgressEntity
 import com.instructure.pandautils.room.offline.entities.CourseSyncSettingsEntity
 import com.instructure.pandautils.room.offline.entities.FileFolderEntity
 import com.instructure.pandautils.room.offline.entities.QuizEntity
-import com.instructure.pandautils.room.offline.entities.RemoteFileEntity
 import com.instructure.pandautils.room.offline.facade.AssignmentFacade
 import com.instructure.pandautils.room.offline.facade.ConferenceFacade
 import com.instructure.pandautils.room.offline.facade.CourseFacade
@@ -116,12 +116,16 @@ class CourseSync(
     private val externalFilesToSync = mutableMapOf<Long, Set<String>>()
     private val failedTabsPerCourse = mutableMapOf<Long, Set<String>>()
 
+    private var studioMetadata: List<StudioMediaMetadata> = emptyList()
+    val studioMediaIdsToSync = mutableSetOf<String>()
+
     private var isStopped = false
         set(value) = synchronized(this) {
             field = value
         }
 
-    suspend fun syncCourses(courseIds: List<Long>) {
+    suspend fun syncCourses(courseIds: Set<Long>, studioMetadata: List<StudioMediaMetadata>) {
+        this.studioMetadata = studioMetadata
         coroutineScope {
             courseIds.map {
                 async { syncCourse(it) }
@@ -334,10 +338,11 @@ class CourseSync(
         val enrollments = course.enrollments.orEmpty().flatMap {
             enrollmentsApi.getEnrollmentsForUserInCourse(courseId, it.userId, params).dataOrThrow
         }.toMutableList()
+        val courseSettings = courseApi.getCourseSettings(courseId, params).dataOrThrow
 
         course.syllabusBody = parseHtmlContent(course.syllabusBody, courseId)
 
-        courseFacade.insertCourse(course.copy(enrollments = enrollments))
+        courseFacade.insertCourse(course.copy(enrollments = enrollments, settings = courseSettings))
 
         val courseFeatures = featuresApi.getEnabledFeaturesForCourse(courseId, params).dataOrNull
         courseFeatures?.let {
@@ -581,13 +586,14 @@ class CourseSync(
     }
 
     private suspend fun parseHtmlContent(htmlContent: String?, courseId: Long): String? {
-        val htmlParsingResult = htmlParser.createHtmlStringWithLocalFiles(htmlContent, courseId)
+        val htmlParsingResult = htmlParser.createHtmlStringWithLocalFiles(htmlContent, courseId, studioMetadata)
         additionalFileIdsToSync[courseId]?.let {
             additionalFileIdsToSync[courseId] = it + htmlParsingResult.internalFileIds
         }
         externalFilesToSync[courseId]?.let {
             externalFilesToSync[courseId] = it + htmlParsingResult.externalFileUrls
         }
+        studioMediaIdsToSync.addAll(htmlParsingResult.studioMediaIds)
         return htmlParsingResult.htmlWithLocalFileLinks
     }
 

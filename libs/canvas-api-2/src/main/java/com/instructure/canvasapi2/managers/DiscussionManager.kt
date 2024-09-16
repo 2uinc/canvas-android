@@ -16,13 +16,13 @@
  */
 package com.instructure.canvasapi2.managers
 
+import com.instructure.canvasapi2.CanvasRestAdapter
 import com.instructure.canvasapi2.StatusCallback
 import com.instructure.canvasapi2.apis.DiscussionAPI
 import com.instructure.canvasapi2.builders.RestBuilder
 import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.DiscussionEntry
-import com.instructure.canvasapi2.models.DiscussionTopic
 import com.instructure.canvasapi2.models.DiscussionTopicHeader
 import com.instructure.canvasapi2.models.postmodels.DiscussionEntryPostBody
 import com.instructure.canvasapi2.models.postmodels.DiscussionTopicPostBody
@@ -101,40 +101,6 @@ object DiscussionManager {
         DiscussionAPI.getFirstPageDiscussionTopicHeaders(canvasContext, adapter, depaginatedCallback, params)
     }
 
-    fun getFullDiscussionTopic(
-        canvasContext: CanvasContext,
-        topicId: Long,
-        forceNetwork: Boolean,
-        callback: StatusCallback<DiscussionTopic>
-    ) {
-        val adapter = RestBuilder(callback)
-        val params = RestParams(isForceReadFromNetwork = forceNetwork)
-        DiscussionAPI.getFullDiscussionTopic(adapter, canvasContext, topicId, callback, params)
-    }
-
-    fun getDetailedDiscussion(
-        canvasContext: CanvasContext,
-        topicId: Long,
-        callback: StatusCallback<DiscussionTopicHeader>,
-        forceNetwork: Boolean
-    ) {
-        val adapter = RestBuilder(callback)
-        val params = RestParams(isForceReadFromNetwork = forceNetwork)
-        DiscussionAPI.getDetailedDiscussion(adapter, canvasContext, topicId, callback, params)
-    }
-
-    fun rateDiscussionEntry(
-        canvasContext: CanvasContext,
-        topicId: Long,
-        entryId: Long,
-        rating: Int,
-        callback: StatusCallback<Void>
-    ) {
-        val adapter = RestBuilder(callback)
-        val params = RestParams()
-        DiscussionAPI.rateDiscussionEntry(adapter, canvasContext, topicId, entryId, rating, callback, params)
-    }
-
     fun markDiscussionTopicRead(
         canvasContext: CanvasContext,
         topicId: Long,
@@ -143,28 +109,6 @@ object DiscussionManager {
         val adapter = RestBuilder(callback)
         val params = RestParams()
         DiscussionAPI.markDiscussionTopicRead(adapter, canvasContext, topicId, callback, params)
-    }
-
-    fun markDiscussionTopicEntryRead(
-        canvasContext: CanvasContext,
-        topicId: Long,
-        entryId: Long,
-        callback: StatusCallback<Void>
-    ) {
-        val adapter = RestBuilder(callback)
-        val params = RestParams()
-        DiscussionAPI.markDiscussionTopicEntryRead(adapter, canvasContext, topicId, entryId, callback, params)
-    }
-
-    fun markDiscussionTopicEntryUnread(
-        canvasContext: CanvasContext,
-        topicId: Long,
-        entryId: Long,
-        callback: StatusCallback<Void>
-    ) {
-        val adapter = RestBuilder(callback)
-        val params = RestParams()
-        DiscussionAPI.markDiscussionTopicEntryUnread(adapter, canvasContext, topicId, entryId, callback, params)
     }
 
     fun replyToDiscussionEntry(
@@ -263,6 +207,8 @@ object DiscussionManager {
     ) {
         val adapter = RestBuilder(callback)
         val params = RestParams()
+
+        CanvasRestAdapter.clearCacheUrls("discussion_topics")
         DiscussionAPI.pinDiscussion(adapter, canvasContext, topicId, callback, params)
     }
 
@@ -273,6 +219,8 @@ object DiscussionManager {
     ) {
         val adapter = RestBuilder(callback)
         val params = RestParams()
+
+        CanvasRestAdapter.clearCacheUrls("discussion_topics")
         DiscussionAPI.unpinDiscussion(adapter, canvasContext, topicId, callback, params)
     }
 
@@ -283,6 +231,8 @@ object DiscussionManager {
     ) {
         val adapter = RestBuilder(callback)
         val params = RestParams()
+
+        CanvasRestAdapter.clearCacheUrls("discussion_topics")
         DiscussionAPI.lockDiscussion(adapter, canvasContext, topicId, callback, params)
     }
 
@@ -293,24 +243,17 @@ object DiscussionManager {
     ) {
         val adapter = RestBuilder(callback)
         val params = RestParams()
+
+        CanvasRestAdapter.clearCacheUrls("discussion_topics")
         DiscussionAPI.unlockDiscussion(adapter, canvasContext, topicId, callback, params)
     }
 
     fun deleteDiscussionTopicHeader(canvasContext: CanvasContext, topicId: Long, callback: StatusCallback<Void>) {
         val adapter = RestBuilder(callback)
         val params = RestParams()
-        DiscussionAPI.deleteDiscussionTopicHeader(adapter, canvasContext, topicId, callback, params)
-    }
 
-    fun deleteDiscussionEntry(
-        canvasContext: CanvasContext,
-        topicId: Long,
-        entryId: Long,
-        callback: StatusCallback<Void>
-    ) {
-        val adapter = RestBuilder(callback)
-        val params = RestParams()
-        DiscussionAPI.deleteDiscussionEntry(adapter, canvasContext, topicId, entryId, callback, params)
+        CanvasRestAdapter.clearCacheUrls("discussion_topics")
+        DiscussionAPI.deleteDiscussionTopicHeader(adapter, canvasContext, topicId, callback, params)
     }
 
     fun createDiscussion(
@@ -324,6 +267,8 @@ object DiscussionManager {
     ) {
         val adapter = RestBuilder(callback)
         val params = RestParams()
+
+        CanvasRestAdapter.clearCacheUrls("discussion_topics")
         DiscussionAPI.createDiscussion(
             adapter,
             params,
