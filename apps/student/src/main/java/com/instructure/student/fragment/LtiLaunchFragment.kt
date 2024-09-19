@@ -29,6 +29,7 @@ import com.instructure.canvasapi2.managers.AssignmentManager
 import com.instructure.canvasapi2.managers.SubmissionManager
 import com.instructure.canvasapi2.models.*
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.RemoteConfigPrefs
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.canvasapi2.utils.pageview.PageView
 import com.instructure.canvasapi2.utils.pageview.PageViewUrl
@@ -39,6 +40,7 @@ import com.instructure.pandautils.analytics.SCREEN_VIEW_LTI_LAUNCH
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.utils.*
+import com.instructure.student.BuildConfig
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentLtiLaunchBinding
 import com.instructure.student.router.RouteMatcher
@@ -96,6 +98,10 @@ class LtiLaunchFragment : ParentFragment() {
         try {
             when {
                 ltiTab != null -> loadSessionlessLtiUrl(ltiTab!!.ltiUrl)
+                ltiUrl.contains(getPlacementPortalUrl()) -> {
+                    val url = "${ApiPrefs.fullDomain}$ltiUrl?launch_type=global_navigation"
+                    launchCustomTab(url)
+                }
                 ltiUrl.isNotBlank() -> {
                     var url = ltiUrl // Replace deep link scheme
                         .replaceFirst("canvas-courses://", "${ApiPrefs.protocol}://")
@@ -184,6 +190,16 @@ class LtiLaunchFragment : ParentFragment() {
 
     companion object {
         const val LTI_URL = "ltiUrl"
+
+        private const val PLACEMENT_PORTAL_URL_STG_TAG = "placement_portal_path_stg"
+        private const val PLACEMENT_PORTAL_URL_TAG = "placement_portal_path"
+
+        fun getPlacementPortalUrl(): String {
+            return RemoteConfigPrefs.getString(
+                if (BuildConfig.IS_DEBUG) PLACEMENT_PORTAL_URL_STG_TAG else PLACEMENT_PORTAL_URL_TAG,
+                ""
+            ) ?: ""
+        }
 
         fun makeLTIBundle(ltiUrl: String, title: String, sessionLessLaunch: Boolean): Bundle {
             val args = Bundle()

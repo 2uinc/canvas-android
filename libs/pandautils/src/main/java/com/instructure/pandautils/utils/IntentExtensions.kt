@@ -27,6 +27,9 @@ import androidx.annotation.RequiresApi
 fun Intent.asChooserExcludingInstructure(title: String? = null): Intent {
     val excludeComponents = arrayOf(
         // Student
+        ComponentName("com.instructure.candroid.twou", "com.instructure.student.activity.InterwebsToApplication"),
+
+        // Student
         ComponentName("com.instructure.candroid", "com.instructure.student.activity.InterwebsToApplication"),
 
         // Parent (native)

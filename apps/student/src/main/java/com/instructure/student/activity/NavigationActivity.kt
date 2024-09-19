@@ -236,6 +236,15 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                     startActivity(Five9SupportActivity.newInstance(this@NavigationActivity))
                 }
 
+                R.id.navigationDrawerItem_placementPortal -> {
+                    val user = ApiPrefs.user ?: return@weave
+                    LtiLaunchFragment.routeLtiLaunchFragment(
+                        this@NavigationActivity,
+                        CanvasContext.currentUserContext(user),
+                        LtiLaunchFragment.getPlacementPortalUrl()
+                    )
+                }
+
                 R.id.navigationDrawerItem_help -> {
                     HelpDialogFragment.show(this@NavigationActivity)
                 }
@@ -680,6 +689,9 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         navigationDrawerBinding.navigationDrawerItemLiveChat.setOnClickListener(
             mNavigationDrawerItemClickListener
         )
+        navigationDrawerBinding.navigationDrawerItemPlacementPortal.setOnClickListener(
+            mNavigationDrawerItemClickListener
+        )
         navigationDrawerBinding.navigationDrawerItemHelp.onClickWithRequireNetwork(
             mNavigationDrawerItemClickListener
         )
@@ -771,6 +783,11 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
         navigationDrawerBinding.navigationDrawerItemStartMasquerading.setVisible(!ApiPrefs.isMasquerading && ApiPrefs.canBecomeUser == true)
         navigationDrawerBinding.navigationDrawerItemStopMasquerading.setVisible(ApiPrefs.isMasquerading)
+
+        val placementPortalUrl = LtiLaunchFragment.getPlacementPortalUrl()
+        if (placementPortalUrl.isNotEmpty()) {
+            navigationDrawerBinding.navigationDrawerItemPlacementPortal.visibility = View.VISIBLE
+        }
     }
 
     fun attachNavigationIcon(toolbar: Toolbar) {

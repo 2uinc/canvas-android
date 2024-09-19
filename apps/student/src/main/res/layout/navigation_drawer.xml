@@ -342,6 +342,24 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/navigationDrawerItem_placementPortal"
+                style="@style/NavigationDrawerItem"
+                android:visibility="gone"
+                tools:ignore="UseCompoundDrawables">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    style="@style/NavigationDrawerIcon"
+                    app:srcCompat="@drawable/ic_placement_portal" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/placement_portal"
+                    android:textColor="@color/textDarkest"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/navigationDrawerItem_help"
                 style="@style/NavigationDrawerItem"
                 tools:ignore="UseCompoundDrawables">
