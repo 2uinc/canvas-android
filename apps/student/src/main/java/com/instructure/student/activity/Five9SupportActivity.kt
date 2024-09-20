@@ -197,43 +197,46 @@ class Five9SupportActivity : AppCompatActivity() {
                 }}();
                 </script>
                 <script>
-                    document.addEventListener(
-                        "DOMSubtreeModified",
-                        function(e) {
-                            var container = document.getElementById("xpert-chatbot-container");
-                            if (container != undefined) {
-                                var button = container.getElementsByTagName("button")[0];
-                                if (button != undefined && button.isClicked == undefined) {
-                                    setTimeout(() => {
-                                        button.click();
-                                        javascript:window.android.onFive9Opened();                                       
-                                    }, 500);
-                                    button.isClicked = true;
-                                }
+                    function observeButtons() {
+                        var chatButton = document.getElementById("xpert_chatbot__floating-action-btn");
+                        if (chatButton != undefined && chatButton.isClicked == undefined) {
+                            setTimeout(() => {
+                                chatButton.click();
+                                javascript:window.android.onFive9Opened();                                       
+                            }, 500);
+                            chatButton.isClicked = true;
+                        }
+                        var xpertCloseButton = document.getElementsByClassName("xpert-chatbot-popup__header--btn-outline")[0]
+                        if (xpertCloseButton != undefined) {
+                            xpertCloseButton.addEventListener(
+                                "click",
+                                function(e) {
+                                    javascript:window.android.onFive9Closed();
+                                },
+                                false
+                            );
+                        }
+                        var five9OpenButton = document.getElementsByClassName("xpert-chatbot-popup__live-chat--btn-outline")[0]
+                        if (five9OpenButton != undefined) {
+                            five9OpenButton.addEventListener(
+                                "click",
+                                function(e) {
+                                    javascript:window.android.shouldOpenFive9();
+                                },
+                                false
+                            );
+                        }
+                    }
+                    const config = { attributes: true, childList: true, subtree: true };
+                    var callback = function(mutationsList) {
+                        for(var mutation of mutationsList) {
+                            if (mutation.type == 'childList') {
+                                observeButtons();
                             }
-                            var xpertCloseButton = document.getElementsByClassName("xpert-chatbot-popup__header--btn-outline")[0]
-                            if (xpertCloseButton != undefined) {
-                                xpertCloseButton.addEventListener(
-                                    "click",
-                                    function(e) {
-                                        javascript:window.android.onFive9Closed();
-                                    },
-                                    false
-                                );
-                            }
-                            var five9OpenButton = document.getElementsByClassName("xpert-chatbot-popup__live-chat--btn-outline")[0]
-                            if (five9OpenButton != undefined) {
-                                five9OpenButton.addEventListener(
-                                    "click",
-                                    function(e) {
-                                        javascript:window.android.shouldOpenFive9();
-                                    },
-                                    false
-                                );
-                            }
-                        },
-                        false
-                    );
+                        }
+                    };
+                    var observer = new MutationObserver(callback);
+                    observer.observe(document, config);
                 </script>
             </body>
         </html>
