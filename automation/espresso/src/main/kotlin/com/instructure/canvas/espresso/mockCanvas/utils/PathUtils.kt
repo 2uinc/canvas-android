@@ -50,6 +50,9 @@ class PathVars {
     var enrollmentId: Long by map
     var progressId: Long by map
     var plannerNoteId: Long by map
+    var eventId: Long by map
+    var studentId: Long by map
+    var workflowState: String by map
 }
 
 /**

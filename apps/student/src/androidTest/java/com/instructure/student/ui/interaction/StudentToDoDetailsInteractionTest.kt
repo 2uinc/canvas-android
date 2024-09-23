@@ -16,11 +16,10 @@
 package com.instructure.student.ui.interaction
 
 import android.app.Activity
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.performClick
 import com.instructure.canvas.espresso.common.interaction.ToDoDetailsInteractionTest
 import com.instructure.canvas.espresso.mockCanvas.MockCanvas
 import com.instructure.canvas.espresso.mockCanvas.init
+import com.instructure.canvasapi2.models.User
 import com.instructure.espresso.InstructureActivityTestRule
 import com.instructure.student.BuildConfig
 import com.instructure.student.activity.LoginActivity
@@ -37,7 +36,7 @@ class StudentToDoDetailsInteractionTest : ToDoDetailsInteractionTest() {
     override val activityRule: InstructureActivityTestRule<out Activity> =
         StudentActivityTestRule(LoginActivity::class.java)
 
-    val dashboardPage = DashboardPage()
+    private val dashboardPage = DashboardPage()
 
     override fun displaysPageObjects() = Unit
 
@@ -50,9 +49,8 @@ class StudentToDoDetailsInteractionTest : ToDoDetailsInteractionTest() {
 
         val todo = data.todos.first()
 
-        //TODO: Update when the CalendarPage is ready
         composeTestRule.waitForIdle()
-        composeTestRule.onNode(hasText(todo.plannable.title)).performClick()
+        calendarScreenPage.clickOnItem(todo.plannable.title)
     }
 
     override fun initData(): MockCanvas {
@@ -63,4 +61,6 @@ class StudentToDoDetailsInteractionTest : ToDoDetailsInteractionTest() {
             favoriteCourseCount = 1
         )
     }
+
+    override fun getLoggedInUser(): User = MockCanvas.data.students.first()
 }

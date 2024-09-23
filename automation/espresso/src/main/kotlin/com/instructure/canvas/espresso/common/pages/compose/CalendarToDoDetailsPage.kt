@@ -38,7 +38,6 @@ class CalendarToDoDetailsPage(private val composeTestRule: ComposeTestRule) {
         composeTestRule.onNode(hasTestTag("todoDetailsPageTitle") and hasText(pageTitle)).assertIsDisplayed()
     }
 
-
     fun assertTitle(title: String) {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("title")
@@ -47,10 +46,6 @@ class CalendarToDoDetailsPage(private val composeTestRule: ComposeTestRule) {
 
     fun assertCanvasContext(title: String) {
         composeTestRule.onNodeWithText(title).assertIsDisplayed()
-    }
-
-    fun assertTextColor(title: String, color: Int) {
-        composeTestRule.onNodeWithText(title).assertTextColor(Color(color))
     }
 
     fun assertDate(context: Context, date: Date) {
@@ -76,7 +71,7 @@ class CalendarToDoDetailsPage(private val composeTestRule: ComposeTestRule) {
 
     fun clickToolbarMenu() {
         composeTestRule.onNode(
-            hasParent(hasTestTag("Toolbar"))
+            hasParent(hasTestTag("toolbar"))
                 .and(hasContentDescription("More options"))
         )
             .performClick()
@@ -88,6 +83,10 @@ class CalendarToDoDetailsPage(private val composeTestRule: ComposeTestRule) {
 
     fun clickDeleteMenu() {
         composeTestRule.onNodeWithText("Delete").performClick()
+    }
+
+    fun assertDeleteDialog() {
+        composeTestRule.onNodeWithText("Delete To Do?").assertIsDisplayed()
     }
 
     fun confirmDeletion() {

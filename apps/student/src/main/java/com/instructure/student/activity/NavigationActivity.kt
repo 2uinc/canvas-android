@@ -50,6 +50,8 @@ import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.CanvasRestAdapter
+import com.instructure.canvasapi2.apis.OAuthAPI
+import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.managers.GroupManager
 import com.instructure.canvasapi2.managers.UserManager
 import com.instructure.canvasapi2.models.CanvasContext
@@ -75,7 +77,6 @@ import com.instructure.interactions.Navigation
 import com.instructure.interactions.router.Route
 import com.instructure.interactions.router.RouteContext
 import com.instructure.interactions.router.RouterParams
-import com.instructure.loginapi.login.dialog.ErrorReportDialog
 import com.instructure.loginapi.login.dialog.MasqueradingDialog
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.binding.viewBinding
@@ -108,6 +109,7 @@ import com.instructure.pandautils.utils.ViewStyler
 import com.instructure.pandautils.utils.applyTheme
 import com.instructure.pandautils.utils.hideKeyboard
 import com.instructure.pandautils.utils.items
+import com.instructure.pandautils.utils.loadUrlIntoHeadlessWebView
 import com.instructure.pandautils.utils.onClickWithRequireNetwork
 import com.instructure.pandautils.utils.post
 import com.instructure.pandautils.utils.postSticky
@@ -170,9 +172,7 @@ private const val BOTTOM_SCREENS_BUNDLE_KEY = "bottomScreens"
 @AndroidEntryPoint
 @Suppress("DELEGATED_MEMBER_HIDES_SUPERTYPE_OVERRIDE")
 class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.OnMasqueradingSet,
-    FullScreenInteractions,
-    ActivityCompat.OnRequestPermissionsResultCallback by PermissionReceiver(),
-    ErrorReportDialog.ErrorReportDialogResultListener {
+    FullScreenInteractions, ActivityCompat.OnRequestPermissionsResultCallback by PermissionReceiver() {
 
     private val binding by viewBinding(ActivityNavigationBinding::inflate)
     private lateinit var navigationDrawerBinding: NavigationDrawerBinding
@@ -210,6 +210,9 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
+
+    @Inject
+    lateinit var oAuthApi: OAuthAPI.OAuthInterface
 
     private var routeJob: WeaveJob? = null
     private var debounceJob: Job? = null
@@ -426,6 +429,22 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         }
 
         scheduleAlarms()
+
+        if (ApiPrefs.isFirstMasqueradingStart) {
+            loadAuthenticatedSession()
+            ApiPrefs.isFirstMasqueradingStart = false
+        }
+    }
+
+    private fun loadAuthenticatedSession() {
+        lifecycleScope.launch {
+            oAuthApi.getAuthenticatedSession(
+                ApiPrefs.fullDomain,
+                RestParams(isForceReadFromNetwork = true)
+            ).dataOrNull?.sessionUrl?.let {
+                loadUrlIntoHeadlessWebView(this@NavigationActivity, it)
+            }
+        }
     }
 
     private fun handleTokenCheck(online: Boolean?) {
@@ -666,10 +685,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         binding.drawerLayout.openDrawer(navigationDrawerBinding.navigationDrawer)
     }
 
-    override fun <F> attachNavigationDrawer(
-        fragment: F,
-        toolbar: Toolbar
-    ) where F : Fragment, F : FragmentInteractions {
+    override fun <F> attachNavigationDrawer(fragment: F, toolbar: Toolbar?) where F : Fragment, F : FragmentInteractions {
         //Navigation items
         navigationDrawerBinding.navigationDrawerItemFiles.onClickWithRequireNetwork(
             mNavigationDrawerItemClickListener
@@ -739,13 +755,13 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         }
 
         if (isBottomNavFragment(fragment)) {
-            toolbar.setNavigationIcon(R.drawable.ic_hamburger)
-            toolbar.navigationContentDescription = getString(R.string.navigation_drawer_open)
-            toolbar.setNavigationOnClickListener {
+            toolbar?.setNavigationIcon(R.drawable.ic_hamburger)
+            toolbar?.navigationContentDescription = getString(R.string.navigation_drawer_open)
+            toolbar?.setNavigationOnClickListener {
                 openNavigationDrawer()
             }
         } else {
-            toolbar.setupAsBackButton(fragment)
+            toolbar?.setupAsBackButton(fragment)
         }
 
         binding.drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
@@ -774,12 +790,9 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
         setupUserDetails(ApiPrefs.user)
 
-        ViewStyler.themeToolbarColored(
-            this,
-            toolbar,
-            ThemePrefs.primaryColor,
-            ThemePrefs.primaryTextColor
-        )
+        toolbar?.let {
+            ViewStyler.themeToolbarColored(this, it, ThemePrefs.primaryColor, ThemePrefs.primaryTextColor)
+        }
 
         navigationDrawerBinding.navigationDrawerItemStartMasquerading.setVisible(!ApiPrefs.isMasquerading && ApiPrefs.canBecomeUser == true)
         navigationDrawerBinding.navigationDrawerItemStopMasquerading.setVisible(ApiPrefs.isMasquerading)
@@ -787,14 +800,6 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         val placementPortalUrl = LtiLaunchFragment.getPlacementPortalUrl()
         if (placementPortalUrl.isNotEmpty()) {
             navigationDrawerBinding.navigationDrawerItemPlacementPortal.visibility = View.VISIBLE
-        }
-    }
-
-    fun attachNavigationIcon(toolbar: Toolbar) {
-        toolbar.setNavigationIcon(R.drawable.ic_hamburger)
-        toolbar.navigationContentDescription = getString(R.string.navigation_drawer_open)
-        toolbar.setNavigationOnClickListener {
-            openNavigationDrawer()
         }
     }
 
@@ -1220,6 +1225,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         }
         ft.show(fragment)
         ft.commitAllowingStateLoss()
+
+        if (fragment is CalendarFragment) {
+            fragment.calendarTabSelected()
+        }
     }
 
     private fun getBottomBarFragments(selectedFragmentName: String): List<Fragment> {
@@ -1410,10 +1419,8 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     //endregion
 
     override fun gotLaunchDefinitions(launchDefinitions: List<LaunchDefinition>?) {
-        val studioLaunchDefinition =
-            launchDefinitions?.firstOrNull { it.domain == LaunchDefinition._STUDIO_DOMAIN }
-        val gaugeLaunchDefinition =
-            launchDefinitions?.firstOrNull { it.domain == LaunchDefinition._GAUGE_DOMAIN }
+        val studioLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.STUDIO_DOMAIN }
+        val gaugeLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.GAUGE_DOMAIN }
 
         val studio = findViewById<View>(R.id.navigationDrawerItem_studio)
         studio.visibility = if (studioLaunchDefinition != null) View.VISIBLE else View.GONE
@@ -1455,9 +1462,8 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     ) = with(binding) {
         if (count > 0) {
             bottomBar.getOrCreateBadge(menuItemId).number = count
-            bottomBar.getOrCreateBadge(menuItemId).backgroundColor =
-                getColor(R.color.backgroundInfo)
-            bottomBar.getOrCreateBadge(menuItemId).badgeTextColor = getColor(R.color.white)
+            bottomBar.getOrCreateBadge(menuItemId).backgroundColor = getColor(R.color.backgroundInfo)
+            bottomBar.getOrCreateBadge(menuItemId).badgeTextColor = getColor(R.color.textLightest)
             if (quantityContentDescription != null) {
                 bottomBar.getOrCreateBadge(menuItemId)
                     .setContentDescriptionQuantityStringsResource(quantityContentDescription)
@@ -1487,15 +1493,6 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             )
             animation.playAnimation()
         }
-    }
-
-    override fun onTicketPost() {
-        // The message is a little longer than normal, so show it for LENGTH_LONG instead of LENGTH_SHORT
-        Toast.makeText(this, R.string.errorReportThankyou, Toast.LENGTH_LONG).show()
-    }
-
-    override fun onTicketError() {
-        toast(R.string.errorOccurred)
     }
 
     private fun createBottomNavFragment(name: String?): Fragment? {

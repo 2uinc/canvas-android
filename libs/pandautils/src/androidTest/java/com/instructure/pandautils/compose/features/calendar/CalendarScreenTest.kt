@@ -65,21 +65,23 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, LocalDate.now())
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = {},
                 navigationActionClick = {},
             )
         }
 
-        val toolbar = composeTestRule.onNodeWithTag("Toolbar")
+        val toolbar = composeTestRule.onNodeWithTag("toolbar")
         toolbar.assertExists()
-        composeTestRule.onNode(hasParent(hasTestTag("Toolbar")).and(hasText("Calendar")))
+        composeTestRule.onNode(hasParent(hasTestTag("toolbar")).and(hasText("Calendar")))
             .assertIsDisplayed()
         val backButton =
-            composeTestRule.onNode(hasParent(hasTestTag("Toolbar")).and(hasContentDescription("Open navigation drawer")))
+            composeTestRule.onNode(hasParent(hasTestTag("toolbar")).and(hasContentDescription("Open navigation drawer")))
         backButton
             .assertIsDisplayed()
             .assertHasClickAction()
-        val todayButton = composeTestRule.onNode(hasAnyAncestor(hasTestTag("Toolbar")).and(hasContentDescription("Jump to Today")))
+        val todayButton = composeTestRule.onNode(hasAnyAncestor(hasTestTag("toolbar")).and(hasContentDescription("Jump to Today")))
         todayButton.assertIsNotDisplayed()
     }
 
@@ -98,21 +100,23 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = {},
                 navigationActionClick = {},
             )
         }
 
-        val toolbar = composeTestRule.onNodeWithTag("Toolbar")
+        val toolbar = composeTestRule.onNodeWithTag("toolbar")
         toolbar.assertExists()
-        composeTestRule.onNode(hasParent(hasTestTag("Toolbar")).and(hasText("Calendar")))
+        composeTestRule.onNode(hasParent(hasTestTag("toolbar")).and(hasText("Calendar")))
             .assertIsDisplayed()
         val backButton =
-            composeTestRule.onNode(hasParent(hasTestTag("Toolbar")).and(hasContentDescription("Open navigation drawer")))
+            composeTestRule.onNode(hasParent(hasTestTag("toolbar")).and(hasContentDescription("Open navigation drawer")))
         backButton
             .assertIsDisplayed()
             .assertHasClickAction()
-        val todayButton = composeTestRule.onNode(hasAnyAncestor(hasTestTag("Toolbar")).and(hasContentDescription("Jump to Today")))
+        val todayButton = composeTestRule.onNode(hasAnyAncestor(hasTestTag("toolbar")).and(hasContentDescription("Jump to Today")))
         todayButton.assertIsDisplayed()
     }
 
@@ -133,12 +137,14 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = { actions.add(it) },
                 navigationActionClick = {},
             )
         }
 
-        val todayButton = composeTestRule.onNode(hasAnyAncestor(hasTestTag("Toolbar")).and(hasContentDescription("Jump to Today")))
+        val todayButton = composeTestRule.onNode(hasAnyAncestor(hasTestTag("toolbar")).and(hasContentDescription("Jump to Today")))
         todayButton.assertIsDisplayed().performClick()
         composeTestRule.waitForIdle()
 
@@ -160,12 +166,14 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = {},
                 navigationActionClick = {},
             )
         }
 
-        val fab = composeTestRule.onNode(hasContentDescription("Add new"))
+        val fab = composeTestRule.onNode(hasContentDescription("Add new calendar item"))
         fab.assertIsDisplayed()
         val addToDoItem = composeTestRule.onNode((hasText("Add To Do")))
         addToDoItem.assertIsNotDisplayed()
@@ -188,12 +196,14 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = {},
                 navigationActionClick = {},
             )
         }
 
-        val fab = composeTestRule.onNode(hasContentDescription("Add new"))
+        val fab = composeTestRule.onNode(hasContentDescription("Add new calendar item"))
         fab.assertIsDisplayed()
         fab.performClick()
         composeTestRule.waitForIdle()
@@ -220,12 +230,14 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = { actions.add(it) },
                 navigationActionClick = {},
             )
         }
 
-        val fab = composeTestRule.onNode(hasContentDescription("Add new"))
+        val fab = composeTestRule.onNode(hasContentDescription("Add new calendar item"))
         fab.performClick()
         composeTestRule.waitForIdle()
         val addEventItem = composeTestRule.onNode((hasText("Add Event")))
@@ -252,12 +264,14 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     )
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = { actions.add(it) },
                 navigationActionClick = {},
             )
         }
 
-        val fab = composeTestRule.onNode(hasContentDescription("Add new"))
+        val fab = composeTestRule.onNode(hasContentDescription("Add new calendar item"))
         fab.performClick()
         composeTestRule.waitForIdle()
         val addToDo = composeTestRule.onNode((hasText("Add To Do")))
@@ -282,12 +296,14 @@ class CalendarScreenTest {
                         ), stateMapper.createBodyUiState(true, selectedDate)
                     ), snackbarMessage = "Snackbar message"
                 ),
+                false,
+                showToolbar = true,
                 actionHandler = {},
                 navigationActionClick = {},
             )
         }
 
-        val snackbarText = composeTestRule.onNode(hasText("Snackbar message").and(hasAnyAncestor(hasTestTag("SnackbarHost"))))
+        val snackbarText = composeTestRule.onNode(hasText("Snackbar message").and(hasAnyAncestor(hasTestTag("snackbarHost"))))
         snackbarText.assertIsDisplayed()
     }
 }

@@ -4,10 +4,10 @@ object Versions {
     /* SDK Versions */
     const val COMPILE_SDK = 34
     const val MIN_SDK = 26
-    const val TARGET_SDK = 33
+    const val TARGET_SDK = 34
 
     /* Build/tooling */
-    const val ANDROID_GRADLE_TOOLS = "7.1.3"
+    const val ANDROID_GRADLE_TOOLS = "7.4.2"
     const val BUILD_TOOLS = "34.0.0"
 
     /* Testing */
@@ -28,7 +28,6 @@ object Versions {
     const val PSPDFKIT = "8.9.1"
     const val PHOTO_VIEW = "2.3.0"
     const val MOBIUS = "1.2.1"
-    const val SQLDELIGHT = "1.5.4" // 2.0 is out but may break stuff. We should look into migrating to Room.
     const val HILT = "2.49"
     const val HILT_ANDROIDX = "1.1.0"
     const val LIFECYCLE = "2.6.2"
@@ -40,6 +39,8 @@ object Versions {
     const val HEAP = "1.10.6"
     const val ROOM = "2.6.1"
     const val HAMCREST = "2.2"
+    const val NAVIGATION = "2.7.7"
+    const val MEDIA3 = "1.3.1"
 }
 
 object Libs {
@@ -97,7 +98,7 @@ object Libs {
     const val JUNIT = "junit:junit:${Versions.JUNIT}"
     const val ROBOLECTRIC = "org.robolectric:robolectric:${Versions.ROBOLECTRIC}"
     const val ANDROIDX_TEST_JUNIT = "androidx.test.ext:junit:1.1.5"
-    const val MOCKK = "io.mockk:mockk:1.12.8"
+    const val MOCKK = "io.mockk:mockk:1.13.12"
     const val THREETEN_BP = "org.threeten:threetenbp:1.6.8"
     const val UI_AUTOMATOR = "com.android.support.test.uiautomator:uiautomator-v18:2.1.3"
     const val TEST_ORCHESTRATOR = "androidx.test:orchestrator:1.4.2"
@@ -123,6 +124,11 @@ object Libs {
     /* Media and content handling */
     const val PSPDFKIT = "com.pspdfkit:pspdfkit:${Versions.PSPDFKIT}"
     const val EXOPLAYER = "com.google.android.exoplayer:exoplayer:2.18.5" // This is deprecated, we should migrate to https://developer.android.com/guide/topics/media/media3/getting-started/migration-guide
+    const val MEDIA3 = "androidx.media3:media3-exoplayer:${Versions.MEDIA3}"
+    const val MEDIA3_UI = "androidx.media3:media3-ui:${Versions.MEDIA3}"
+    const val MEDIA3_HLS = "androidx.media3:media3-exoplayer-hls:${Versions.MEDIA3}"
+    const val MEDIA3_DASH = "androidx.media3:media3-exoplayer-dash:${Versions.MEDIA3}"
+    const val MEDIA3_SMOOTH_STREAMING = "androidx.media3:media3-exoplayer-smoothstreaming:${Versions.MEDIA3}"
     const val PHOTO_VIEW = "com.github.chrisbanes:PhotoView:${Versions.PHOTO_VIEW}"
     const val ANDROID_SVG = "com.caverock:androidsvg:1.4"
     const val RICH_EDITOR = "jp.wasabeef:richeditor-android:2.0.0"
@@ -145,7 +151,6 @@ object Libs {
     /* Other */
     const val LOTTIE = "com.airbnb.android:lottie:6.2.0"
     const val SLIDING_UP_PANEL = "com.sothree.slidinguppanel:library:3.3.1"
-    const val SQLDELIGHT = "com.squareup.sqldelight:android-driver:${Versions.SQLDELIGHT}"
     const val DISK_LRU_CACHE = "com.jakewharton:disklrucache:2.0.2"
     const val EVENTBUS = "org.greenrobot:eventbus:3.3.1"
     const val JW_THREETEN_BP = "com.jakewharton.threetenabp:threetenabp:1.4.6"
@@ -176,6 +181,11 @@ object Libs {
     const val COMPOSE_UI_TEST = "androidx.compose.ui:ui-test-junit4:1.6.4"
     const val COMPOSE_UI_TEST_MANIFEST = "androidx.compose.ui:ui-test-manifest"
     const val COMPOSE_ACTIVITY = "androidx.activity:activity-compose:1.8.2"
+    const val COMPOSE_GLIDE = "com.github.bumptech.glide:compose:1.0.0-beta01"
+
+    // Navigation
+    const val NAVIGATION_FRAGMENT = "androidx.navigation:navigation-fragment-ktx:${Versions.NAVIGATION}"
+    const val NAVIGATION_KTX = "androidx.navigation:navigation-ui-ktx:${Versions.NAVIGATION}"
 }
 
 object Plugins {
@@ -185,7 +195,6 @@ object Plugins {
     const val KOTLIN = "org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.KOTLIN}"
     const val GOOGLE_SERVICES = "com.google.gms:google-services:${Versions.GOOGLE_SERVICES}"
     const val JACOCO_ANDROID = "com.dicedmelon.gradle:jacoco-android:${Versions.JACOCO_ANDROID}"
-    const val SQLDELIGHT = "com.squareup.sqldelight:gradle-plugin:${Versions.SQLDELIGHT}"
     const val HILT = "com.google.dagger:hilt-android-gradle-plugin:${Versions.HILT}"
     const val HEAP = "com.heapanalytics.android:heap-android-gradle:${Versions.HEAP}"
 }

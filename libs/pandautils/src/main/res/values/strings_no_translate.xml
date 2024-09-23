@@ -28,4 +28,7 @@
     <string name="help_email" translatable="false">Email:</string>
     <string name="help_locale" translatable="false">Locale:</string>
     <string name="installDate" translatable="false">Install Date:</string>
+
+    <string name="degrees_edx_on_github" translatable="false">Degrees edX on GitHub</string>
+
 </resources>

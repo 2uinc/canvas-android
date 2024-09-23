@@ -21,7 +21,7 @@ import com.google.ical.values.RRule
 import com.instructure.canvasapi2.apis.CalendarEventAPI
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.utils.DateHelper
-import com.instructure.pandautils.compose.composables.SelectCalendarUiState
+import com.instructure.pandautils.compose.composables.SelectContextUiState
 import org.threeten.bp.DayOfWeek
 import org.threeten.bp.LocalDate
 import org.threeten.bp.LocalTime
@@ -34,7 +34,7 @@ data class CreateUpdateEventUiState(
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
     val selectFrequencyUiState: SelectFrequencyUiState = SelectFrequencyUiState(),
-    val selectCalendarUiState: SelectCalendarUiState = SelectCalendarUiState(),
+    val selectContextUiState: SelectContextUiState = SelectContextUiState(),
     val location: String = "",
     val address: String = "",
     val details: String = "",
@@ -83,7 +83,7 @@ sealed class CreateUpdateEventAction {
     data class UpdateLocation(val location: String) : CreateUpdateEventAction()
     data class UpdateAddress(val address: String) : CreateUpdateEventAction()
     data class UpdateDetails(val details: String) : CreateUpdateEventAction()
-    data class Save(val modifyEventScope: CalendarEventAPI.ModifyEventScope) : CreateUpdateEventAction()
+    data class Save(val modifyEventScope: CalendarEventAPI.ModifyEventScope, val isSeriesEvent: Boolean = false) : CreateUpdateEventAction()
     data object SnackbarDismissed : CreateUpdateEventAction()
     data object ShowSelectCalendarScreen : CreateUpdateEventAction()
     data object HideSelectCalendarScreen : CreateUpdateEventAction()

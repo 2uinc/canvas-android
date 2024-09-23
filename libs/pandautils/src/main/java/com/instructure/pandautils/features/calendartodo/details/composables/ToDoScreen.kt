@@ -36,9 +36,12 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -122,31 +125,34 @@ private fun OverFlowMenuSegment(
     actionHandler: (ToDoAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val showDeleteConfirmationDialog = remember { mutableStateOf(false) }
-    if (showDeleteConfirmationDialog.value) {
+    var showDeleteConfirmationDialog by rememberSaveable { mutableStateOf(false) }
+    if (showDeleteConfirmationDialog) {
         SimpleAlertDialog(
             dialogTitle = stringResource(id = R.string.todoDeleteConfirmationTitle),
             dialogText = stringResource(id = R.string.todoDeleteConfirmationText),
             dismissButtonText = stringResource(id = R.string.cancel),
             confirmationButtonText = stringResource(id = R.string.delete),
             onDismissRequest = {
-                showDeleteConfirmationDialog.value = false
+                showDeleteConfirmationDialog = false
             },
             onConfirmation = {
-                showDeleteConfirmationDialog.value = false
+                showDeleteConfirmationDialog = false
                 actionHandler(ToDoAction.DeleteToDo)
             }
         )
     }
 
-    val showMenu = remember { mutableStateOf(false) }
+    var showMenu by rememberSaveable { mutableStateOf(false) }
     OverflowMenu(
         modifier = modifier.background(color = colorResource(id = R.color.backgroundLightestElevated)),
-        showMenu = showMenu
+        showMenu = showMenu,
+        onDismissRequest = {
+            showMenu = !showMenu
+        }
     ) {
         DropdownMenuItem(
             onClick = {
-                showMenu.value = !showMenu.value
+                showMenu = !showMenu
                 actionHandler(ToDoAction.EditToDo)
             }
         ) {
@@ -157,8 +163,8 @@ private fun OverFlowMenuSegment(
         }
         DropdownMenuItem(
             onClick = {
-                showMenu.value = !showMenu.value
-                showDeleteConfirmationDialog.value = true
+                showMenu = !showMenu
+                showDeleteConfirmationDialog = true
             }
         ) {
             Text(
@@ -182,7 +188,8 @@ private fun ToDoContent(
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = toDoUiState.title,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
                     .testTag("title"),
                 color = colorResource(id = R.color.textDarkest),
                 fontSize = 22.sp
@@ -208,7 +215,9 @@ private fun ToDoContent(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = toDoUiState.date,
-                modifier = Modifier.padding(horizontal = 16.dp).testTag("date"),
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .testTag("date"),
                 color = colorResource(id = R.color.textDarkest),
                 fontSize = 16.sp
             )
@@ -225,7 +234,9 @@ private fun ToDoContent(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = toDoUiState.description,
-                    modifier = Modifier.padding(horizontal = 16.dp).testTag("description"),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .testTag("description"),
                     color = colorResource(id = R.color.textDarkest),
                     fontSize = 16.sp
                 )

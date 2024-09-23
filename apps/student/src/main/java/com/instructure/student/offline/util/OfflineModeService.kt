@@ -1,7 +1,13 @@
 package com.instructure.student.offline.util
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.instructure.student.R
@@ -78,7 +84,16 @@ class OfflineModeService : Service() {
             0, 0, true
         )
         if (isStart) {
-            startForeground(NOTIFICATION_ID, notification)
+
+            notification?.let {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    startForeground(NOTIFICATION_ID, it)
+                } else {
+                    startForeground(
+                        NOTIFICATION_ID, it, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    )
+                }
+            }
 
         } else {
             mNotificationManager?.notify(NOTIFICATION_ID, notification)

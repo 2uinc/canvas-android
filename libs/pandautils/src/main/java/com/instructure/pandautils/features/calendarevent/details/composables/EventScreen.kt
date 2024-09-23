@@ -38,9 +38,13 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -117,8 +121,7 @@ internal fun EventScreen(
                     contentColor = Color.White,
                     navigationActionClick = {
                         navigationAction()
-                    },
-                    modifier = modifier.testTag("canvasThemedAppBar")
+                    }
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -143,26 +146,30 @@ private fun OverFlowMenuSegment(
     actionHandler: (EventAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val showDeleteConfirmationDialog = remember { mutableStateOf(false) }
-    if (showDeleteConfirmationDialog.value) {
+    var showDeleteConfirmationDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+    if (showDeleteConfirmationDialog) {
         SimpleAlertDialog(
             dialogTitle = stringResource(id = R.string.eventDeleteConfirmationTitle),
             dialogText = stringResource(id = R.string.eventDeleteConfirmationText),
             dismissButtonText = stringResource(id = R.string.cancel),
             confirmationButtonText = stringResource(id = R.string.delete),
             onDismissRequest = {
-                showDeleteConfirmationDialog.value = false
+                showDeleteConfirmationDialog = false
             },
             onConfirmation = {
-                showDeleteConfirmationDialog.value = false
+                showDeleteConfirmationDialog = false
                 actionHandler(EventAction.DeleteEvent(CalendarEventAPI.ModifyEventScope.ONE))
             }
         )
     }
 
-    val showDeleteScopeDialog = remember { mutableStateOf(false) }
-    if (showDeleteScopeDialog.value) {
+    var showDeleteScopeDialog by rememberSaveable { mutableStateOf(false) }
+    var defaultSelection by rememberSaveable { mutableIntStateOf(-1) }
+    if (showDeleteScopeDialog) {
         SingleChoiceAlertDialog(
+            defaultSelection = defaultSelection,
             dialogTitle = stringResource(id = R.string.eventDeleteRecurringConfirmationTitle),
             items = CalendarEventAPI.ModifyEventScope.entries.take(if (eventUiState.isSeriesHead) 2 else 3).map {
                 stringResource(id = it.stringRes)
@@ -170,24 +177,32 @@ private fun OverFlowMenuSegment(
             dismissButtonText = stringResource(id = R.string.cancel),
             confirmationButtonText = stringResource(id = R.string.delete),
             onDismissRequest = {
-                showDeleteScopeDialog.value = false
+                showDeleteScopeDialog = false
             },
             onConfirmation = {
-                showDeleteScopeDialog.value = false
+                showDeleteScopeDialog = false
                 actionHandler(EventAction.DeleteEvent(CalendarEventAPI.ModifyEventScope.entries[it]))
+            },
+            onItemSelected = {
+                defaultSelection = it
             }
         )
     }
 
-    val showMenu = remember { mutableStateOf(false) }
+    var showMenu by rememberSaveable { mutableStateOf(false) }
     OverflowMenu(
-        modifier = modifier.background(color = colorResource(id = R.color.backgroundLightestElevated)).testTag("overFlowMenu"),
-        showMenu = showMenu
+        modifier = modifier
+            .background(color = colorResource(id = R.color.backgroundLightestElevated))
+            .testTag("overFlowMenu"),
+        showMenu = showMenu,
+        onDismissRequest = {
+            showMenu = !showMenu
+        }
     ) {
         if (eventUiState.toolbarUiState.editAllowed) {
             DropdownMenuItem(
                 onClick = {
-                    showMenu.value = !showMenu.value
+                    showMenu = !showMenu
                     actionHandler(EventAction.EditEvent)
                 }
             ) {
@@ -199,11 +214,11 @@ private fun OverFlowMenuSegment(
         }
         DropdownMenuItem(
             onClick = {
-                showMenu.value = !showMenu.value
+                showMenu = !showMenu
                 if (eventUiState.isSeriesEvent) {
-                    showDeleteScopeDialog.value = true
+                    showDeleteScopeDialog = true
                 } else {
-                    showDeleteConfirmationDialog.value = true
+                    showDeleteConfirmationDialog = true
                 }
             }
         ) {
@@ -233,21 +248,27 @@ private fun EventContent(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = uiState.title,
-                    modifier = Modifier.padding(horizontal = 16.dp).testTag("eventTitle"),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .testTag("eventTitle"),
                     color = colorResource(id = R.color.textDarkest),
                     fontSize = 22.sp
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = uiState.date,
-                    modifier = Modifier.padding(horizontal = 16.dp).testTag("eventDate"),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .testTag("eventDate"),
                     color = colorResource(id = R.color.textDarkest),
                     fontSize = 16.sp
                 )
                 if (uiState.recurrence.isNotEmpty()) {
                     Text(
                         text = uiState.recurrence,
-                        modifier = Modifier.padding(horizontal = 16.dp).testTag("recurrence"),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .testTag("recurrence"),
                         color = colorResource(id = R.color.textDarkest),
                         fontSize = 16.sp
                     )
@@ -258,14 +279,18 @@ private fun EventContent(
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = stringResource(id = R.string.eventLocationLabel),
-                        modifier = Modifier.padding(horizontal = 16.dp).testTag("locationLabel"),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .testTag("locationLabel"),
                         color = colorResource(id = R.color.textDark),
                         fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = uiState.location,
-                        modifier = Modifier.padding(horizontal = 16.dp).testTag("location"),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .testTag("location"),
                         color = colorResource(id = R.color.textDarkest),
                         fontSize = 16.sp
                     )
@@ -274,14 +299,18 @@ private fun EventContent(
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = stringResource(id = R.string.eventAddressLabel),
-                        modifier = Modifier.padding(horizontal = 16.dp).testTag("addressLabel"),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .testTag("addressLabel"),
                         color = colorResource(id = R.color.textDark),
                         fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = uiState.address,
-                        modifier = Modifier.padding(horizontal = 16.dp).testTag("address"),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .testTag("address"),
                         color = colorResource(id = R.color.textDarkest),
                         fontSize = 16.sp
                     )
@@ -290,13 +319,17 @@ private fun EventContent(
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = stringResource(id = R.string.eventDetailsLabel),
-                        modifier = Modifier.padding(horizontal = 16.dp).testTag("detailsLabel"),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .testTag("detailsLabel"),
                         color = colorResource(id = R.color.textDark),
                         fontSize = 14.sp
                     )
                     ComposeCanvasWebViewWrapper(
                         html = uiState.formattedDescription,
-                        modifier = Modifier.padding(horizontal = 8.dp).testTag("composeCanvasWebViewWrapper"),
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .testTag("composeCanvasWebViewWrapper"),
                         onLtiButtonPressed = {
                             actionHandler(EventAction.OnLtiClicked(it))
                         },

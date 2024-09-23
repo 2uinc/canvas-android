@@ -143,13 +143,13 @@ abstract class CallbackActivity : ParentActivity(), OnUnreadCountInvalidated, No
 
             val launchDefinitions = awaitApi<List<LaunchDefinition>?> { LaunchDefinitionsManager.getLaunchDefinitions(it, false) }
             launchDefinitions?.let {
-                val definitions = launchDefinitions.filter { it.domain == LaunchDefinition._STUDIO_DOMAIN || it.domain == LaunchDefinition._GAUGE_DOMAIN }
+                val definitions = launchDefinitions.filter { it.domain == LaunchDefinition.STUDIO_DOMAIN || it.domain == LaunchDefinition.GAUGE_DOMAIN }
                 gotLaunchDefinitions(definitions)
             }
 
             if (!ApiPrefs.isMasquerading) {
                 // We don't know how the crashlytics stores the userId so we just set it to empty to make sure we don't log it.
-                val crashlytics = FirebaseCrashlytics.getInstance();
+                val crashlytics = FirebaseCrashlytics.getInstance()
                 crashlytics.setUserId("")
             }
 
@@ -210,7 +210,7 @@ abstract class CallbackActivity : ParentActivity(), OnUnreadCountInvalidated, No
             val shouldRestartForLocaleChange = setupUser(user, type)
             if (shouldRestartForLocaleChange) {
                 if (BuildConfig.DEBUG) toast(R.string.localeRestartMessage)
-                LocaleUtils.restartApp(this@CallbackActivity, LoginActivity::class.java)
+                LocaleUtils.restartApp(this@CallbackActivity)
             } else {
                 loadInitialData()
             }

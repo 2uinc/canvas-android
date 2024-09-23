@@ -51,7 +51,6 @@ object ModuleUtility {
         item: ModuleItem,
         course: Course,
         moduleObject: ModuleObject?,
-        isDiscussionRedesignEnabled: Boolean,
         navigatedFromModules: Boolean,
         isOnline: Boolean,
         syncedTabs: Set<String>,
@@ -66,7 +65,7 @@ object ModuleUtility {
         }
         "Discussion" -> {
             createFragmentWithOfflineCheck(isOnline, course, item, syncedTabs, context, setOf(Tab.DISCUSSIONS_ID)) {
-                if (isDiscussionRedesignEnabled && isOnline) {
+                if (isOnline) {
                     DiscussionDetailsWebViewFragment.newInstance(getDiscussionRedesignRoute(item, course))
                 } else {
                     DiscussionDetailsFragment.newInstance(getDiscussionRoute(item, course))

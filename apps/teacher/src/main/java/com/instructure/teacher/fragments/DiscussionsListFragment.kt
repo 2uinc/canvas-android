@@ -29,15 +29,34 @@ import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_DISCUSSION_LIST
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.features.discussion.details.DiscussionDetailsWebViewFragment
 import com.instructure.pandautils.fragments.BaseExpandableSyncFragment
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.BooleanArg
+import com.instructure.pandautils.utils.ColorUtils
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.addSearch
+import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.closeSearch
+import com.instructure.pandautils.utils.getDrawableCompat
+import com.instructure.pandautils.utils.nonNullArgs
+import com.instructure.pandautils.utils.onClickWithRequireNetwork
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.showThemed
+import com.instructure.pandautils.utils.textAndIconColor
+import com.instructure.pandautils.utils.toast
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.DiscussionListAdapter
 import com.instructure.teacher.databinding.FragmentDiscussionListBinding
 import com.instructure.teacher.dialog.DiscussionsMoveToDialog
-import com.instructure.teacher.events.*
+import com.instructure.teacher.events.DiscussionCreatedEvent
+import com.instructure.teacher.events.DiscussionTopicHeaderDeletedEvent
+import com.instructure.teacher.events.DiscussionTopicHeaderEvent
+import com.instructure.teacher.events.DiscussionUpdatedEvent
+import com.instructure.teacher.events.post
 import com.instructure.teacher.factory.DiscussionListPresenterFactory
-import com.instructure.teacher.features.discussion.DiscussionsDetailsFragment
 import com.instructure.teacher.presenters.DiscussionListPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.RecyclerViewUtils
@@ -239,7 +258,7 @@ open class DiscussionsListFragment : BaseExpandableSyncFragment<
     }
 
     override fun discussionDeletedSuccessfully(discussionTopicHeader: DiscussionTopicHeader) {
-        DiscussionTopicHeaderDeletedEvent(discussionTopicHeader.id, (DiscussionsDetailsFragment::class.java.toString() + ".onPost()")).post()
+        DiscussionTopicHeaderDeletedEvent(discussionTopicHeader.id, (DiscussionDetailsWebViewFragment::class.java.toString() + ".onPost()")).post()
     }
 
     override fun displayLoadingError() = toast(R.string.errorOccurred)

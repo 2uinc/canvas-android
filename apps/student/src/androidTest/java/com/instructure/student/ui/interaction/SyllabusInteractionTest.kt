@@ -59,6 +59,21 @@ class SyllabusInteractionTest : StudentComposeTest() {
         calendarEventDetailsPage.verifyDescription(event.description!!)
     }
 
+    @Test
+    @TestMetaData(Priority.MANDATORY, FeatureCategory.SYLLABUS, TestCategory.INTERACTION)
+    fun testSyllabus_assignment() {
+        val data = goToSyllabus(eventCount = 0, assignmentCount = 1)
+
+        val course = data.courses.values.first()
+        data.coursePermissions[course.id] = CanvasContextPermission(manageCalendar = true)
+        val assignment = data.assignments.entries.firstOrNull()!!.value
+
+        syllabusPage.selectSummaryTab()
+        syllabusPage.assertItemDisplayed(assignment.name!!)
+        syllabusPage.selectSummaryEvent(assignment.name!!)
+        assignmentDetailsPage.assertAssignmentTitle(assignment.name!!)
+    }
+
     private fun goToSyllabus(eventCount: Int, assignmentCount: Int) : MockCanvas {
 
         val data = MockCanvas.init(studentCount = 1, teacherCount = 1, courseCount = 1, favoriteCourseCount = 1)
@@ -79,8 +94,8 @@ class SyllabusInteractionTest : StudentComposeTest() {
 
         repeat(eventCount) {
             data.addCourseCalendarEvent(
-                    courseId = course.id,
-                    date = 2.days.fromNow.iso8601,
+                    course = course,
+                    startDate = 2.days.fromNow.iso8601,
                     title = "Test Calendar Event",
                     description = "The calendar event to end all calendar events"
             )

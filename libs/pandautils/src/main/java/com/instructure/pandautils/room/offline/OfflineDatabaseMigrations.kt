@@ -17,7 +17,7 @@
 
 package com.instructure.pandautils.room.offline
 
-import com.instructure.pandautils.room.createMigration
+import com.instructure.pandautils.room.common.createMigration
 
 val offlineDatabaseMigrations = arrayOf(
 
@@ -95,4 +95,14 @@ val offlineDatabaseMigrations = arrayOf(
         database.execSQL("DROP TABLE LockedModuleEntity")
         database.execSQL("ALTER TABLE LockedModuleEntity_temp RENAME TO LockedModuleEntity")
     },
+    createMigration(2, 3) { database ->
+        database.execSQL(
+            "CREATE TABLE IF NOT EXISTS `StudioMediaProgressEntity` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
+                    "`ltiLaunchId` TEXT NOT NULL," +
+                    "`progress` INTEGER NOT NULL," +
+                    "`fileSize` INTEGER NOT NULL," +
+                    "`progressState` TEXT NOT NULL)"
+        )
+    }
 )
