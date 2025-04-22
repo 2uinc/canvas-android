@@ -16,9 +16,17 @@
 package com.instructure.teacher.adapters
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.TextView
-import com.instructure.canvasapi2.StudentContextCardQuery.*
+import com.instructure.canvasapi2.StudentContextCardQuery
+import com.instructure.canvasapi2.StudentContextCardQuery.Analytics
+import com.instructure.canvasapi2.StudentContextCardQuery.Submission
+import com.instructure.canvasapi2.StudentContextCardQuery.User
+import com.instructure.canvasapi2.managers.StudentContextManager
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.GradeableStudentSubmission
 import com.instructure.canvasapi2.models.Recipient
@@ -31,13 +39,30 @@ import com.instructure.interactions.MasterDetailInteractions
 import com.instructure.interactions.router.Route
 import com.instructure.interactions.router.RouteContext
 import com.instructure.pandautils.binding.viewBinding
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.blueprint.PresenterFragment
+import com.instructure.pandautils.features.inbox.compose.InboxComposeFragment
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptions
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptionsDefaultValues
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptionsDisabledFields
+import com.instructure.pandautils.utils.BooleanArg
+import com.instructure.pandautils.utils.LongArg
+import com.instructure.pandautils.utils.ProfileUtils
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.asStateList
+import com.instructure.pandautils.utils.children
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.getContentDescriptionForMinusGradeString
+import com.instructure.pandautils.utils.isVisible
+import com.instructure.pandautils.utils.nonNullArgs
+import com.instructure.pandautils.utils.onClick
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.toast
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.SpeedGraderActivity
 import com.instructure.teacher.databinding.FragmentStudentContextBinding
 import com.instructure.teacher.events.AssignmentGradedEvent
 import com.instructure.teacher.factory.StudentContextPresenterFactory
-import com.instructure.teacher.fragments.AddMessageFragment
 import com.instructure.teacher.holders.StudentContextSubmissionView
 import com.instructure.teacher.presenters.StudentContextPresenter
 import com.instructure.teacher.router.RouteMatcher
@@ -46,20 +71,24 @@ import com.instructure.teacher.utils.setupBackButton
 import com.instructure.teacher.utils.setupBackButtonWithExpandCollapseAndBack
 import com.instructure.teacher.utils.updateToolbarExpandCollapseIcon
 import com.instructure.teacher.viewinterface.StudentContextView
-import instructure.androidblueprint.PresenterFragment
+import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class StudentContextFragment : PresenterFragment<StudentContextPresenter, StudentContextView>(), StudentContextView {
+
+    @Inject
+    lateinit var studentContextManager: StudentContextManager
 
     private val binding by viewBinding(FragmentStudentContextBinding::bind)
 
     private var mStudentId by LongArg()
     private var mCourseId by LongArg()
     private var mLaunchSubmissions by BooleanArg()
-    private var mNeedToForceNetwork = false
+    private var needToForceNetwork = false
     private var mHasLoaded = false
 
     @Suppress("unused")
@@ -67,7 +96,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
     fun onAssignmentGraded(event: AssignmentGradedEvent) {
         event.once(javaClass.simpleName) {
             //force network call on resume
-            mNeedToForceNetwork = true
+            needToForceNetwork = true
             mHasLoaded = false
         }
     }
@@ -87,7 +116,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
         return inflater.inflate(R.layout.fragment_student_context, container, false)
     }
 
-    override fun getPresenterFactory() = StudentContextPresenterFactory(mStudentId, mCourseId)
+    override fun getPresenterFactory() = StudentContextPresenterFactory(mStudentId, mCourseId, studentContextManager)
 
     override fun onRefreshStarted() = with(binding) {
         toolbar.setGone()
@@ -106,7 +135,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
 
     override fun onReadySetGo(presenter: StudentContextPresenter) {
         if(!mHasLoaded) {
-            presenter.refresh(mNeedToForceNetwork)
+            presenter.refresh(needToForceNetwork)
             mHasLoaded = true
         }
     }
@@ -115,8 +144,8 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
         binding.submissionListContainer.removeAllViewsInLayout()
     }
 
-    override fun setData(course: AsCourse, student: User, summary: Analytics?, isStudent: Boolean) = with(binding) {
-        val courseBackgroundColor = CanvasContext.emptyCourseContext(course.id.toLong()).backgroundColor
+    override fun setData(course: StudentContextCardQuery.OnCourse, student: User, summary: Analytics?, isStudent: Boolean) = with(binding) {
+        val courseBackgroundColor = CanvasContext.emptyCourseContext(course.id.toLong()).color
 
         setupScrollListener()
 
@@ -124,7 +153,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
         if (activity is MasterDetailInteractions) {
             toolbar.setupBackButtonWithExpandCollapseAndBack(this@StudentContextFragment) {
                 toolbar.updateToolbarExpandCollapseIcon(this@StudentContextFragment)
-                ViewStyler.themeToolbarColored(requireActivity(), toolbar, courseBackgroundColor, requireContext().getColor(R.color.white))
+                ViewStyler.themeToolbarColored(requireActivity(), toolbar, courseBackgroundColor, requireContext().getColor(R.color.textLightest))
                 (activity as MasterDetailInteractions).toggleExpandCollapse()
             }
         } else {
@@ -132,7 +161,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
         }
         toolbar.title = Pronouns.span(student.shortName, student.pronouns)
         toolbar.subtitle = course.name
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, courseBackgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), toolbar, courseBackgroundColor, requireContext().getColor(R.color.textLightest))
 
         // Message FAB
         messageButton.setVisible()
@@ -144,8 +173,18 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
                 pronouns = student.pronouns,
                 avatarURL = student.avatarUrl,
             )
-            val args = AddMessageFragment.createBundle(listOf(recipient), "", "course_${course.id}", true)
-            RouteMatcher.route(requireActivity(), Route(AddMessageFragment::class.java, null, args))
+            val options = InboxComposeOptions.buildNewMessage().copy(
+                defaultValues = InboxComposeOptionsDefaultValues(
+                    contextName = course.name,
+                    contextCode = "course_${course.id}",
+                    recipients = listOf(recipient)
+                ),
+                disabledFields = InboxComposeOptionsDisabledFields(
+                    isContextDisabled = true
+                )
+            )
+            val route = InboxComposeFragment.makeRoute(options)
+            RouteMatcher.route(requireActivity(), route)
         }
 
         studentNameView.text = Pronouns.span(student.shortName, student.pronouns)
@@ -173,7 +212,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
         } ?: lastActivityView.setGone()
 
         if (isStudent) {
-            val enrollmentGrades = student.enrollments.find { it.type == EnrollmentType.STUDENTENROLLMENT }?.grades
+            val enrollmentGrades = student.enrollments.find { it.type == EnrollmentType.StudentEnrollment }?.grades
 
             // Grade before posting
             val gradeBeforePostingText = enrollmentGrades?.let { it.currentGrade ?: it.currentScore?.toString() } ?: "--"
@@ -214,7 +253,7 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
                 // Set color of last grade item
                 visibleGradeItems.lastOrNull()?.apply {
                     backgroundTintList = courseBackgroundColor.asStateList()
-                    children<TextView>().onEach { it.setTextColor(requireContext().getColor(R.color.white)) }
+                    children<TextView>().onEach { it.setTextColor(requireContext().getColor(R.color.textLightest)) }
                 }
             }
 
@@ -255,19 +294,19 @@ class StudentContextFragment : PresenterFragment<StudentContextPresenter, Studen
                 val threshold = scrollContent.height - loadMoreContainer.top
                 val bottomOffset = contentContainer.height + contentContainer.scrollY - scrollContent.bottom
                 if (scrollContent.height <= contentContainer.height) {
-                    presenter.loadMoreSubmissions()
+                    presenter.loadMoreSubmissions(needToForceNetwork)
                 } else if (triggered && (threshold + touchSlop + bottomOffset < 0)) {
                     triggered = false
                 } else if (!triggered && (threshold + bottomOffset > 0)) {
                     triggered = true
-                    presenter.loadMoreSubmissions()
+                    presenter.loadMoreSubmissions(needToForceNetwork)
                 }
             }
         }
     }
 
-    override fun addSubmissions(submissions: List<Submission>, course: AsCourse, student: User) {
-        val courseColor = CanvasContext.emptyCourseContext(course.id.toLong()).textAndIconColor
+    override fun addSubmissions(submissions: List<Submission>, course: StudentContextCardQuery.OnCourse, student: User) {
+        val courseColor = CanvasContext.emptyCourseContext(course.id.toLong()).color
         submissions.forEach { submission ->
             val view = StudentContextSubmissionView(requireContext(), submission, courseColor)
             if (mLaunchSubmissions) view.onClick {

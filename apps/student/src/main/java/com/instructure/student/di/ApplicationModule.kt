@@ -19,11 +19,14 @@
 package com.instructure.student.di
 
 import com.instructure.pandautils.utils.LogoutHelper
+import com.instructure.student.router.EnabledTabs
+import com.instructure.student.router.EnabledTabsImpl
 import com.instructure.student.util.StudentLogoutHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -32,5 +35,11 @@ class ApplicationModule {
     @Provides
     fun provideLogoutHelper(): LogoutHelper {
         return StudentLogoutHelper()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEnabledTabs(): EnabledTabs {
+        return EnabledTabsImpl()
     }
 }

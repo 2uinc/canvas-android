@@ -18,6 +18,9 @@ package com.instructure.teacher.features.assignment.details
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.webkit.WebView
+import android.widget.Button
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.instructure.canvasapi2.models.Assignment
 import com.instructure.canvasapi2.models.Assignment.Companion.getSubmissionTypeFromAPIString
 import com.instructure.canvasapi2.models.Assignment.Companion.submissionTypeToPrettyPrintString
@@ -36,12 +39,14 @@ import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_ASSIGNMENT_DETAILS
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.features.discussion.router.DiscussionRouterFragment
+import com.instructure.pandautils.features.lti.LtiLaunchFragment
 import com.instructure.pandautils.fragments.BasePresenterFragment
 import com.instructure.pandautils.utils.LongArg
 import com.instructure.pandautils.utils.ParcelableArg
 import com.instructure.pandautils.utils.ThemePrefs
 import com.instructure.pandautils.utils.ViewStyler
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.accessibilityClassName
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.isTablet
 import com.instructure.pandautils.utils.loadHtmlWithIframes
 import com.instructure.pandautils.utils.makeBundle
@@ -49,11 +54,11 @@ import com.instructure.pandautils.utils.onClick
 import com.instructure.pandautils.utils.onClickWithRequireNetwork
 import com.instructure.pandautils.utils.setGone
 import com.instructure.pandautils.utils.setVisible
-import com.instructure.pandautils.utils.toast
 import com.instructure.pandautils.utils.withArgs
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.InternalWebViewActivity
+import com.instructure.teacher.activities.SpeedGraderActivity
 import com.instructure.teacher.databinding.FragmentAssignmentDetailsBinding
 import com.instructure.teacher.dialog.NoInternetConnectionDialog
 import com.instructure.teacher.events.AssignmentDeletedEvent
@@ -61,11 +66,10 @@ import com.instructure.teacher.events.AssignmentGradedEvent
 import com.instructure.teacher.events.AssignmentUpdatedEvent
 import com.instructure.teacher.events.post
 import com.instructure.teacher.factory.AssignmentDetailPresenterFactory
-import com.instructure.teacher.features.assignment.submission.AssignmentSubmissionListFragment
+import com.instructure.teacher.features.assignment.submission.SubmissionListFragment
 import com.instructure.teacher.features.assignment.submission.SubmissionListFilter
 import com.instructure.teacher.fragments.DueDatesFragment
 import com.instructure.teacher.fragments.EditAssignmentDetailsFragment
-import com.instructure.teacher.fragments.LtiLaunchFragment
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.getColorCompat
 import com.instructure.teacher.utils.setupBackButtonWithExpandCollapseAndBack
@@ -97,7 +101,7 @@ class AssignmentDetailsFragment : BasePresenterFragment<
 
     @Suppress("unused")
     @PageViewUrl
-    private fun makePageViewUrl() = "${ApiPrefs.fullDomain}/${course.contextId.replace("_", "s/")}/${assignment.id}"
+    fun makePageViewUrl() = "${ApiPrefs.fullDomain}/${course.contextId.replace("_", "s/")}/${assignment.id}"
 
     override val bindingInflater: (layoutInflater: LayoutInflater) -> FragmentAssignmentDetailsBinding = FragmentAssignmentDetailsBinding::inflate
 
@@ -124,11 +128,28 @@ class AssignmentDetailsFragment : BasePresenterFragment<
 
     override fun populateAssignmentDetails(assignment: Assignment) = with(binding) {
         this@AssignmentDetailsFragment.assignment = assignment
-        toolbar.setupMenu(R.menu.menu_edit_generic) { openEditPage(assignment) }
+        toolbar.setupMenu(R.menu.menu_assignment_details) { menuItem ->
+            when (menuItem.itemId) {
+                R.id.menu_edit -> {
+                    openEditPage(assignment)
+                }
+
+                R.id.menu_speedGrader -> {
+                    SpeedGraderActivity.createIntent(
+                        requireContext(),
+                        course.id,
+                        assignment.id,
+                        -1
+                    ).let {
+                        startActivity(it)
+                    }
+                }
+            }
+        }
         swipeRefreshLayout.isRefreshing = false
         setupViews(assignment)
         setupListeners(assignment)
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, course.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), toolbar, course.color, requireContext().getColor(R.color.textLightest))
     }
 
     override fun getPresenterFactory() = AssignmentDetailPresenterFactory(assignment)
@@ -138,7 +159,7 @@ class AssignmentDetailsFragment : BasePresenterFragment<
     private fun setupToolbar() = with(binding) {
         toolbar.setupBackButtonWithExpandCollapseAndBack(this@AssignmentDetailsFragment) {
             toolbar.updateToolbarExpandCollapseIcon(this@AssignmentDetailsFragment)
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar, course.backgroundColor, requireContext().getColor(R.color.white))
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar, course.color, requireContext().getColor(R.color.textLightest))
             (activity as MasterDetailInteractions).toggleExpandCollapse()
         }
 
@@ -146,7 +167,7 @@ class AssignmentDetailsFragment : BasePresenterFragment<
         if(!isTablet) {
             toolbar.subtitle = course.name
         }
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, course.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), toolbar, course.color, requireContext().getColor(R.color.textLightest))
     }
 
     private fun setupViews(assignment: Assignment) = with(binding) {
@@ -177,6 +198,8 @@ class AssignmentDetailsFragment : BasePresenterFragment<
         configureDescription(assignment)
         configureSubmissionDonuts(assignment)
         configureViewDiscussionButton(assignment)
+
+        dueLayout.accessibilityClassName(Button::class.java.name)
     }
 
     // region Configure Assignment
@@ -249,21 +272,16 @@ class AssignmentDetailsFragment : BasePresenterFragment<
 
     private fun configureSubmissionTypes(assignment: Assignment) = with(binding) {
         submissionTypesTextView.text = assignment.submissionTypesRaw.map {
-            submissionTypeToPrettyPrintString(getSubmissionTypeFromAPIString(it), requireContext()) }.joinToString("\n")
+            submissionTypeToPrettyPrintString(getSubmissionTypeFromAPIString(it), requireContext(), assignment.ltiToolType()) }.joinToString("\n")
 
         if(assignment.submissionTypesRaw.contains(Assignment.SubmissionType.EXTERNAL_TOOL.apiString)) {
             // External tool
             submissionTypesArrowIcon.setVisible()
             submissionTypesLayout.onClickWithRequireNetwork {
-                // If the user is a designer we don't want to let them look at LTI tools
-                if (course.isDesigner) {
-                    toast(R.string.errorIsDesigner)
-                    return@onClickWithRequireNetwork
-                }
                 val ltiUrl = assignment.url.validOrNull() ?: assignment.htmlUrl
                 if(!ltiUrl.isNullOrBlank()) {
-                    val args = LtiLaunchFragment.makeBundle(course, ltiUrl, assignment.name!!, true)
-                    RouteMatcher.route(requireActivity(), Route(LtiLaunchFragment::class.java, course, args))
+                    val route = LtiLaunchFragment.makeRoute(course, ltiUrl, assignment.name!!, assignmentLti = true, openInternally = assignment.ltiToolType().openInternally)
+                    RouteMatcher.route(requireActivity(), route)
                 }
             }
         }
@@ -310,7 +328,7 @@ class AssignmentDetailsFragment : BasePresenterFragment<
         loadHtmlJob = descriptionWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), assignment.description, {
             descriptionWebViewWrapper.loadHtml(it, assignment.name, baseUrl = assignment.htmlUrl)
         }) {
-            LtiLaunchFragment.routeLtiLaunchFragment(requireActivity(), course, it)
+            RouteMatcher.route(requireActivity(), LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), course, it))
         }
     }
 
@@ -339,33 +357,40 @@ class AssignmentDetailsFragment : BasePresenterFragment<
     //endregion
 
     override fun updateSubmissionDonuts(totalStudents: Int, gradedStudents: Int, needsGradingCount: Int, notSubmitted: Int) = with(binding.donutGroup) {
+        allTitle.setTextColor(course.color)
+        allIcon.setColorFilter(course.color)
         // Submission section
         gradedChart.setSelected(gradedStudents)
         gradedChart.setTotal(totalStudents)
-        gradedChart.setSelectedColor(ThemePrefs.brandColor)
+        gradedChart.setSelectedColor(course.color)
+        gradedChart.setUnselectedColor(Color(course.color).copy(alpha = 0.2f).toArgb())
         gradedChart.setCenterText(gradedStudents.toString())
         gradedWrapper.contentDescription = getString(R.string.content_description_submission_donut_graded).format(gradedStudents, totalStudents)
+        gradedWrapper.accessibilityClassName(Button::class.java.name)
         gradedProgressBar.setGone()
         gradedChart.invalidate()
 
         ungradedChart.setSelected(needsGradingCount)
         ungradedChart.setTotal(totalStudents)
-        ungradedChart.setSelectedColor(ThemePrefs.brandColor)
+        ungradedChart.setSelectedColor(course.color)
+        ungradedChart.setUnselectedColor(Color(course.color).copy(alpha = 0.2f).toArgb())
         ungradedChart.setCenterText(needsGradingCount.toString())
         ungradedLabel.text = requireContext().resources.getQuantityText(R.plurals.needsGradingNoQuantity, needsGradingCount)
         ungradedWrapper.contentDescription = getString(R.string.content_description_submission_donut_needs_grading).format(needsGradingCount, totalStudents)
+        ungradedWrapper.accessibilityClassName(Button::class.java.name)
         ungradedProgressBar.setGone()
         ungradedChart.invalidate()
 
         notSubmittedChart.setSelected(notSubmitted)
         notSubmittedChart.setTotal(totalStudents)
-        notSubmittedChart.setSelectedColor(ThemePrefs.brandColor)
+        notSubmittedChart.setSelectedColor(course.color)
+        notSubmittedChart.setUnselectedColor(Color(course.color).copy(alpha = 0.2f).toArgb())
         notSubmittedChart.setCenterText(notSubmitted.toString())
 
         notSubmittedWrapper.contentDescription = getString(R.string.content_description_submission_donut_unsubmitted).format(notSubmitted, totalStudents)
+        notSubmittedWrapper.accessibilityClassName(Button::class.java.name)
         notSubmittedProgressBar.setGone()
         notSubmittedChart.invalidate()
-
 
         // Only show graded dial if the assignment submission type is not online
         if (!presenter.mAssignment.isOnlineSubmissionType) {
@@ -428,8 +453,8 @@ class AssignmentDetailsFragment : BasePresenterFragment<
     }
 
     private fun navigateToSubmissions(course: Course, assignment: Assignment, filter: SubmissionListFilter) {
-        val args = AssignmentSubmissionListFragment.makeBundle(assignment, filter)
-        RouteMatcher.route(requireActivity(), Route(null, AssignmentSubmissionListFragment::class.java, course, args))
+        val args = SubmissionListFragment.makeBundle(assignment, filter)
+        RouteMatcher.route(requireActivity(), Route(null, SubmissionListFragment::class.java, course, args))
     }
 
     override fun onResume() {

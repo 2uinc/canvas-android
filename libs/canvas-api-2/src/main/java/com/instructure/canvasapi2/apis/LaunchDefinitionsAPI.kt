@@ -22,7 +22,6 @@ import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.models.LTITool
 import com.instructure.canvasapi2.models.LaunchDefinition
 import com.instructure.canvasapi2.utils.DataResult
-
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path

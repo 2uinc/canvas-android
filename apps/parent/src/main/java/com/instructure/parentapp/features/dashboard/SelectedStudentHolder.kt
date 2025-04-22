@@ -28,19 +28,28 @@ import kotlinx.coroutines.flow.asStateFlow
 
 interface SelectedStudentHolder {
     val selectedStudentState: StateFlow<User?>
-    val selectedStudentChangedFlow: SharedFlow<User>
-    suspend fun updateSelectedStudent(user: User)
+    val selectedStudentChangedFlow: SharedFlow<User?>
+    val selectedStudentColorChanged: SharedFlow<Unit>
+    suspend fun updateSelectedStudent(user: User?)
+    suspend fun selectedStudentColorChanged()
 }
 
 class SelectedStudentHolderImpl : SelectedStudentHolder {
     private val _selectedStudentState = MutableStateFlow<User?>(null)
     override val selectedStudentState = _selectedStudentState.asStateFlow()
 
-    private val _selectedStudentChangedFlow = MutableSharedFlow<User>()
-    override val selectedStudentChangedFlow: SharedFlow<User> = _selectedStudentChangedFlow.asSharedFlow()
+    private val _selectedStudentChangedFlow = MutableSharedFlow<User?>()
+    override val selectedStudentChangedFlow: SharedFlow<User?> = _selectedStudentChangedFlow.asSharedFlow()
 
-    override suspend fun updateSelectedStudent(user: User) {
+    private val _selectedStudentColorChanged = MutableSharedFlow<Unit>()
+    override val selectedStudentColorChanged: SharedFlow<Unit> = _selectedStudentColorChanged.asSharedFlow()
+
+    override suspend fun updateSelectedStudent(user: User?) {
         _selectedStudentState.value = user
         _selectedStudentChangedFlow.emit(user)
+    }
+
+    override suspend fun selectedStudentColorChanged() {
+        _selectedStudentColorChanged.emit(Unit)
     }
 }

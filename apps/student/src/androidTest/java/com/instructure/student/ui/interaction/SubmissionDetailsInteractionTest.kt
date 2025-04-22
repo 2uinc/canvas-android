@@ -17,7 +17,11 @@
 package com.instructure.student.ui.interaction
 
 import android.os.SystemClock.sleep
+import androidx.compose.ui.platform.ComposeView
+import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.web.webdriver.Locator
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResultUtils
+import com.google.android.apps.common.testing.accessibility.framework.checks.SpeakableTextPresentCheck
 import com.instructure.canvas.espresso.FeatureCategory
 import com.instructure.canvas.espresso.Priority
 import com.instructure.canvas.espresso.Stub
@@ -37,14 +41,15 @@ import com.instructure.canvasapi2.models.RubricCriterion
 import com.instructure.canvasapi2.models.RubricCriterionRating
 import com.instructure.canvasapi2.models.SubmissionComment
 import com.instructure.student.ui.pages.WebViewTextCheck
-import com.instructure.student.ui.utils.StudentTest
+import com.instructure.student.ui.utils.StudentComposeTest
 import com.instructure.student.ui.utils.tokenLogin
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.hamcrest.Matchers
 import org.junit.Test
-import java.util.*
+import java.util.Date
 
 @HiltAndroidTest
-class SubmissionDetailsInteractionTest : StudentTest() {
+class SubmissionDetailsInteractionTest : StudentComposeTest() {
     override fun displaysPageObjects() = Unit // Not used for interaction tests
 
     private lateinit var course: Course
@@ -289,5 +294,22 @@ class SubmissionDetailsInteractionTest : StudentTest() {
         dashboardPage.selectCourse(course)
 
         return data
+    }
+
+    override fun enableAndConfigureAccessibilityChecks() {
+        extraAccessibilitySupressions = Matchers.allOf(
+            AccessibilityCheckResultUtils.matchesCheck(
+                SpeakableTextPresentCheck::class.java
+            ),
+            AccessibilityCheckResultUtils.matchesViews(
+                ViewMatchers.withParent(
+                    ViewMatchers.withClassName(
+                        Matchers.equalTo(ComposeView::class.java.name)
+                    )
+                )
+            )
+        )
+
+        super.enableAndConfigureAccessibilityChecks()
     }
 }

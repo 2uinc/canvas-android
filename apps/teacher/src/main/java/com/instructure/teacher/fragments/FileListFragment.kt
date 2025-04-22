@@ -21,6 +21,7 @@ import android.os.Handler
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.RecyclerView
@@ -33,44 +34,68 @@ import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.canvasapi2.utils.pageview.PageView
 import com.instructure.canvasapi2.utils.pageview.PageViewUrl
-import com.instructure.canvasapi2.utils.pageview.PageViewUtils
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_FILE_LIST
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.analytics.pageview.PageViewUtils
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.features.file.upload.FileUploadDialogFragment
 import com.instructure.pandautils.features.file.upload.FileUploadDialogParent
 import com.instructure.pandautils.fragments.BaseSyncFragment
 import com.instructure.pandautils.models.EditableFile
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.FileFolderDeletedEvent
+import com.instructure.pandautils.utils.FileFolderUpdatedEvent
+import com.instructure.pandautils.utils.FileUploadEvent
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.getDrawableCompat
+import com.instructure.pandautils.utils.isCourse
+import com.instructure.pandautils.utils.isGroup
+import com.instructure.pandautils.utils.isUser
+import com.instructure.pandautils.utils.remove
+import com.instructure.pandautils.utils.setInvisible
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.toast
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.FileListAdapter
 import com.instructure.teacher.databinding.FragmentFileListBinding
+import com.instructure.teacher.dialog.ConfirmDeleteFileFolderDialog
 import com.instructure.teacher.dialog.CreateFolderDialog
 import com.instructure.teacher.dialog.NoInternetConnectionDialog
 import com.instructure.teacher.factory.FileListPresenterFactory
 import com.instructure.teacher.features.files.search.FileSearchFragment
 import com.instructure.teacher.holders.FileFolderViewHolder
+import com.instructure.teacher.interfaces.ConfirmDeleteFileCallback
 import com.instructure.teacher.presenters.FileListPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.RecyclerViewUtils
 import com.instructure.teacher.utils.setupBackButton
 import com.instructure.teacher.utils.setupMenu
 import com.instructure.teacher.utils.viewMedia
+import com.instructure.teacher.utils.withRequireNetwork
 import com.instructure.teacher.viewinterface.FileListView
+import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.util.*
+import java.util.UUID
+import javax.inject.Inject
 
 @PageView
 @ScreenView(SCREEN_VIEW_FILE_LIST)
+@AndroidEntryPoint
 class FileListFragment : BaseSyncFragment<
         FileFolder,
         FileListPresenter,
         FileListView,
         FileFolderViewHolder,
-        FileListAdapter>(), FileListView, FileUploadDialogParent {
+        FileListAdapter>(), FileListView, FileUploadDialogParent, ConfirmDeleteFileCallback {
+
+    @Inject
+    lateinit var pageViewUtils: PageViewUtils
 
     private val binding by viewBinding(FragmentFileListBinding::bind)
 
@@ -143,7 +168,7 @@ class FileListFragment : BaseSyncFragment<
 
     @Suppress("unused")
     @PageViewUrl
-    private fun makePageViewUrl(): String {
+    fun makePageViewUrl(): String {
         var url = if (canvasContext.type == CanvasContext.Type.USER) "${ApiPrefs.fullDomain}/files"
         else "${ApiPrefs.fullDomain}/${canvasContext.contextId.replace("_", "s/")}/files"
 
@@ -200,29 +225,57 @@ class FileListFragment : BaseSyncFragment<
     }
 
     override fun createAdapter(): FileListAdapter {
-        return FileListAdapter(requireContext(), canvasContext.textAndIconColor, presenter) {
+        return FileListAdapter(requireContext(), canvasContext.color, presenter, callback = {
             if (it.displayName.isValid()) {
                 // This is a file
-                val editableFile = EditableFile(it, presenter.usageRights, presenter.licenses, canvasContext.backgroundColor, presenter.mCanvasContext, R.drawable.ic_document)
+                val editableFile = EditableFile(it, presenter.usageRights, presenter.licenses, canvasContext.color, presenter.mCanvasContext, R.drawable.ic_document)
                 recordFilePreviewEvent(it)
                 if (it.isHtmlFile) {
                     /* An HTML file can reference other canvas files as resources (e.g. CSS files) and must be
                     accessed as an authenticated preview to work correctly */
-                    val bundle = ViewHtmlFragment.makeAuthSessionBundle(canvasContext, it, it.displayName.orEmpty(), canvasContext.backgroundColor, editableFile)
+                    val bundle = ViewHtmlFragment.makeAuthSessionBundle(canvasContext, it, it.displayName.orEmpty(), canvasContext.color, editableFile)
                     RouteMatcher.route(requireActivity(), Route(ViewHtmlFragment::class.java, null, bundle))
                 } else {
-                    viewMedia(requireActivity(), it.displayName.orEmpty(), it.contentType.orEmpty(), it.url, it.thumbnailUrl, it.displayName, R.drawable.ic_document, canvasContext.backgroundColor, editableFile)
+                    viewMedia(requireActivity(), it.displayName.orEmpty(), it.contentType.orEmpty(), it.url, it.thumbnailUrl, it.displayName, R.drawable.ic_document, canvasContext.color, editableFile)
                 }
             } else {
                 // This is a folder
                 val args = makeBundle(presenter.mCanvasContext, it)
                 RouteMatcher.route(requireActivity(), Route(FileListFragment::class.java, presenter.mCanvasContext, args))
             }
-        }
+        }, menuCallback = ::showOptionMenu)
     }
 
+    private fun showOptionMenu(item: FileFolder, anchorView: View) {
+        val popup = PopupMenu(requireContext(), anchorView)
+        popup.inflate(R.menu.menu_file_list_item)
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.edit -> {
+                    val bundle = EditFileFolderFragment.makeBundle(item, presenter.usageRights, presenter.licenses, presenter.mCanvasContext.id)
+                    RouteMatcher.route(requireActivity(), Route(EditFileFolderFragment::class.java, canvasContext, bundle))
+                }
+                R.id.delete -> withRequireNetwork { ConfirmDeleteFileFolderDialog.show(childFragmentManager, item) }
+            }
+            true
+        }
+
+        popup.show()
+    }
+
+    override val onConfirmDeleteFile: (fileFolder: FileFolder) -> Unit
+        get() = { fileFolder -> presenter.deleteFileFolder(fileFolder) }
+
+    override fun fileFolderDeleted(fileFolder: FileFolder) {
+        presenter.data.remove(fileFolder)
+        checkIfEmpty()
+    }
+
+    override fun fileFolderDeleteError(message: Int) = toast(message)
+
     private fun recordFilePreviewEvent(file: FileFolder) {
-        PageViewUtils.saveSingleEvent("FilePreview", "${makePageViewUrl()}?preview=${file.id}")
+        pageViewUtils.saveSingleEvent("FilePreview", "${makePageViewUrl()}?preview=${file.id}")
     }
 
     override fun onRefreshStarted() = with(binding) {
@@ -327,7 +380,7 @@ class FileListFragment : BaseSyncFragment<
         if (canvasContext.isUser) {
             // User's files, no CanvasContext
             ViewStyler.themeToolbarColored(requireActivity(), fileListToolbar, ThemePrefs.primaryColor, ThemePrefs.primaryTextColor)
-        } else ViewStyler.themeToolbarColored(requireActivity(), fileListToolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
+        } else ViewStyler.themeToolbarColored(requireActivity(), fileListToolbar, canvasContext.color, requireContext().getColor(R.color.textLightest))
     }
 
     private fun animateFabs() = if (fabOpen) {

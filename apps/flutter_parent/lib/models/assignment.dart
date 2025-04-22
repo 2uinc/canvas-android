@@ -119,6 +119,9 @@ abstract class Assignment implements Built<Assignment, AssignmentBuilder> {
   @BuiltValueField(wireName: 'submission_types')
   BuiltList<SubmissionTypes>? get submissionTypes;
 
+  @BuiltValueField(wireName: 'hide_in_gradebook')
+  bool? get isHiddenInGradeBook;
+
   static void _initializeBuilder(AssignmentBuilder b) => b
     ..pointsPossible = 0.0
     ..useRubricForGrading = false
@@ -145,13 +148,13 @@ abstract class Assignment implements Built<Assignment, AssignmentBuilder> {
 
   SubmissionStatus getStatus({required String? studentId}) {
     final submission = this.submission(studentId);
-    if (!isSubmittable() && submission == null) {
+    if ((!isSubmittable() && submission == null) || (!isSubmittable() && submission?.isGraded() == false)) {
       return SubmissionStatus.NONE;
     } else if (submission?.isLate == true) {
       return SubmissionStatus.LATE;
     } else if (_isMissingSubmission(studentId)) {
       return SubmissionStatus.MISSING;
-    } else if (submission?.submittedAt == null) {
+    } else if (submission?.submittedAt == null && (submission?.isGraded() ?? false) == false) {
       return SubmissionStatus.NOT_SUBMITTED;
     } else {
       return SubmissionStatus.SUBMITTED;

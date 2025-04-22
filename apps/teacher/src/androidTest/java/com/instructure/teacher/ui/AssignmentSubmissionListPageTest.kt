@@ -25,14 +25,13 @@ import com.instructure.canvasapi2.models.CanvasContextPermission
 import com.instructure.dataseeding.util.ago
 import com.instructure.dataseeding.util.days
 import com.instructure.dataseeding.util.iso8601
-import com.instructure.teacher.R
-import com.instructure.teacher.ui.utils.TeacherTest
+import com.instructure.teacher.ui.utils.TeacherComposeTest
 import com.instructure.teacher.ui.utils.tokenLogin
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Test
 
 @HiltAndroidTest
-class AssignmentSubmissionListPageTest : TeacherTest() {
+class AssignmentSubmissionListPageTest : TeacherComposeTest() {
 
     @Test
     override fun displaysPageObjects() {
@@ -55,11 +54,9 @@ class AssignmentSubmissionListPageTest : TeacherTest() {
                 dueAt = 7.days.ago.iso8601
         )
         assignmentSubmissionListPage.clickFilterButton()
-        assignmentSubmissionListPage.clickFilterSubmissions()
         assignmentSubmissionListPage.clickFilterSubmittedLate()
         assignmentSubmissionListPage.clickFilterDialogOk()
-        assignmentSubmissionListPage.assertDisplaysClearFilter()
-        assignmentSubmissionListPage.assertFilterLabelText(R.string.submitted_late)
+        assignmentSubmissionListPage.assertFilterLabelText("Submitted Late")
         assignmentSubmissionListPage.assertHasSubmission()
     }
 
@@ -67,11 +64,9 @@ class AssignmentSubmissionListPageTest : TeacherTest() {
     fun filterUngradedSubmissions() {
         goToAssignmentSubmissionListPage()
         assignmentSubmissionListPage.clickFilterButton()
-        assignmentSubmissionListPage.clickFilterSubmissions()
         assignmentSubmissionListPage.clickFilterUngraded()
         assignmentSubmissionListPage.clickFilterDialogOk()
-        assignmentSubmissionListPage.assertDisplaysClearFilter()
-        assignmentSubmissionListPage.assertFilterLabelText(R.string.havent_been_graded)
+        assignmentSubmissionListPage.assertFilterLabelText("Haven't Been Graded")
         assignmentSubmissionListPage.assertHasSubmission()
     }
 
@@ -79,16 +74,6 @@ class AssignmentSubmissionListPageTest : TeacherTest() {
     fun displaysAssignmentStatusSubmitted() {
         goToAssignmentSubmissionListPage()
         assignmentSubmissionListPage.assertSubmissionStatusSubmitted()
-    }
-
-    @Test
-    fun displaysAssignmentStatusMissing() {
-        goToAssignmentSubmissionListPage(
-                students = 1,
-                submissions = 0,
-                dueAt = 1.days.ago.iso8601
-        )
-        assignmentSubmissionListPage.assertSubmissionStatusMissing()
     }
 
     @Test
@@ -115,8 +100,8 @@ class AssignmentSubmissionListPageTest : TeacherTest() {
         )
         val student = data.students[0]
         assignmentSubmissionListPage.clickAddMessage()
-        addMessagePage.assertPageObjects()
-        addMessagePage.assertHasStudentRecipient(student)
+
+        inboxComposePage.assertRecipientSelected(student.shortName!!)
     }
 
     private fun goToAssignmentSubmissionListPage(

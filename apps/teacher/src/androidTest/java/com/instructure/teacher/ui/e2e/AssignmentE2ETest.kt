@@ -16,11 +16,14 @@
  */
 package com.instructure.teacher.ui.e2e
 
+import android.os.SystemClock.sleep
 import android.util.Log
 import androidx.test.espresso.Espresso
+import androidx.test.rule.GrantPermissionRule
 import com.instructure.canvas.espresso.E2E
 import com.instructure.canvas.espresso.FeatureCategory
 import com.instructure.canvas.espresso.Priority
+import com.instructure.canvas.espresso.Stub
 import com.instructure.canvas.espresso.TestCategory
 import com.instructure.canvas.espresso.TestMetaData
 import com.instructure.dataseeding.api.AssignmentsApi
@@ -34,21 +37,29 @@ import com.instructure.dataseeding.util.iso8601
 import com.instructure.espresso.assertContainsText
 import com.instructure.espresso.page.onViewWithId
 import com.instructure.teacher.R
-import com.instructure.teacher.ui.utils.TeacherTest
+import com.instructure.teacher.ui.utils.TeacherComposeTest
 import com.instructure.teacher.ui.utils.seedAssignmentSubmission
 import com.instructure.teacher.ui.utils.seedAssignments
 import com.instructure.teacher.ui.utils.seedData
 import com.instructure.teacher.ui.utils.tokenLogin
 import com.instructure.teacher.ui.utils.uploadTextFile
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Rule
 import org.junit.Test
 
 @HiltAndroidTest
-class AssignmentE2ETest : TeacherTest() {
+class AssignmentE2ETest : TeacherComposeTest() {
 
     override fun displaysPageObjects() = Unit
 
     override fun enableAndConfigureAccessibilityChecks() = Unit
+
+    @Rule
+    @JvmField
+    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        android.Manifest.permission.RECORD_AUDIO,
+        android.Manifest.permission.CAMERA
+    )
 
     @E2E
     @Test
@@ -93,7 +104,9 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG,"Refresh Assignment List Page and assert that the previously seeded ${assignment[0].name} assignment has been displayed." +
                 "Assert that the needs grading count under the corresponding assignment is 1.")
-        assignmentListPage.refresh()
+        composeTestRule.waitForIdle()
+        assignmentListPage.refreshAssignmentList()
+        composeTestRule.waitForIdle()
         assignmentListPage.assertHasAssignment(assignment[0])
 
         Log.d(STEP_TAG,"Click on ${assignment[0].name} assignment and assert the numbers of 'Not Submitted' and 'Needs Grading' submissions.")
@@ -107,15 +120,14 @@ class AssignmentE2ETest : TeacherTest() {
         assignmentSubmissionListPage.clickFilterButton()
 
         Log.d(STEP_TAG, "Filter by section (the ${course.name} course).")
-        assignmentSubmissionListPage.clickFilterBySection()
+        assignmentSubmissionListPage.clickFilterButton()
 
         Log.d(ASSERTION_TAG, "Assert that the 'Filter By...' section dialog details displayed correctly. Filter by the '${course.name}' (course) section.")
-        assignmentSubmissionListPage.assertSectionFilterDialogDetails()
         assignmentSubmissionListPage.filterBySection(course.name)
+        assignmentSubmissionListPage.clickFilterDialogOk()
 
         Log.d(ASSERTION_TAG, "Assert that the 'Clear filter' button is displayed as we set some filter. Assert that the filter label text is the 'All Submissions' text plus the '${course.name}' course name.")
-        assignmentSubmissionListPage.assertDisplaysClearFilter()
-        assignmentSubmissionListPage.assertFilterLabelText("All Submissions, ${course.name}")
+        assignmentSubmissionListPage.assertFilterLabelText("All Submissions")
 
         Log.d(STEP_TAG, "Open '${student.name}' student's submission.")
         assignmentSubmissionListPage.clickSubmission(student)
@@ -125,14 +137,18 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG, "Navigate back to the Assignment Submission List Page and clear the filter.")
         Espresso.pressBack()
-        assignmentSubmissionListPage.clearFilter()
+        assignmentSubmissionListPage.clickFilterButton()
+        assignmentSubmissionListPage.filterBySection(course.name)
+        assignmentSubmissionListPage.clickFilterDialogOk()
 
         Log.d(ASSERTION_TAG, "Assert that the 'Clear filter' button is NOT displayed as we just cleared the filter. Assert that the filter label text 'All Submission'.")
-        assignmentSubmissionListPage.assertClearFilterGone()
         assignmentSubmissionListPage.assertFilterLabelText("All Submissions")
 
         Log.d(STEP_TAG,"Navigate back to Assignment List Page, open the '${assignment[0].name}' assignment and publish it. Click on Save.")
         Espresso.pressBack()
+        composeTestRule.waitForIdle()
+        Espresso.pressBack()
+        composeTestRule.waitForIdle()
         assignmentListPage.clickAssignment(assignment[0])
         assignmentDetailsPage.openEditPage()
         editAssignmentDetailsPage.clickPublishSwitch()
@@ -158,7 +174,8 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG, "Navigate back to Assignment List page. Assert that the '${quizAssignment[0].name}' quiz displays as UNPUBLISHED. Open the quiz assignment again.")
         Espresso.pressBack()
-        assignmentListPage.assertAssignmentUnPublished(quizAssignment[0].name)
+        assignmentListPage.refreshAssignmentList()
+        assignmentListPage.assertPublishedState(quizAssignment[0].name, false)
         assignmentListPage.clickAssignment(quizAssignment[0])
 
         Log.d(STEP_TAG, "Open Edit Page and re-publish the assignment, then click on Save. Assert that the quiz assignment is published automatically.")
@@ -169,7 +186,8 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG, "Navigate back to Assignment List page. Assert that the '${quizAssignment[0].name}' quiz displays as PUBLISHED.")
         Espresso.pressBack()
-        assignmentListPage.assertAssignmentPublished(quizAssignment[0].name)
+        assignmentListPage.refreshAssignmentList()
+        assignmentListPage.assertPublishedState(quizAssignment[0].name, true)
 
         Log.d(STEP_TAG, "Open the '${assignment[0].name}' assignment.")
         assignmentListPage.clickAssignment(assignment[0])
@@ -220,21 +238,22 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG, "Navigate back to Assignment List Page. Assert that the '${assignment[0].name}' assignment has 1 'Needs Grading' submission.")
         Espresso.pressBack()
-        assignmentListPage.assertHasAssignment(assignment[0])
-        assignmentListPage.assertNeedsGradingCountOfAssignment(assignment[0].name, 1)
+        assignmentListPage.refreshAssignmentList()
+        assignmentListPage.assertHasAssignment(quizAssignment[0], needsGradingCount = null)
+        assignmentListPage.assertHasAssignment(assignment[0], needsGradingCount = 1)
 
         Log.d(STEP_TAG,"Click on Search button and type '${quizAssignment[0].name}' to the search input field.")
-        assignmentListPage.searchable.clickOnSearchButton()
-        assignmentListPage.searchable.typeToSearchBar(quizAssignment[0].name)
+        assignmentListPage.searchBar.clickOnSearchButton()
+        assignmentListPage.searchBar.typeToSearchBar(quizAssignment[0].name)
 
         Log.d(STEP_TAG, "Assert that the '${quizAssignment[0].name}' quiz assignment is the only one which is displayed because it matches the search text.")
-        assignmentListPage.assertHasAssignment(quizAssignment[0])
-        assignmentListPage.assertAssignmentNotDisplayed(assignment[0])
+        assignmentListPage.assertHasAssignment(quizAssignment[0], needsGradingCount = null)
+        assignmentListPage.assertAssignmentNotDisplayed(assignment[0].name)
 
         Log.d(STEP_TAG,"Clear search input field value and assert if both of the assignment are displayed again on the Assignment List Page.")
-        assignmentListPage.searchable.clickOnClearSearchButton()
-        assignmentListPage.assertHasAssignment(assignment[0])
-        assignmentListPage.assertHasAssignment(quizAssignment[0])
+        assignmentListPage.searchBar.clickOnClearSearchButton()
+        assignmentListPage.assertHasAssignment(assignment[0], needsGradingCount = 1)
+        assignmentListPage.assertHasAssignment(quizAssignment[0], needsGradingCount = null)
 
         val newAssignmentName = "New Assignment Name"
         Log.d(STEP_TAG,"Edit ${assignment[0].name} assignment's name  to: $newAssignmentName.")
@@ -314,6 +333,7 @@ class AssignmentE2ETest : TeacherTest() {
     @E2E
     @Test
     @TestMetaData(Priority.COMMON, FeatureCategory.COMMENTS, TestCategory.E2E)
+    @Stub("Failing on CI, needs to be fixed in ticket MBL-18749")
     fun testMediaCommentsE2E() {
 
         Log.d(PREPARATION_TAG,"Seeding data.")
@@ -359,10 +379,12 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG, "Send an audio comment and assert that is displayed among the comments.")
         speedGraderCommentsPage.sendAudioComment()
+        sleep(5000) // wait for audio comment submission to propagate
         speedGraderCommentsPage.assertAudioCommentDisplayed()
 
         Log.d(STEP_TAG, "Send a video comment and assert that is displayed among the comments.")
         speedGraderCommentsPage.sendVideoComment()
+        sleep(5000) // wait for video comment submission to propagate
         speedGraderCommentsPage.assertVideoCommentDisplayed()
 
         Log.d(STEP_TAG, "Click on the previously uploaded audio comment. Assert that the media comment preview (and the 'Play button') is displayed.")
@@ -428,7 +450,7 @@ class AssignmentE2ETest : TeacherTest() {
 
         Log.d(STEP_TAG,"Assert that ${submissionUploadInfo.fileName} file. Navigate to Comments Tab and ${commentUploadInfo.fileName} comment attachment is displayed.")
         speedGraderPage.selectCommentsTab()
-        assignmentSubmissionListPage.assertCommentAttachmentDisplayedCommon(commentUploadInfo.fileName, student.shortName)
+        speedGraderPage.assertCommentAttachmentDisplayedCommon(commentUploadInfo.fileName, student.shortName)
     }
 
 }

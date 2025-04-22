@@ -27,8 +27,14 @@ import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_DUE_DATES
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.features.discussion.create.CreateDiscussionWebViewFragment
 import com.instructure.pandautils.fragments.BaseSyncFragment
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.bind
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.isTablet
+import com.instructure.pandautils.utils.withArgs
 import com.instructure.pandautils.views.EmptyView
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.DueDatesAdapter
@@ -77,7 +83,7 @@ class DueDatesFragment : BaseSyncFragment<DueDateGroup, DueDatesPresenter, DueDa
         if(!isTablet) {
             toolbar.subtitle = mCourse.name
         }
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, mCourse.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), toolbar, mCourse.color, requireContext().getColor(R.color.textLightest))
     }
 
     override fun showMenu(assignment: Assignment) {
@@ -90,11 +96,9 @@ class DueDatesFragment : BaseSyncFragment<DueDateGroup, DueDatesPresenter, DueDa
                     }
                     assignment.submissionTypesRaw.contains(Assignment.SubmissionType.DISCUSSION_TOPIC.apiString) -> {
                         val discussionTopicHeader = assignment.discussionTopicHeader
+                        val route = CreateDiscussionWebViewFragment.makeRoute(mCourse, false, discussionTopicHeader?.id)
 
-                        assignment.discussionTopicHeader = null
-                        discussionTopicHeader?.assignment = assignment
-                        val args =  CreateDiscussionFragment.makeBundle(mCourse, discussionTopicHeader!!, true)
-                        RouteMatcher.route(requireActivity(), Route(CreateDiscussionFragment::class.java, mCourse, args))
+                        RouteMatcher.route(requireActivity(), route)
                     }
                     else -> {
                         val args = EditAssignmentDetailsFragment.makeBundle(assignment, true)

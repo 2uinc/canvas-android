@@ -28,7 +28,7 @@
         android:layout_gravity="center"
         android:progressTint="@color/textInfo" />
 
-    <com.instructure.loginapi.login.view.CanvasLoadingView
+    <com.instructure.pandautils.views.CanvasLoadingView
         android:id="@+id/progress_bar"
         android:layout_width="120dp"
         android:layout_height="120dp"

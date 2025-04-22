@@ -20,10 +20,17 @@ package com.instructure.student.util
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import com.bugfender.sdk.Bugfender
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
+import com.instructure.pandautils.analytics.pageview.PageViewUploadWorker
+import com.instructure.pandautils.features.reminder.AlarmScheduler
 import com.instructure.pandautils.room.offline.DatabaseProvider
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.BuildConfig
@@ -31,7 +38,7 @@ import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineDownloaderCreator
 import com.instructure.student.offline.util.OfflineModeService
 import com.instructure.student.offline.util.OfflineUtils
-import com.instructure.student.features.assignments.reminder.AlarmScheduler
+import com.instructure.student.BuildConfig
 import com.instructure.student.tasks.StudentLogoutTask
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager
@@ -42,6 +49,8 @@ import com.twou.offline.util.OfflineLoggerType
 import com.twou.offline.util.OfflineLogs
 import dagger.hilt.android.HiltAndroidApp
 import io.intercom.android.sdk.Intercom
+import sdk.pendo.io.Pendo
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -58,6 +67,9 @@ class AppManager : BaseAppManager() {
 
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
+
+    @Inject
+    lateinit var workManager: WorkManager
 
     override fun onCreate() {
         super.onCreate()
@@ -185,6 +197,14 @@ class AppManager : BaseAppManager() {
 
         Intercom.initialize(this, BuildConfig.INTERCOM_API_KEY, BuildConfig.INTERCOM_AP_ID)
         Bugfender.init(this, BuildConfig.BUGFENDER_KEY, BuildConfig.DEBUG)
+
+        schedulePandataUpload()
+        initPendo()
+    }
+
+    private fun initPendo() {
+        val options = Pendo.PendoOptions.Builder().setJetpackComposeBeta(true).build()
+        Pendo.setup(this, BuildConfig.PENDO_TOKEN, options, null)
     }
 
     override fun performLogoutOnAuthError() {
@@ -197,6 +217,13 @@ class AppManager : BaseAppManager() {
     }
 
     override fun getWorkManagerFactory(): WorkerFactory = workerFactory
+
+    private fun schedulePandataUpload() {
+        val workRequest = PeriodicWorkRequestBuilder<PageViewUploadWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+        workManager.enqueueUniquePeriodicWork("pageView-student", ExistingPeriodicWorkPolicy.KEEP, workRequest)
+    }
 
     companion object {
         const val OFFLINE_KEY = "OfflineTest"

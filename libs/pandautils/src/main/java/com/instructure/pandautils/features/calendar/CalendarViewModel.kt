@@ -41,6 +41,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.threeten.bp.Clock
 import org.threeten.bp.LocalDate
@@ -267,6 +268,7 @@ class CalendarViewModel @Inject constructor(
             bodyUiState = calendarStateMapper.createBodyUiState(expanded, selectedDay, jumpToToday, scrollToPageOffset, eventIndicators),
             scrollToPageOffset = scrollToPageOffset,
             pendingSelectedDay = pendingSelectedDay,
+            todayTapped = jumpToToday
         )
     }
 
@@ -311,7 +313,7 @@ class CalendarViewModel @Inject constructor(
     @DrawableRes
     private fun getIconForPlannerItem(plannerItem: PlannerItem): Int {
         return when (plannerItem.plannableType) {
-            PlannableType.ASSIGNMENT -> R.drawable.ic_assignment
+            PlannableType.ASSIGNMENT, PlannableType.SUB_ASSIGNMENT -> R.drawable.ic_assignment
             PlannableType.QUIZ -> R.drawable.ic_quiz
             PlannableType.CALENDAR_EVENT -> R.drawable.ic_calendar
             PlannableType.DISCUSSION_TOPIC -> R.drawable.ic_discussion
@@ -425,6 +427,11 @@ class CalendarViewModel @Inject constructor(
                 clearAndReloadCalendar()
             }
             CalendarAction.PullToRefresh -> refreshCalendar()
+            CalendarAction.TodayTapHandled -> _uiState.update {
+                it.copy(
+                    calendarUiState = it.calendarUiState.copy(todayTapped = false)
+                )
+            }
         }
     }
 
@@ -525,8 +532,16 @@ class CalendarViewModel @Inject constructor(
                     CalendarViewModelAction.OpenAssignment(plannerItem.canvasContext, plannerItem.plannable.id)
                 }
 
+                PlannableType.SUB_ASSIGNMENT -> {
+                    val regex = """assignments/(\d+)""".toRegex()
+                    val matchResult = regex.find(plannerItem.htmlUrl.orEmpty())
+                    matchResult?.groupValues?.getOrNull(1)?.toLongOrNull()?.let {
+                        CalendarViewModelAction.OpenAssignment(plannerItem.canvasContext, it)
+                    }
+                }
+
                 PlannableType.DISCUSSION_TOPIC -> {
-                    CalendarViewModelAction.OpenDiscussion(plannerItem.canvasContext, plannerItem.plannable.id)
+                    CalendarViewModelAction.OpenDiscussion(plannerItem.canvasContext, plannerItem.plannable.id, plannerItem.plannable.assignmentId)
                 }
 
                 PlannableType.QUIZ -> {

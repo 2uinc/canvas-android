@@ -45,12 +45,29 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager.widget.ViewPager
 import com.bumptech.glide.Glide
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.instructure.pandautils.BR
 import com.instructure.pandautils.R
+import com.instructure.pandautils.features.assignments.details.mobius.gradeCell.DonutChartView
+import com.instructure.pandautils.features.assignments.details.mobius.gradeCell.GradeCellViewState
+import com.instructure.pandautils.features.assignments.details.mobius.gradeCell.GradeStatisticsView
 import com.instructure.pandautils.features.inbox.list.AvatarViewData
 import com.instructure.pandautils.mvvm.ItemViewModel
 import com.instructure.pandautils.mvvm.ViewState
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.HtmlContentFormatter
+import com.instructure.pandautils.utils.JsGoogleDocsInterface
+import com.instructure.pandautils.utils.ProfileUtils
+import com.instructure.pandautils.utils.accessibleTouchTarget
+import com.instructure.pandautils.utils.applyTheme
+import com.instructure.pandautils.utils.collapse
+import com.instructure.pandautils.utils.expand
+import com.instructure.pandautils.utils.onClickWithRequireNetwork
+import com.instructure.pandautils.utils.setCourseImage
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.setupAvatarA11y
+import com.instructure.pandautils.utils.toPx
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.pandautils.views.CanvasWebViewWrapper
 import com.instructure.pandautils.views.EmptyView
@@ -202,6 +219,11 @@ fun addBorderToContainer(view: View, borderColor: Int?, borderWidth: Int?, backg
     view.background = border
 }
 
+@BindingAdapter("themeSwitch")
+fun themeSwitch(materialSwitch: MaterialSwitch, color: Int) {
+    materialSwitch.applyTheme(color)
+}
+
 @BindingAdapter("layout_constraintWidth_percent")
 fun bindConstraintWidthPercentage(view: View, percentage: Float) {
     val params = view.layoutParams as ConstraintLayout.LayoutParams
@@ -226,8 +248,8 @@ fun bindBitmap(imageView: ImageView, bitmap: Bitmap?) {
 }
 
 
-@BindingAdapter(value = ["accessibilityClickDescription", "accessibilityLongClickDescription"], requireAll = false)
-fun bindAccesibilityDelegate(view: View, clickDescription: String?, longClickDescription: String?) {
+@BindingAdapter(value = ["accessibilityClickDescription", "accessibilityLongClickDescription", "accessibilityClassName"], requireAll = false)
+fun bindAccesibilityDelegate(view: View, clickDescription: String?, longClickDescription: String?, className: String?) {
     view.accessibilityDelegate = object : View.AccessibilityDelegate() {
         override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
             super.onInitializeAccessibilityNodeInfo(host, info)
@@ -236,6 +258,10 @@ fun bindAccesibilityDelegate(view: View, clickDescription: String?, longClickDes
             }
             longClickDescription?.let {
                 info.addAction(AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_LONG_CLICK, it))
+            }
+
+            className?.let {
+                info.className = className
             }
         }
     }
@@ -249,9 +275,9 @@ fun setBottomMargin(view: View, bottomMargin: Int) {
     view.layoutParams = layoutParams
 }
 
-@BindingAdapter(value = ["userAvatar", "userName"], requireAll = true)
-fun bindUserAvatar(imageView: ImageView, userAvatarUrl: String?, userName: String?) {
-    ProfileUtils.loadAvatarForUser(imageView, userName, userAvatarUrl)
+@BindingAdapter(value = ["userAvatar", "userName", "avatarTint"], requireAll = false)
+fun bindUserAvatar(imageView: ImageView, userAvatarUrl: String?, userName: String?, @ColorInt avatarTint: Int?) {
+    ProfileUtils.loadAvatarForUser(imageView, userName, userAvatarUrl, avatarTint)
 }
 
 @BindingAdapter("avatar")
@@ -344,4 +370,19 @@ fun rotationAnim(view: View, rotation: Int) {
 @BindingAdapter("expandCollapseAnim")
 fun expandCollapseAnim(view: View, visible: Boolean) {
     if (visible) view.expand() else view.collapse()
+}
+
+@BindingAdapter("progress", "color", "trackColor")
+fun DonutChartView.setProgress(progress: Float, @ColorInt color: Int, @ColorInt trackColor: Int) {
+    setColor(color)
+    setTrackColor(trackColor)
+    setPercentage(progress, true)
+}
+
+@BindingAdapter("stats", "color")
+fun GradeStatisticsView.setStatistics(stats: GradeCellViewState.GradeStats?, @ColorInt color: Int) {
+    stats?.let {
+        setStats(stats)
+        setAccentColor(color)
+    }
 }

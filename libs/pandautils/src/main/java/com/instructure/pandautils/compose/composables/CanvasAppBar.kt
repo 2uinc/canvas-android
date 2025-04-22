@@ -15,8 +15,8 @@
  */
 package com.instructure.pandautils.compose.composables
 
-import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -24,12 +24,20 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.instructure.pandautils.R
 
 /**
@@ -40,20 +48,42 @@ fun CanvasAppBar(
     title: String,
     navigationActionClick: () -> Unit,
     modifier: Modifier = Modifier,
-    @ColorRes backgroundColor: Int = R.color.backgroundLightestElevated,
+    subtitle: String? = null,
     @DrawableRes navIconRes: Int = R.drawable.ic_close,
     navIconContentDescription: String = stringResource(id = R.string.close),
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
+    backgroundColor: Color = colorResource(id = R.color.backgroundLightestElevated),
+    textColor: Color = colorResource(id = R.color.textDarkest)
 ) {
     TopAppBar(
         title = {
-            Text(text = title)
+            Column(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    isTraversalGroup = true
+                    traversalIndex = -1f
+                    heading()
+                }
+            ) {
+                Text(text = title)
+                subtitle?.let {
+                    Text(text = subtitle,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        lineHeight = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         },
         elevation = 2.dp,
-        backgroundColor = colorResource(id = backgroundColor),
-        contentColor = colorResource(id = R.color.textDarkest),
+        backgroundColor = backgroundColor,
+        contentColor = textColor,
         navigationIcon = {
-            IconButton(onClick = navigationActionClick) {
+            IconButton(
+                modifier = Modifier.testTag("navigationButton"),
+                onClick = navigationActionClick
+            ) {
                 Icon(
                     painter = painterResource(id = navIconRes),
                     contentDescription = navIconContentDescription
@@ -68,5 +98,5 @@ fun CanvasAppBar(
 @Preview
 @Composable
 fun CanvasAppBarPreview() {
-    CanvasAppBar(title = "Title", navigationActionClick = {})
+    CanvasAppBar(title = "Title", subtitle = "Subtitle that is really really really long to make sure it does not fit into one line", navigationActionClick = {})
 }

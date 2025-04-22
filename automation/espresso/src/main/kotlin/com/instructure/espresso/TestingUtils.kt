@@ -18,9 +18,18 @@ package com.instructure.espresso
 import android.os.Build
 import android.view.View
 import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.NoMatchingViewException
+import androidx.test.espresso.contrib.RecyclerViewActions
+import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.espresso.web.sugar.Web
 import androidx.test.espresso.web.webdriver.DriverAtoms
 import androidx.test.espresso.web.webdriver.Locator
+import com.instructure.espresso.page.plus
+import com.instructure.pandautils.binding.BindableViewHolder
 import org.apache.commons.lang3.StringUtils
 import org.hamcrest.Matcher
 import org.junit.Assert
@@ -63,14 +72,32 @@ fun getDateInCanvasFormat(date: LocalDateTime? = null): String {
 }
 
 
-fun getCurrentDateInCanvasCalendarFormat(): String {
+fun getDateInCanvasCalendarFormat(dateString: String? = getCurrentDateInIso8601()): String {
     val calendar = Calendar.getInstance()
+
     val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    if(dateString != null) {
+        return if (day in 1..9) formatIso8601ToCustom(dateString, SimpleDateFormat("MMM d", Locale.getDefault()))
+        else formatIso8601ToCustom(dateString, SimpleDateFormat("MMM dd", Locale.getDefault()))
+    }
+
     var dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
-
     if (day in 1..9) dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
-
     return dateFormat.format(Date())
+}
+
+fun getCurrentDateInIso8601(): String {
+    val iso8601Format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+    return iso8601Format.format(Date())
+}
+
+fun formatIso8601ToCustom(iso8601DateString: String?, customDateFormat: SimpleDateFormat): String {
+
+    val iso8601Format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+    val date: Date? = iso8601DateString?.let { iso8601Format.parse(it) }
+
+    return customDateFormat.format(date!!)
 }
     
 fun getCustomDateCalendar(dayDiffFromToday: Int): Calendar {
@@ -151,3 +178,48 @@ fun waitForWebElement(
 
     Assert.fail("Element not found: $locator=$value within $timeoutMillis ms")
 }
+
+fun scrollToItem(ancestorId: Int, itemText: String, recyclerView: Matcher<View>, target: Matcher<View>? = null) {
+    var i: Int = getRecyclerViewLastVisibleItemPosition(getRecyclerViewFromMatcher(recyclerView))
+    while (true) {
+        scrollToPosition(recyclerView, i)
+        Thread.sleep(300)
+        try {
+            if(target == null) onView(isDescendantOfA(withId(ancestorId)) + withText(itemText)).scrollTo()
+            else onView(target + withText(itemText)).scrollTo()
+            break
+        } catch(e: NoMatchingViewException) {
+            i+=1
+        }
+    }
+}
+
+fun scrollToPosition(recyclerViewMatcher: Matcher<View>, position: Int) {
+    onView(recyclerViewMatcher).perform(RecyclerViewActions.scrollToPosition<BindableViewHolder>(position))
+}
+
+fun getRecyclerViewLastVisibleItemPosition(recyclerView: RecyclerView): Int {
+    val layoutManager = recyclerView.layoutManager
+    return if (layoutManager is androidx.recyclerview.widget.LinearLayoutManager) {
+        layoutManager.findLastVisibleItemPosition()
+    } else {
+        return -1
+    }
+}
+
+fun getRecyclerViewFromMatcher(matcher: Matcher<View>): RecyclerView {
+    var recyclerView: RecyclerView? = null
+
+    onView(matcher).check { view, noViewFoundException ->
+        if (noViewFoundException != null) {
+            throw IllegalArgumentException("No view found matching the provided matcher", noViewFoundException)
+        }
+        if (view !is RecyclerView) {
+            throw IllegalArgumentException("The view matched is not a RecyclerView")
+        }
+        recyclerView = view
+    }
+
+    return recyclerView ?: throw IllegalStateException("Failed to retrieve RecyclerView")
+}
+

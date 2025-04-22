@@ -31,6 +31,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.viewpager.widget.ViewPager
 import com.instructure.canvasapi2.models.Assignment
+import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.models.DiscussionTopicHeader
 import com.instructure.canvasapi2.models.GradeableStudentSubmission
 import com.instructure.canvasapi2.models.StudentAssignee
@@ -47,25 +48,40 @@ import com.instructure.pandautils.analytics.SCREEN_VIEW_SPEED_GRADER
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.dialogs.UnsavedChangesContinueDialog
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.ActivityResult
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.ExoAgent
+import com.instructure.pandautils.utils.OnActivityResults
+import com.instructure.pandautils.utils.PermissionUtils
 import com.instructure.pandautils.utils.RequestCodes.CAMERA_PIC_REQUEST
 import com.instructure.pandautils.utils.RequestCodes.PICK_FILE_FROM_DEVICE
 import com.instructure.pandautils.utils.RequestCodes.PICK_IMAGE_GALLERY
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.hideKeyboard
+import com.instructure.pandautils.utils.onClick
+import com.instructure.pandautils.utils.orDefault
+import com.instructure.pandautils.utils.postSticky
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
 import com.instructure.teacher.BuildConfig
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.SubmissionContentAdapter
 import com.instructure.teacher.databinding.ActivitySpeedgraderBinding
 import com.instructure.teacher.events.AssignmentGradedEvent
 import com.instructure.teacher.factory.SpeedGraderPresenterFactory
-import com.instructure.teacher.features.assignment.submission.AssignmentSubmissionListPresenter
 import com.instructure.teacher.features.assignment.submission.AssignmentSubmissionRepository
 import com.instructure.teacher.features.assignment.submission.SubmissionListFilter
+import com.instructure.teacher.features.postpolicies.ui.PostPolicyFragment
 import com.instructure.teacher.features.speedgrader.commentlibrary.CommentLibraryAction
 import com.instructure.teacher.features.speedgrader.commentlibrary.CommentLibraryFragment
 import com.instructure.teacher.features.speedgrader.commentlibrary.CommentLibraryViewModel
 import com.instructure.teacher.presenters.SpeedGraderPresenter
+import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.TeacherPrefs
 import com.instructure.teacher.utils.isTalkbackEnabled
+import com.instructure.teacher.utils.setupBackButton
+import com.instructure.teacher.utils.setupMenu
 import com.instructure.teacher.utils.toast
 import com.instructure.teacher.view.AudioPermissionGrantedEvent
 import com.instructure.teacher.view.TabSelectedEvent
@@ -77,7 +93,7 @@ import kotlinx.coroutines.delay
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.util.*
+import java.util.Locale
 import javax.inject.Inject
 
 @PageView("courses/{courseId}/gradebook/speed_grader?assignment_id={assignmentId}")
@@ -92,11 +108,12 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
 
     /* These should be passed to the presenter factory and should not be directly referenced otherwise */
     @get:PageViewUrlParam("courseId")
-    private val courseId: Long by lazy { intent.extras!!.getLong(Const.COURSE_ID) }
+    val courseId: Long by lazy { intent.extras!!.getLong(Const.COURSE_ID) }
     @get:PageViewUrlParam("assignmentId")
-    private val assignmentId: Long by lazy { intent.extras!!.getLong(Const.ASSIGNMENT_ID) }
+    val assignmentId: Long by lazy { intent.extras!!.getLong(Const.ASSIGNMENT_ID) }
     private val submissionId: Long by lazy { intent.extras!!.getLong(RouterParams.SUBMISSION_ID) }
     private val discussionTopicHeader: DiscussionTopicHeader? by lazy { intent.extras!!.getParcelable(Const.DISCUSSION_HEADER) }
+    private val discussionEntryId: Long? by lazy { intent.extras?.getLong(DISCUSSION_ENTRY_ID, -1) }
     private val anonymousGrading: Boolean? by lazy { intent.extras?.getBoolean(Const.ANONYMOUS_GRADING) }
     private val filteredSubmissionIds: LongArray by lazy { intent.extras?.getLongArray(FILTERED_SUBMISSION_IDS) ?: longArrayOf() }
     private val filter: SubmissionListFilter by lazy {
@@ -178,12 +195,15 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
         } else {
             assignment
         }
+        val selection = if (discussionEntryId != null && discussionEntryId != -1L) {
+            submissions.indexOfFirst { it.submission?.discussionEntries?.map{ it.id }?.contains(discussionEntryId).orDefault() }
+        } else { initialSelection }
         adapter = SubmissionContentAdapter(assignmentWithAnonymousGrading, presenter!!.course, submissions)
         submissionContentPager.offscreenPageLimit = 1
         submissionContentPager.pageMargin = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics))
         submissionContentPager.setPageMarginDrawable(R.color.backgroundMedium)
         submissionContentPager.adapter = adapter
-        submissionContentPager.setCurrentItem(initialSelection, false)
+        submissionContentPager.setCurrentItem(selection, false)
         submissionContentPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrollStateChanged(state: Int) {}
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
@@ -199,6 +219,29 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
             }
         })
         setupTutorialView()
+
+        setupToolbar(presenter!!.course, assignment)
+    }
+
+    private fun setupToolbar(course: Course, assignment: Assignment) = with(binding) {
+        gradingToolbar.setupBackButton(this@SpeedGraderActivity)
+
+        gradingToolbar.setupMenu(R.menu.menu_post_policies) {
+            when (it.itemId) {
+                R.id.menuPostPolicies -> {
+                    RouteMatcher.route(
+                        this@SpeedGraderActivity,
+                        PostPolicyFragment.makeRoute(presenter!!.course, assignment)
+                    )
+                }
+            }
+        }
+
+        gradingToolbar.setNavigationIcon(R.drawable.ic_back_arrow)
+        gradingToolbar.title = assignment.name
+        gradingToolbar.subtitle = course.name
+
+        ViewStyler.themeToolbarColored(this@SpeedGraderActivity, gradingToolbar, course.color, getColor(R.color.textLightest))
     }
 
     @Suppress("EXPERIMENTAL_FEATURE_WARNING")
@@ -384,6 +427,7 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
         const val FILTER = "filter"
         const val FILTER_VALUE = "filter_value"
         const val FILTERED_SUBMISSION_IDS = "filtered_submission_ids"
+        const val DISCUSSION_ENTRY_ID = "discussion_entry_id"
 
         fun makeBundle(
             courseId: Long,

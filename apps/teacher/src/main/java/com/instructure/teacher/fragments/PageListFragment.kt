@@ -25,12 +25,25 @@ import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Page
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_PAGE_LIST
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.fragments.BaseSyncFragment
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.ColorUtils
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.addSearch
+import com.instructure.pandautils.utils.closeSearch
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.getDrawableCompat
+import com.instructure.pandautils.utils.nonNullArgs
+import com.instructure.pandautils.utils.onClickWithRequireNetwork
+import com.instructure.pandautils.utils.orDefault
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.PageListAdapter
 import com.instructure.teacher.databinding.FragmentPageListBinding
@@ -54,7 +67,8 @@ class PageListFragment : BaseSyncFragment<Page, PageListPresenter, PageListView,
 
     private val binding by viewBinding(FragmentPageListBinding::bind)
 
-    private var canvasContext: CanvasContext by ParcelableArg(default = CanvasContext.getGenericContext(CanvasContext.Type.COURSE, -1L, ""))
+    @get:PageViewUrlParam("canvasContext")
+    var canvasContext: CanvasContext by ParcelableArg(default = CanvasContext.getGenericContext(CanvasContext.Type.COURSE, -1L, ""))
 
     private val linearLayoutManager by lazy { LinearLayoutManager(requireContext()) }
     private lateinit var mRecyclerView: RecyclerView
@@ -127,7 +141,7 @@ class PageListFragment : BaseSyncFragment<Page, PageListPresenter, PageListView,
     }
 
     override fun createAdapter(): PageListAdapter {
-        return PageListAdapter(requireContext(), presenter, canvasContext.textAndIconColor) { page ->
+        return PageListAdapter(requireContext(), presenter, canvasContext.color) { page ->
             val args = PageDetailsFragment.makeBundle(page)
             RouteMatcher.route(requireActivity(), Route(null, PageDetailsFragment::class.java, canvasContext, args))
         }
@@ -172,7 +186,7 @@ class PageListFragment : BaseSyncFragment<Page, PageListPresenter, PageListView,
             }
             presenter.searchQuery = query
         }
-        ViewStyler.themeToolbarColored(requireActivity(), pageListToolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), pageListToolbar, canvasContext.color, requireContext().getColor(R.color.textLightest))
     }
 
     private fun setupViews() = with(binding) {

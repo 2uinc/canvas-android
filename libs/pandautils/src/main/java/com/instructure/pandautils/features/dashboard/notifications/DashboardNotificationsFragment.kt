@@ -24,20 +24,20 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.fragment.app.Fragment
+import com.instructure.pandautils.base.BaseCanvasFragment
 import androidx.fragment.app.viewModels
 import com.instructure.pandautils.analytics.SCREEN_VIEW_DASHBOARD_NOTIFICATIONS
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.databinding.FragmentDashboardNotificationsBinding
 import com.instructure.pandautils.features.shareextension.ShareExtensionRouter
 import com.instructure.pandautils.utils.asChooserExcludingInstructure
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.color
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @ScreenView(SCREEN_VIEW_DASHBOARD_NOTIFICATIONS)
 @AndroidEntryPoint
-class DashboardNotificationsFragment : Fragment() {
+class DashboardNotificationsFragment : BaseCanvasFragment() {
 
     @Inject
     lateinit var shareExtensionRouter: ShareExtensionRouter
@@ -78,7 +78,7 @@ class DashboardNotificationsFragment : Fragment() {
         when (action) {
             is DashboardNotificationsActions.LaunchConference -> {
                 val colorSchemeParams = CustomTabColorSchemeParams.Builder()
-                    .setToolbarColor(action.canvasContext.backgroundColor)
+                    .setToolbarColor(action.canvasContext.color)
                     .build()
 
                 var intent = CustomTabsIntent.Builder()

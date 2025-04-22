@@ -16,10 +16,11 @@
  */
 package com.instructure.canvasapi2
 
-import com.instructure.canvasapi2.apis.OAuthAPI
+import android.net.Uri
 import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.utils.APIHelper
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.restParams
 import okhttp3.CacheControl
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -42,18 +43,7 @@ class RequestInterceptor : Interceptor {
         // Nearly all requests are instantiated using RestBuilder and will have been tagged with
         // a RestParams instance. Here we will attempt to retrieve it, but if unsuccessful we will
         // fall back to a new RestParams instance with default values.
-        val params: RestParams
-        params = when {
-            request.tag(RestParams::class.java) != null -> {
-                request.tag(RestParams::class.java) ?: RestParams()
-            }
-            request.tag() != null && request.tag() is RestParams -> {
-                request.tag() as RestParams
-            }
-            else -> {
-                RestParams()
-            }
-        }
+        val params = request.restParams() ?: RestParams()
 
         // Set the UserAgent
         if (userAgent != "") {
@@ -90,6 +80,19 @@ class RequestInterceptor : Interceptor {
 
         if (params.usePerPageQueryParam) {
             val url = request.url.newBuilder().addQueryParameter("per_page", Integer.toString(ApiPrefs.perPageCount)).build()
+            request = request.newBuilder().url(url).build()
+        }
+
+        if (params.disableFileVerifiers) {
+            val url = request.url.newBuilder().addQueryParameter("no_verifiers", "1").build()
+            request = request.newBuilder().url(url).build()
+        }
+
+
+        if (domain.isNotEmpty() && params.domain != null && domain != params.domain) {
+            val uri = Uri.parse(params.domain)
+            val url = request.url.newBuilder().scheme(uri.scheme ?: "https")
+                .host(uri.host ?: params.domain.removePrefix("https://")).build()
             request = request.newBuilder().url(url).build()
         }
 

@@ -19,6 +19,7 @@ package com.instructure.pandautils.features.inbox.compose.composables
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -58,8 +61,6 @@ import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.displayText
 import com.instructure.pandautils.R
 import com.instructure.pandautils.compose.CanvasTheme
-import com.instructure.pandautils.compose.animations.ScreenSlideBackTransition
-import com.instructure.pandautils.compose.animations.ScreenSlideTransition
 import com.instructure.pandautils.compose.composables.CanvasAppBar
 import com.instructure.pandautils.compose.composables.CanvasDivider
 import com.instructure.pandautils.compose.composables.CanvasThemedTextField
@@ -70,7 +71,7 @@ import com.instructure.pandautils.compose.composables.UserAvatar
 import com.instructure.pandautils.features.inbox.compose.RecipientPickerActionHandler
 import com.instructure.pandautils.features.inbox.compose.RecipientPickerScreenOption
 import com.instructure.pandautils.features.inbox.compose.RecipientPickerUiState
-import com.instructure.pandautils.features.inbox.compose.ScreenState
+import com.instructure.pandautils.utils.ScreenState
 import java.util.EnumMap
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -83,17 +84,7 @@ fun RecipientPickerScreen(
     val animationLabel = "RecipientPickerScreenSlideTransition"
     AnimatedContent(
         label = animationLabel,
-        targetState = uiState.screenOption,
-        transitionSpec = {
-            when(uiState.screenOption) {
-                is  RecipientPickerScreenOption.Recipients -> {
-                    ScreenSlideTransition
-                }
-                is RecipientPickerScreenOption.Roles -> {
-                    ScreenSlideBackTransition
-                }
-            }
-        }
+        targetState = uiState.screenOption
     ){ screenOption ->
         val pullToRefreshState = rememberPullRefreshState(refreshing = false, onRefresh = {
             actionHandler(RecipientPickerActionHandler.RefreshCalled)
@@ -115,14 +106,21 @@ fun RecipientPickerScreen(
                                 .padding(padding)
                         ) {
                             if (uiState.screenState != ScreenState.Loading && uiState.screenState != ScreenState.Error) {
+                                val searchContext = if (uiState.selectedRole == null) stringResource(
+                                    R.string.inboxAllRecipients
+                                ) else uiState.selectedRole.displayText
                                 SearchField(
                                     value = uiState.searchValue,
+                                    placeholder = stringResource(
+                                        R.string.inboxSearchIn,
+                                        searchContext
+                                    ),
                                     actionHandler = actionHandler
                                 )
                             }
 
                             when (uiState.screenState) {
-                                is ScreenState.Data -> {
+                                is ScreenState.Content -> {
                                     when (screenOption) {
                                         is RecipientPickerScreenOption.Roles -> RecipientPickerRoleScreen(
                                             uiState,
@@ -254,46 +252,43 @@ private fun RecipientPickerPeopleScreen(
 fun StateScreen(
     uiState: RecipientPickerUiState,
 ) {
-    LazyColumn(
-        Modifier.fillMaxSize()
+    Column(
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         when (uiState.screenState) {
             is ScreenState.Loading -> {
-                item {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        Loading()
-                    }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    Loading()
                 }
             }
 
             is ScreenState.Error -> {
-                item {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        ErrorContent(errorMessage = stringResource(id = R.string.failedToLoadRecipients))
-                    }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    ErrorContent(errorMessage = stringResource(id = R.string.failedToLoadRecipients))
                 }
             }
 
             is ScreenState.Empty -> {
-                item {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        EmptyContent(
-                            emptyMessage = stringResource(id = R.string.noRecipients),
-                            imageRes = R.drawable.ic_panda_nothing_to_see
-                        )
-                    }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    EmptyContent(
+                        emptyMessage = stringResource(id = R.string.noRecipients),
+                        imageRes = R.drawable.ic_panda_nothing_to_see
+                    )
                 }
             }
 
@@ -319,16 +314,18 @@ private fun RoleRow(
             .padding(horizontal = 8.dp, vertical = 16.dp)
     ) {
         UserAvatar(
-            null,
-            name,
-            Modifier
+            imageUrl = null,
+            name = name,
+            modifier = Modifier
                 .size(36.dp)
                 .padding(2.dp)
         )
 
         Spacer(Modifier.width(8.dp))
 
-        Column {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Text(
                 text = name,
                 fontSize = 16.sp,
@@ -342,8 +339,6 @@ private fun RoleRow(
                 color = colorResource(id = R.color.textDark),
             )
         }
-
-        Spacer(Modifier.weight(1f))
 
         if (isSelected) {
             Icon(
@@ -368,9 +363,9 @@ private fun RecipientRow(
             .padding(horizontal = 8.dp, vertical = 16.dp)
     ) {
         UserAvatar(
-            recipient.avatarURL,
-            recipient.name ?: "",
-            Modifier
+            imageUrl = recipient.avatarURL,
+            name = recipient.name ?: "",
+            modifier = Modifier
                 .size(36.dp)
                 .padding(2.dp)
         )
@@ -381,9 +376,8 @@ private fun RecipientRow(
             text = recipient.name ?: "",
             fontSize = 16.sp,
             color = colorResource(id = R.color.textDarkest),
+            modifier = Modifier.weight(1f)
         )
-        
-        Spacer(Modifier.weight(1f))
 
         if (isSelected) {
             Icon(
@@ -398,6 +392,7 @@ private fun RecipientRow(
 @Composable
 private fun SearchField(
     value: TextFieldValue,
+    placeholder: String?,
     actionHandler: (RecipientPickerActionHandler) -> Unit
 ) {
     Column {
@@ -421,7 +416,7 @@ private fun SearchField(
                 value = value,
                 onValueChange = { actionHandler(RecipientPickerActionHandler.SearchValueChanged(it)) },
                 singleLine = true,
-                placeholder = stringResource(id = R.string.search),
+                placeholder = placeholder,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -472,12 +467,12 @@ fun RecipientPickerRolesScreenPreview() {
     ContextKeeper.appContext = LocalContext.current
 
     val roleRecipients: EnumMap<EnrollmentType, List<Recipient>> = EnumMap(EnrollmentType::class.java)
-    roleRecipients[EnrollmentType.STUDENTENROLLMENT] = listOf(
+    roleRecipients[EnrollmentType.StudentEnrollment] = listOf(
         Recipient(name = "John Doe 1"),
         Recipient(name = "John Smith 1"),
     )
 
-    roleRecipients[EnrollmentType.TEACHERENROLLMENT] = listOf(
+    roleRecipients[EnrollmentType.TeacherEnrollment] = listOf(
         Recipient(name = "John Doe 2"),
         Recipient(name = "John Smith 2"),
     )
@@ -487,7 +482,7 @@ fun RecipientPickerRolesScreenPreview() {
         title = "Select Recipients",
         uiState = RecipientPickerUiState(
             screenOption = RecipientPickerScreenOption.Roles,
-            screenState = ScreenState.Data,
+            screenState = ScreenState.Content,
             searchValue = TextFieldValue(""),
             selectedRecipients = emptyList(),
             recipientsByRole = roleRecipients,
@@ -503,12 +498,12 @@ fun RecipientPickerRecipientsScreenPreview() {
     ContextKeeper.appContext = LocalContext.current
 
     val roleRecipients: EnumMap<EnrollmentType, List<Recipient>> = EnumMap(EnrollmentType::class.java)
-    roleRecipients[EnrollmentType.STUDENTENROLLMENT] = listOf(
+    roleRecipients[EnrollmentType.StudentEnrollment] = listOf(
         Recipient(name = "John Doe 1"),
         Recipient(name = "John Smith 1"),
     )
 
-    roleRecipients[EnrollmentType.TEACHERENROLLMENT] = listOf(
+    roleRecipients[EnrollmentType.TeacherEnrollment] = listOf(
         Recipient(name = "John Doe 2"),
         Recipient(name = "John Smith 2"),
     )
@@ -518,12 +513,12 @@ fun RecipientPickerRecipientsScreenPreview() {
         title = "Select Recipients",
         uiState = RecipientPickerUiState(
             screenOption = RecipientPickerScreenOption.Recipients,
-            screenState = ScreenState.Data,
+            screenState = ScreenState.Content,
             searchValue = TextFieldValue(""),
-            selectedRole = EnrollmentType.TEACHERENROLLMENT,
-            selectedRecipients = listOf(roleRecipients[EnrollmentType.TEACHERENROLLMENT]!!.first()),
+            selectedRole = EnrollmentType.TeacherEnrollment,
+            selectedRecipients = listOf(roleRecipients[EnrollmentType.TeacherEnrollment]!!.first()),
             recipientsByRole = roleRecipients,
-            recipientsToShow = roleRecipients[EnrollmentType.TEACHERENROLLMENT]!!,
+            recipientsToShow = roleRecipients[EnrollmentType.TeacherEnrollment]!!,
         ),
         actionHandler = {}
     )
@@ -535,12 +530,12 @@ fun RecipientPickerSearchScreenPreview() {
     ContextKeeper.appContext = LocalContext.current
 
     val roleRecipients: EnumMap<EnrollmentType, List<Recipient>> = EnumMap(EnrollmentType::class.java)
-    roleRecipients[EnrollmentType.STUDENTENROLLMENT] = listOf(
+    roleRecipients[EnrollmentType.StudentEnrollment] = listOf(
         Recipient(name = "John Doe 1"),
         Recipient(name = "John Smith 1"),
     )
 
-    roleRecipients[EnrollmentType.TEACHERENROLLMENT] = listOf(
+    roleRecipients[EnrollmentType.TeacherEnrollment] = listOf(
         Recipient(name = "John Doe 2"),
         Recipient(name = "John Smith 2"),
     )
@@ -550,13 +545,13 @@ fun RecipientPickerSearchScreenPreview() {
         title = "Select Recipients",
         uiState = RecipientPickerUiState(
             screenOption = RecipientPickerScreenOption.Roles,
-            screenState = ScreenState.Data,
+            screenState = ScreenState.Content,
             searchValue = TextFieldValue("John"),
-            selectedRecipients = listOf(roleRecipients[EnrollmentType.TEACHERENROLLMENT]!!.first()),
+            selectedRecipients = listOf(roleRecipients[EnrollmentType.TeacherEnrollment]!!.first()),
             recipientsByRole = roleRecipients,
             recipientsToShow = listOf(
-                roleRecipients[EnrollmentType.TEACHERENROLLMENT]!!.first(),
-                roleRecipients[EnrollmentType.STUDENTENROLLMENT]!!.first()
+                roleRecipients[EnrollmentType.TeacherEnrollment]!!.first(),
+                roleRecipients[EnrollmentType.StudentEnrollment]!!.first()
             )
         ),
         actionHandler = {}
@@ -625,6 +620,7 @@ fun RecipientPickerEmptyScreenPreview() {
 fun SearchFieldPreview() {
     SearchField(
         value = TextFieldValue(""),
+        placeholder = "Search",
         actionHandler = {}
     )
 }

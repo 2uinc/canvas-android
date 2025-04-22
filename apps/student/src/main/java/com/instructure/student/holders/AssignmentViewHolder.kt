@@ -24,8 +24,9 @@ import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.GradingSchemeRow
 import com.instructure.canvasapi2.utils.DateHelper
 import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.pandautils.utils.accessibilityClassName
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.setTextForVisibility
-import com.instructure.pandautils.utils.textAndIconColor
 import com.instructure.student.R
 import com.instructure.student.databinding.ViewholderCardGenericBinding
 import com.instructure.student.interfaces.AdapterToFragmentCallback
@@ -45,7 +46,7 @@ class AssignmentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         root.setOnClickListener { adapterToFragmentCallback.onRowClicked(assignment, adapterPosition, true) }
 
         val courseId = assignment.courseId
-        val color = CanvasContext.emptyCourseContext(courseId).textAndIconColor
+        val color = CanvasContext.emptyCourseContext(courseId).color
 
         val submission = assignment.submission
 
@@ -76,6 +77,8 @@ class AssignmentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         }
 
         description.setTextForVisibility(descriptionText)
+
+        itemView.accessibilityClassName("android.widget.Button")
     }
 
     companion object {

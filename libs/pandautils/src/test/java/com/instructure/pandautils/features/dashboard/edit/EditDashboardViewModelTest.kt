@@ -44,7 +44,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -74,7 +74,7 @@ class EditDashboardViewModelTest {
 
     private lateinit var viewModel: EditDashboardViewModel
 
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
@@ -86,7 +86,7 @@ class EditDashboardViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        testDispatcher.cleanupTestCoroutines()
+        
     }
 
     @Test
@@ -562,6 +562,8 @@ class EditDashboardViewModelTest {
 
         //Then
         assertTrue(viewModel.state.value is ViewState.Empty)
+        assertEquals(R.string.editDashboardNoResults, (viewModel.state.value as ViewState.Empty).emptyTitle)
+        assertEquals(R.string.editDashboardNoResultsMessage, (viewModel.state.value as ViewState.Empty).emptyMessage)
         assertEquals(0, data.size)
     }
 

@@ -221,9 +221,12 @@ class ModuleListView(
         RouteMatcher.route(activity as FragmentActivity, route)
     }
 
-    fun scrollToItem(itemId: Long) {
+    fun scrollToItem(itemId: Long, scrollToModuleHeader: Boolean = false) {
         val itemPosition = adapter.getItemVisualPosition(itemId)
-        binding.recyclerView.scrollToPosition(itemPosition)
+        val scrollPosition = itemPosition - if (scrollToModuleHeader) 1 else 0
+        if (scrollPosition >= 0) {
+            binding.recyclerView.scrollToPosition(scrollPosition)
+        }
     }
 
     fun showConfirmationDialog(
@@ -233,7 +236,7 @@ class ModuleListView(
         negativeButton: Int,
         onConfirmed: () -> Unit
     ) {
-        AlertDialog.Builder(context)
+        AlertDialog.Builder(context, R.style.AccessibleAlertDialog)
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(positiveButton) { _, _ ->
@@ -244,7 +247,9 @@ class ModuleListView(
     }
 
     fun showSnackbar(@StringRes message: Int, params: Array<Any> = emptyArray()) {
-        Snackbar.make(binding.root, context.getString(message, *params), Snackbar.LENGTH_SHORT).show()
+        val messageText = context.getString(message, *params)
+        Snackbar.make(binding.root, messageText, Snackbar.LENGTH_SHORT).show()
+        binding.root.announceForAccessibility(messageText)
     }
 
     fun showUpdateFileDialog(fileId: Long, contentDetails: ModuleContentDetails) {

@@ -14,8 +14,7 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.instructure.teacher">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -27,6 +26,7 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" /> <!-- For Studio -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -56,6 +56,15 @@
         android:requestLegacyExternalStorage="true"
         android:networkSecurityConfig="@xml/network_security_config"
         tools:replace="android:icon">
+
+        <activity android:name="sdk.pendo.io.activities.PendoGateActivity" android:launchMode="singleInstance" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="pendo-0861c1ce"/>
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".activities.LoginActivity"
@@ -227,18 +236,6 @@
         </provider>
 
         <service
-            android:name=".services.FileDownloadService"
-            android:foregroundServiceType="dataSync" />
-        <service
-            android:name="com.instructure.pandautils.services.NotoriousUploadService"
-            android:foregroundServiceType="dataSync" />
-
-        <service
-            android:name=".services.TeacherPageViewService"
-            android:exported="true"
-            android:permission="android.permission.BIND_JOB_SERVICE"/>
-
-        <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
@@ -268,6 +265,11 @@
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove">
         </provider>
+
+        <!--Reminder-->
+        <receiver
+            android:name="com.instructure.pandautils.receivers.alarm.AlarmReceiver"
+            android:exported="false" />
     </application>
 
     <queries>
