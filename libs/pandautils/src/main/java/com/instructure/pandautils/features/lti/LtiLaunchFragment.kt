@@ -34,11 +34,13 @@ import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.LTITool
 import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.RemoteConfigPrefs
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.canvasapi2.utils.pageview.PageView
 import com.instructure.canvasapi2.utils.pageview.PageViewUrl
 import com.instructure.canvasapi2.utils.validOrNull
 import com.instructure.interactions.router.Route
+import com.instructure.pandautils.BuildConfig
 import com.instructure.pandautils.R
 import com.instructure.pandautils.analytics.SCREEN_VIEW_LTI_LAUNCH
 import com.instructure.pandautils.analytics.ScreenView
@@ -148,7 +150,12 @@ class LtiLaunchFragment : BaseCanvasFragment(), NavigationCallbacks {
 
     private fun launchCustomTab(url: String) {
         activity?.let {
-            it.launchCustomTab(url, ltiLaunchFragmentBehavior.toolbarColor)
+            val tabUrl = if (url.contains(getPlacementPortalUrl())) {
+                "${ApiPrefs.fullDomain}$ltiUrl?launch_type=global_navigation"
+            } else {
+                url
+            }
+            it.launchCustomTab(tabUrl, ltiLaunchFragmentBehavior.toolbarColor)
             Handler(Looper.getMainLooper()).postDelayed({
                 it.onBackPressed()
             }, 500)
@@ -243,6 +250,15 @@ class LtiLaunchFragment : BaseCanvasFragment(), NavigationCallbacks {
         const val SESSION_LESS_LAUNCH = "session_less_launch"
         const val IS_ASSIGNMENT_LTI = "is_assignment_lti"
         const val OPEN_INTERNALLY = "open_internally"
+        private const val PLACEMENT_PORTAL_URL_STG_TAG = "placement_portal_path_stg"
+        private const val PLACEMENT_PORTAL_URL_TAG = "placement_portal_path"
+
+        fun getPlacementPortalUrl(): String {
+            return RemoteConfigPrefs.getString(
+                if (BuildConfig.IS_DEBUG) PLACEMENT_PORTAL_URL_STG_TAG else PLACEMENT_PORTAL_URL_TAG,
+                ""
+            ) ?: ""
+        }
 
         fun makeRoute(canvasContext: CanvasContext, ltiTab: Tab): Route {
             val bundle = Bundle().apply { putParcelable(LTI_TAB, ltiTab) }
@@ -281,6 +297,19 @@ class LtiLaunchFragment : BaseCanvasFragment(), NavigationCallbacks {
         fun newInstance(route: Route): LtiLaunchFragment? {
             if (!validateRoute(route)) return null
             return LtiLaunchFragment().withArgs(route.argsWithContext)
+        }
+
+        fun makeLTIBundle(ltiUrl: String, title: String, sessionLessLaunch: Boolean): Bundle {
+            val args = Bundle()
+            args.putString(LTI_URL, ltiUrl)
+            args.putBoolean(Const.SESSIONLESS_LAUNCH, sessionLessLaunch)
+            args.putString(Const.ACTION_BAR_TITLE, title)
+            return args
+        }
+
+        fun routeLtiLaunchFragment(activity: FragmentActivity, canvasContext: CanvasContext?, url: String): Route {
+            val bundle = makeLTIBundle(URLDecoder.decode(url, "utf-8"), activity.getString(R.string.utils_externalToolTitle), true)
+            return Route(LtiLaunchFragment::class.java, canvasContext, bundle)
         }
 
         fun makeSessionlessLtiUrlRoute(activity: FragmentActivity, canvasContext: CanvasContext?, ltiUrl: String): Route {

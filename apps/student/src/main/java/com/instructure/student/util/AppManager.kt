@@ -38,7 +38,6 @@ import com.instructure.student.offline.util.DownloadsRepository
 import com.instructure.student.offline.util.OfflineDownloaderCreator
 import com.instructure.student.offline.util.OfflineModeService
 import com.instructure.student.offline.util.OfflineUtils
-import com.instructure.student.BuildConfig
 import com.instructure.student.tasks.StudentLogoutTask
 import com.twou.offline.Offline
 import com.twou.offline.OfflineManager

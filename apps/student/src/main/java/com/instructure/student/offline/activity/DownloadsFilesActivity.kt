@@ -10,8 +10,9 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
 import com.instructure.student.databinding.ActivityDownloadsContentListBinding
@@ -87,37 +88,36 @@ class DownloadsFilesActivity : AppCompatActivity(), CoroutineScope {
         binding.toolbar.setupAsBackButton { finish() }
         binding.toolbar.setTitle(R.string.download_course_files)
 
-        ColorKeeper.cachedThemedColors["course_$mCourseId"]?.let { themedColor ->
-            ViewStyler.themeToolbarColored(
-                this, binding.toolbar, themedColor.backgroundColor(), Color.WHITE
-            )
+        val themedColor = CanvasContext.fromContextCode("course_$mCourseId").color
+        ViewStyler.themeToolbarColored(
+            this, binding.toolbar, themedColor, Color.WHITE
+        )
 
-            binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-            DownloadsRepository.getFileItems(mCourseId)?.let {
-                mDownloadsFilesAdapter = DownloadsFilesAdapter(
-                    themedColor.textAndIconColor(), it.toMutableList(),
-                    object : DownloadsFilesAdapter.OnDownloadsFilesListener {
-                        override fun onFileClick(fileItem: DownloadsFileItem) {
-                            if (Offline.getOfflineRepository()
-                                    .getOfflineModule(fileItem.key) == null
-                            ) {
-                                Snackbar.make(
-                                    binding.recyclerView, R.string.download_content_not_downloaded,
-                                    Snackbar.LENGTH_LONG
-                                ).show()
-                                return
-                            }
-
-                            startActivity(
-                                DownloadsContentActivity.newIntent(
-                                    this@DownloadsFilesActivity, fileItem.key
-                                )
-                            )
+        DownloadsRepository.getFileItems(mCourseId)?.let {
+            mDownloadsFilesAdapter = DownloadsFilesAdapter(
+                themedColor, it.toMutableList(),
+                object : DownloadsFilesAdapter.OnDownloadsFilesListener {
+                    override fun onFileClick(fileItem: DownloadsFileItem) {
+                        if (Offline.getOfflineRepository()
+                                .getOfflineModule(fileItem.key) == null
+                        ) {
+                            Snackbar.make(
+                                binding.recyclerView, R.string.download_content_not_downloaded,
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                            return
                         }
-                    })
-                binding.recyclerView.adapter = mDownloadsFilesAdapter
-            }
+
+                        startActivity(
+                            DownloadsContentActivity.newIntent(
+                                this@DownloadsFilesActivity, fileItem.key
+                            )
+                        )
+                    }
+                })
+            binding.recyclerView.adapter = mDownloadsFilesAdapter
         }
 
         binding.removeAllTextView.setOnClickListener {

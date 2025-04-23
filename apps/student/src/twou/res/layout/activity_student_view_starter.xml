@@ -17,7 +17,7 @@
         android:layout_gravity="center"
         app:srcCompat="@drawable/ic_app_name" />
 
-    <com.instructure.loginapi.login.view.CanvasLoadingView
+    <com.instructure.pandautils.views.CanvasLoadingView
         android:id="@+id/loadingView"
         android:layout_width="120dp"
         android:layout_height="120dp"

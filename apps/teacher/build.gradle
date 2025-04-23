@@ -84,11 +84,11 @@ android {
         qa {
             dimension "icecream"
             buildConfigField "boolean", "IS_TESTING", "true"
-            buildConfigField "String", "PRONOUN_TEACHER_TEST_USER", "\"$pronounTestTeacher\""
-            buildConfigField "String", "PRONOUN_TEACHER_TEST_PASSWORD", "\"$pronounTestTeacherPassword\""
+            //buildConfigField "String", "PRONOUN_TEACHER_TEST_USER", "\"$pronounTestTeacher\""
+            //buildConfigField "String", "PRONOUN_TEACHER_TEST_PASSWORD", "\"$pronounTestTeacherPassword\""
 
-            buildConfigField "String", "PUSH_NOTIFICATIONS_TEACHER_TEST_USER", "\"$pushNotificationsTestTeacher\""
-            buildConfigField "String", "PUSH_NOTIFICATIONS_TEACHER_TEST_PASSWORD", "\"$pushNotificationsTestTeacherPassword\""
+            //buildConfigField "String", "PUSH_NOTIFICATIONS_TEACHER_TEST_USER", "\"$pushNotificationsTestTeacher\""
+            //buildConfigField "String", "PUSH_NOTIFICATIONS_TEACHER_TEST_PASSWORD", "\"$pushNotificationsTestTeacherPassword\""
         }
     }
 
@@ -106,7 +106,7 @@ android {
                 mappingFileUploadEnabled false
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"$pendoAccessToken\""
+            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
         }
 
         debugMinify {
@@ -137,7 +137,7 @@ android {
                 unstrippedNativeLibsDir 'build/intermediates/merged_native_libs/release/out/lib'
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"$pendoAccessToken\""
+            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
         }
     }
 

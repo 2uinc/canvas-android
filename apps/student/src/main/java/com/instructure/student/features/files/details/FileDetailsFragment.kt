@@ -55,6 +55,7 @@ import com.instructure.pandautils.utils.makeBundle
 import com.instructure.pandautils.utils.setGone
 import com.instructure.pandautils.utils.setVisible
 import com.instructure.pandautils.utils.setupAsBackButton
+import com.instructure.pandautils.utils.toPx
 import com.instructure.pandautils.utils.withArgs
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentFileDetailsBinding

@@ -8,6 +8,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import com.google.android.material.appbar.AppBarLayout
+import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.pandautils.utils.*
 import com.instructure.student.databinding.ActivityDownloadsCourseBinding
 import com.instructure.student.offline.item.DownloadsCourseItem
@@ -128,23 +129,21 @@ class DownloadsCourseActivity : AppCompatActivity(), AppBarLayout.OnOffsetChange
 
             courseBrowserTitle.text = courseItem.title
 
-            ColorKeeper.cachedThemedColors["course_${courseItem.courseId}"]?.let { themedColor ->
-                ViewStyler.setStatusBarDark(
-                    this@DownloadsCourseActivity, themedColor.backgroundColor()
-                )
+            val themedColor = CanvasContext.fromContextCode("course_${courseItem.courseId}").color
+            ViewStyler.setStatusBarDark(
+                this@DownloadsCourseActivity, themedColor
+            )
+            courseImage.setCourseImage(
+                courseItem.logoPath, themedColor,
+                !StudentPrefs.hideCourseColorOverlay
+            )
 
-                courseImage.setCourseImage(
-                    courseItem.logoPath, themedColor.backgroundColor(),
-                    !StudentPrefs.hideCourseColorOverlay
-                )
+            collapsingToolbarLayout.setContentScrimColor(themedColor)
+            noOverlayToolbar.setBackgroundColor(themedColor)
 
-                collapsingToolbarLayout.setContentScrimColor(themedColor.backgroundColor())
-                noOverlayToolbar.setBackgroundColor(themedColor.backgroundColor())
-
-                modulesImageView.setColorFilter(themedColor.textAndIconColor())
-                pagesImageView.setColorFilter(themedColor.textAndIconColor())
-                filesImageView.setColorFilter(themedColor.textAndIconColor())
-            }
+            modulesImageView.setColorFilter(themedColor)
+            pagesImageView.setColorFilter(themedColor)
+            filesImageView.setColorFilter(themedColor)
 
             courseBrowserSubtitle.text = courseItem.termsName
             headerInclude.courseBrowserHeader.setTitleAndSubtitle(

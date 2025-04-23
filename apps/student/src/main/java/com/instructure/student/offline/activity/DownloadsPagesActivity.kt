@@ -10,8 +10,9 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
 import com.instructure.student.databinding.ActivityDownloadsContentListBinding
@@ -87,37 +88,36 @@ class DownloadsPagesActivity : AppCompatActivity(), CoroutineScope {
         binding.toolbar.setupAsBackButton { finish() }
         binding.toolbar.setTitle(R.string.download_course_pages)
 
-        ColorKeeper.cachedThemedColors["course_$mCourseId"]?.let { themedColor ->
-            ViewStyler.themeToolbarColored(
-                this, binding.toolbar, themedColor.backgroundColor(), Color.WHITE
-            )
+        val themedColor = CanvasContext.fromContextCode("course_$mCourseId").color
+        ViewStyler.themeToolbarColored(
+            this, binding.toolbar, themedColor, Color.WHITE
+        )
 
-            binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
 
-            DownloadsRepository.getPageItems(mCourseId)?.let {
-                mDownloadsPagesAdapter = DownloadsPagesAdapter(
-                    this, themedColor.textAndIconColor(),
-                    it.toMutableList(), object : DownloadsPagesAdapter.OnDownloadsPagesListener {
-                        override fun onPageClick(pageItem: DownloadsPageItem) {
-                            if (Offline.getOfflineRepository()
-                                    .getOfflineModule(pageItem.key) == null
-                            ) {
-                                Snackbar.make(
-                                    binding.recyclerView, R.string.download_content_not_downloaded,
-                                    Snackbar.LENGTH_LONG
-                                ).show()
-                                return
-                            }
-
-                            startActivity(
-                                DownloadsContentActivity.newIntent(
-                                    this@DownloadsPagesActivity, pageItem.key
-                                )
-                            )
+        DownloadsRepository.getPageItems(mCourseId)?.let {
+            mDownloadsPagesAdapter = DownloadsPagesAdapter(
+                this, themedColor,
+                it.toMutableList(), object : DownloadsPagesAdapter.OnDownloadsPagesListener {
+                    override fun onPageClick(pageItem: DownloadsPageItem) {
+                        if (Offline.getOfflineRepository()
+                                .getOfflineModule(pageItem.key) == null
+                        ) {
+                            Snackbar.make(
+                                binding.recyclerView, R.string.download_content_not_downloaded,
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                            return
                         }
-                    })
-                binding.recyclerView.adapter = mDownloadsPagesAdapter
-            }
+
+                        startActivity(
+                            DownloadsContentActivity.newIntent(
+                                this@DownloadsPagesActivity, pageItem.key
+                            )
+                        )
+                    }
+                })
+            binding.recyclerView.adapter = mDownloadsPagesAdapter
         }
 
         binding.removeAllTextView.setOnClickListener {

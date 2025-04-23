@@ -112,7 +112,7 @@ android {
                 mappingFileUploadEnabled false
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"$pendoAccessToken\""
+            buildConfigField "String", "PENDO_TOKEN", "\"" + Keys.pendoAccessToken + "\""
 
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
@@ -140,7 +140,7 @@ android {
                 unstrippedNativeLibsDir 'build/intermediates/merged_native_libs/release/out/lib'
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"$pendoAccessToken\""
+            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
 
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_RELEASE + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_RELEASE + "\""
@@ -156,11 +156,11 @@ android {
 
         qa {
             buildConfigField "boolean", "IS_TESTING", "true"
-            buildConfigField "String", "PRONOUN_STUDENT_TEST_USER", "\"$pronounTestStudent\""
-            buildConfigField "String", "PRONOUN_STUDENT_TEST_PASSWORD", "\"$pronounTestStudentPassword\""
+            //buildConfigField "String", "PRONOUN_STUDENT_TEST_USER", "\"$pronounTestStudent\""
+            //buildConfigField "String", "PRONOUN_STUDENT_TEST_PASSWORD", "\"$pronounTestStudentPassword\""
 
-            buildConfigField "String", "PUSH_NOTIFICATIONS_STUDENT_TEST_USER", "\"$pushNotificationsTestStudent\""
-            buildConfigField "String", "PUSH_NOTIFICATIONS_STUDENT_TEST_PASSWORD", "\"$pushNotificationsTestStudentPassword\""
+            //buildConfigField "String", "PUSH_NOTIFICATIONS_STUDENT_TEST_USER", "\"$pushNotificationsTestStudent\""
+            //buildConfigField "String", "PUSH_NOTIFICATIONS_STUDENT_TEST_PASSWORD", "\"$pushNotificationsTestStudentPassword\""
             dimension 'default'
         }
 

@@ -249,11 +249,12 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
                 R.id.navigationDrawerItem_placementPortal -> {
                     val user = ApiPrefs.user ?: return@weave
-                    LtiLaunchFragment.routeLtiLaunchFragment(
+                    val route = LtiLaunchFragment.routeLtiLaunchFragment(
                         this@NavigationActivity,
                         CanvasContext.currentUserContext(user),
                         LtiLaunchFragment.getPlacementPortalUrl()
                     )
+                    RouteMatcher.route(this@NavigationActivity, route)
                 }
 
                 R.id.navigationDrawerItem_help -> {
@@ -1068,30 +1069,12 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                 if (contextId != 0L) {
                     when {
                         RouteContext.FILE == route.routeContext && route.secondaryClass != CourseModuleProgressionFragment::class.java -> {
-                            if (route.queryParamsHash.containsKey(RouterParams.VERIFIER) && route.queryParamsHash.containsKey(
-                                    RouterParams.DOWNLOAD_FRD
-                                )
-                            ) {
-                                if (route.uri != null) openMedia(
-                                    CanvasContext.getGenericContext(
-                                        CanvasContext.Type.COURSE,
-                                        contextId,
-                                        ""
-                                    ), route.uri.toString()
-                                )
+                            if (route.queryParamsHash.containsKey(RouterParams.VERIFIER) && route.queryParamsHash.containsKey(RouterParams.DOWNLOAD_FRD)) {
+                                if(route.uri != null) openMedia(CanvasContext.getGenericContext(CanvasContext.Type.COURSE, contextId, ""), route.uri.toString(), null)
                             }
-                            route.paramsHash[RouterParams.FILE_ID]?.let {
-                                handleSpecificFile(
-                                    contextId,
-                                    it
-                                )
-                            }
+                            route.paramsHash[RouterParams.FILE_ID]?.let { handleSpecificFile(contextId, it) }
 
-                            if (route.canvasContext != null) addFragment(
-                                RouteResolver.getFragment(
-                                    route
-                                ), route
-                            )
+                            if(route.canvasContext != null) addFragment(RouteResolver.getFragment(route), route)
                         }
 
                         RouteContext.LTI == route.routeContext -> {
