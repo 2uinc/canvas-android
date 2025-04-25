@@ -101,9 +101,6 @@ import com.instructure.student.util.StudentPrefs
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import com.twou.offline.Offline
-import io.intercom.android.sdk.Intercom
-import io.intercom.android.sdk.UserAttributes
-import io.intercom.android.sdk.identity.Registration
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
@@ -566,21 +563,6 @@ class DashboardFragment : ParentFragment() {
     override fun onDestroy() {
         recyclerAdapter?.cancel()
         super.onDestroy()
-    }
-
-    private fun initIntercom() {
-        val user = ApiPrefs.user ?: return
-        val userAttributes = UserAttributes.Builder()
-            .withName(user.shortName)
-            .build()
-
-        val registration = Registration.create()
-            .withUserId("${user.id}")
-            .withEmail("${user.email}")
-            .withUserAttributes(userAttributes)
-
-        Intercom.client().loginIdentifiedUser(registration)
-        Intercom.client().handlePushMessage()
     }
 
     private fun initFirebase() {

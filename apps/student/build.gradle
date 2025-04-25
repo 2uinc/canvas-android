@@ -359,7 +359,6 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-core:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"
-    implementation("io.intercom.android:intercom-sdk:14.0.1")
     implementation("com.bugfender.sdk:android:3.0.17")
 }
 

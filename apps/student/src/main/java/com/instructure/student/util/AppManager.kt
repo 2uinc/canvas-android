@@ -47,7 +47,6 @@ import com.twou.offline.util.BaseOfflineUtils.Companion.isOnline
 import com.twou.offline.util.OfflineLoggerType
 import com.twou.offline.util.OfflineLogs
 import dagger.hilt.android.HiltAndroidApp
-import io.intercom.android.sdk.Intercom
 import sdk.pendo.io.Pendo
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -194,7 +193,6 @@ class AppManager : BaseAppManager() {
 
         DownloadsRepository.loadData()
 
-        Intercom.initialize(this, BuildConfig.INTERCOM_API_KEY, BuildConfig.INTERCOM_AP_ID)
         Bugfender.init(this, BuildConfig.BUGFENDER_KEY, BuildConfig.DEBUG)
 
         schedulePandataUpload()
