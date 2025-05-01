@@ -22,17 +22,22 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.SavedStateHandle
 import com.instructure.canvasapi2.models.CanvasColor
 import com.instructure.canvasapi2.models.CanvasTheme
 import com.instructure.canvasapi2.models.User
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.pandautils.utils.ColorKeeper
-import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.FeatureFlagProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -42,10 +47,11 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import sdk.pendo.io.Pendo
 
 
 @ExperimentalCoroutinesApi
@@ -62,20 +68,27 @@ class SplashViewModelTest {
     private val repository: SplashRepository = mockk(relaxed = true)
     private val apiPrefs: ApiPrefs = mockk(relaxed = true)
     private val colorKeeper: ColorKeeper = mockk(relaxed = true)
-    private val themePrefs: ThemePrefs = mockk(relaxed = true)
+    private val savedStateHandle = mockk<SavedStateHandle>(relaxed = true)
+    private val featureFlagProvider = mockk<FeatureFlagProvider>(relaxed = true)
 
     private lateinit var viewModel: SplashViewModel
 
     @Before
-    fun setup() {
+    fun setup() = runTest {
+        every { savedStateHandle.get<Long>(Const.QR_CODE_MASQUERADE_ID) } returns 0L
+        coEvery { featureFlagProvider.checkAccountSurveyNotificationsFlag() } returns true
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         Dispatchers.setMain(testDispatcher)
         ContextKeeper.appContext = context
+        mockkStatic(Pendo::class)
+        every { Pendo.startSession(any(), any(), any(), any()) } returns Unit
+        every { Pendo.endSession() } returns Unit
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
@@ -96,14 +109,14 @@ class SplashViewModelTest {
 
         coVerify { apiPrefs.user = user }
         coVerify { colorKeeper.addToCache(colors) }
-        coVerify { themePrefs.applyCanvasTheme(theme, context) }
 
         val events = mutableListOf<SplashAction>()
         backgroundScope.launch(testDispatcher) {
             viewModel.events.toList(events)
         }
 
-        Assert.assertEquals(SplashAction.InitialDataLoadingFinished, events.last())
+        assertEquals(SplashAction.InitialDataLoadingFinished, events.last())
+        assertEquals(SplashAction.ApplyTheme(theme), events.first())
     }
 
     @Test
@@ -117,11 +130,11 @@ class SplashViewModelTest {
             viewModel.events.toList(events)
         }
 
-        Assert.assertEquals(SplashAction.InitialDataLoadingFinished, events.last())
+        assertEquals(SplashAction.InitialDataLoadingFinished, events.last())
     }
 
     @Test
-    fun `No observed students`() = runTest {
+    fun `No observed students navigates to not a parent screen`() = runTest {
         val user = User(id = 1L)
         coEvery { repository.getSelf() } returns user
 
@@ -140,7 +153,31 @@ class SplashViewModelTest {
             viewModel.events.toList(events)
         }
 
-        Assert.assertEquals(SplashAction.NavigateToNotAParentScreen, events.last())
+        assertEquals(SplashAction.NavigateToNotAParentScreen, events.last())
+    }
+
+    @Test
+    fun `No observed students finishes data loading and navigates to app if the user can masquerade`() = runTest {
+        every { apiPrefs.canBecomeUser } returns true
+        val user = User(id = 1L)
+        coEvery { repository.getSelf() } returns user
+
+        val colors = CanvasColor()
+        coEvery { repository.getColors() } returns colors
+
+        val theme = CanvasTheme("", "", "", "", "", "", "", "")
+        coEvery { repository.getTheme() } returns theme
+
+        coEvery { repository.getStudents() } returns emptyList()
+
+        createViewModel()
+
+        val events = mutableListOf<SplashAction>()
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList(events)
+        }
+
+        assertEquals(SplashAction.InitialDataLoadingFinished, events.last())
     }
 
     @Test
@@ -158,7 +195,94 @@ class SplashViewModelTest {
             viewModel.events.toList(events)
         }
 
-        Assert.assertEquals(SplashAction.LocaleChanged, events.first())
+        assertEquals(SplashAction.LocaleChanged, events.first())
+    }
+
+    @Test
+    fun `Set canBecomeUser when the domain is siteadmin`() = runTest {
+        every { apiPrefs.domain } returns "siteadmin.whatever.com"
+        every { apiPrefs.canBecomeUser } returns null
+        coEvery { repository.getBecomeUserPermission() } returns false
+
+        createViewModel()
+
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList()
+        }
+
+        verify { apiPrefs.canBecomeUser = true }
+    }
+
+    @Test
+    fun `Set canBecomeUser by the result of the canBecomeUserApiCall`() = runTest {
+        every { apiPrefs.domain } returns "whatever.com"
+        every { apiPrefs.canBecomeUser } returns null
+        coEvery { repository.getBecomeUserPermission() } returns true
+
+        createViewModel()
+
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList()
+        }
+
+        verify { apiPrefs.canBecomeUser = true }
+    }
+
+    @Test
+    fun `Do not request permission and set canBecomeUser when masquerading from a QR code`() = runTest {
+        every { apiPrefs.domain } returns "whatever.com"
+        every { apiPrefs.canBecomeUser } returns null
+        every { savedStateHandle.get<Long>(Const.QR_CODE_MASQUERADE_ID) } returns 1L
+
+        createViewModel()
+
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList()
+        }
+
+        coVerify(exactly = 0) { repository.getBecomeUserPermission() }
+        verify(exactly = 0) { apiPrefs.canBecomeUser = any() }
+    }
+
+    @Test
+    fun `Do not request permission and set canBecomeUser when it is already set`() = runTest {
+        every { apiPrefs.domain } returns "whatever.com"
+        every { apiPrefs.canBecomeUser } returns true
+
+        createViewModel()
+
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList()
+        }
+
+        coVerify(exactly = 0) { repository.getBecomeUserPermission() }
+        verify(exactly = 0) { apiPrefs.canBecomeUser = any() }
+    }
+
+    @Test
+    fun `Send usage metrics enabled`() = runTest {
+        coEvery { repository.getSendUsageMetrics() } returns true
+
+        createViewModel()
+
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList()
+        }
+
+        verify { Pendo.startSession(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `Send usage metrics disabled`() = runTest {
+        coEvery { repository.getSendUsageMetrics() } returns false
+
+        createViewModel()
+
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList()
+        }
+
+        verify { Pendo.endSession() }
     }
 
     private fun createViewModel() {
@@ -167,7 +291,8 @@ class SplashViewModelTest {
             repository = repository,
             apiPrefs = apiPrefs,
             colorKeeper = colorKeeper,
-            themePrefs = themePrefs,
+            featureFlagProvider = featureFlagProvider,
+            savedStateHandle = savedStateHandle
         )
     }
 }

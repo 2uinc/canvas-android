@@ -15,7 +15,7 @@ import com.instructure.canvasapi2.models.User
 import com.instructure.canvasapi2.type.EnrollmentType
 import org.junit.Test
 
-abstract class InboxComposeInteractionTest: CanvasComposeTest() {
+abstract class InboxComposeInteractionTest : CanvasComposeTest() {
 
     private val inboxPage = InboxPage()
     private val inboxComposePage = InboxComposePage(composeTestRule)
@@ -48,15 +48,14 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("Teachers")
         recipientPickerPage.pressLabel(getTeachers().first().name)
@@ -76,15 +75,14 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("Teachers")
         recipientPickerPage.pressLabel(getTeachers().first().name)
@@ -92,6 +90,8 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
         inboxComposePage.typeSubject("Test Subject")
         inboxComposePage.typeBody("Test Body")
         inboxComposePage.pressSendButton()
+
+        composeTestRule.waitForIdle()
 
         inboxPage.filterInbox("Sent")
         inboxPage.assertConversationDisplayed("Test Subject")
@@ -106,22 +106,21 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             ),
             Recipient(
                 stringId = getTeachers().last().id.toString(),
                 name = getTeachers().last().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("Teachers")
         recipientPickerPage.pressLabel(getTeachers().first().name)
@@ -146,22 +145,21 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             ),
             Recipient(
                 stringId = getTeachers().last().id.toString(),
                 name = getTeachers().last().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("All in ${data.courses.values.first().name}")
         recipientPickerPage.pressDone()
@@ -184,22 +182,21 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             ),
             Recipient(
                 stringId = getTeachers().last().id.toString(),
                 name = getTeachers().last().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("Teachers")
         recipientPickerPage.pressLabel("All in Teachers")
@@ -223,15 +220,14 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("Teachers")
         recipientPickerPage.pressLabel(getTeachers().first().name)
@@ -247,6 +243,7 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 data
             )
         }
+        composeTestRule.waitForIdle()
 
         inboxPage.filterInbox("Sent")
         inboxPage.assertConversationDisplayed("Test Subject")
@@ -258,9 +255,7 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
 
         inboxComposePage.assertContextSelected(getFirstCourse().name)
     }
@@ -273,15 +268,14 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
                 stringId = getTeachers().first().id.toString(),
                 name = getTeachers().first().name,
                 commonCourses = hashMapOf(
-                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())
+                    getFirstCourse().id.toString() to arrayOf(EnrollmentType.TeacherEnrollment.rawValue)
                 )
             )
         )
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
-        inboxComposePage.pressCourseSelector()
-        selectContextPage.selectContext(getFirstCourse().name)
+        selectContext()
         inboxComposePage.pressAddRecipient()
         recipientPickerPage.pressLabel("Teachers")
         recipientPickerPage.pressLabel(getTeachers().first().name)
@@ -323,13 +317,35 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
     }
 
     @Test
-    fun assertAlertDialogPopsOnExit() {
+    fun assertAlertDialogNotPopsOnExitWithoutModification() {
         val data = initData()
         goToInboxCompose(data)
         composeTestRule.waitForIdle()
 
         inboxComposePage.pressBackButton()
+        inboxPage.assertInboxEmpty()
+    }
+
+    @Test
+    fun assertAlertDialogPopsOnExitWithModification() {
+        val data = initData()
+        goToInboxCompose(data)
+        composeTestRule.waitForIdle()
+
+        inboxComposePage.typeBody("Test Body")
+
+        inboxComposePage.pressBackButton()
         inboxComposePage.assertAlertDialog()
+    }
+
+    @Test
+    fun assertInboxSignatureIsPopulated() {
+        val data = initData()
+        data.inboxSignature = "Test Signature"
+        goToInboxCompose(data)
+        composeTestRule.waitForIdle()
+
+        inboxComposePage.assertBodyText("\n\n---\nTest Signature")
     }
 
     private fun addAttachmentToConversation(attachmentName: String, conversation: Conversation, mockCanvas: MockCanvas) {
@@ -375,4 +391,9 @@ abstract class InboxComposeInteractionTest: CanvasComposeTest() {
     abstract fun getFirstCourse(): Course
 
     abstract fun getSentConversation(): Conversation?
+
+    open fun selectContext() {
+        inboxComposePage.pressCourseSelector()
+        selectContextPage.selectContext(getFirstCourse().name)
+    }
 }

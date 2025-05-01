@@ -167,7 +167,7 @@ object Const {
     // Intent String for QR Code Masquerading
     const val QR_CODE_MASQUERADE_ID = "qrCodeMasqueradeId"
     const val MARKET_URI_PREFIX = "market://details?id="
-    const val CANVAS_STUDENT_ID = "com.instructure.candroid"
+    const val CANVAS_STUDENT_ID = "com.instructure.candroid.twou"
     const val TOKEN = "token"
 
     // This is tied directly to an intent filter in the Student app AndroidManifest - if either one changes, make sure they stay in sync

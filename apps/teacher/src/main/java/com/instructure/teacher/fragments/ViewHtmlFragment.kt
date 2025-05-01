@@ -110,12 +110,13 @@ class ViewHtmlFragment : InternalWebViewFragment() {
         if (isInModulesPager) {
             toolbar.setupBackButtonWithExpandCollapseAndBack(this@ViewHtmlFragment) {
                 toolbar.updateToolbarExpandCollapseIcon(this@ViewHtmlFragment)
-                ViewStyler.themeToolbarColored(requireActivity(), toolbar!!, toolbarColor, requireContext().getColor(R.color.white))
+                ViewStyler.themeToolbarColored(requireActivity(), toolbar!!, toolbarColor, requireContext().getColor(R.color.textLightest))
                 (activity as MasterDetailInteractions).toggleExpandCollapse()
             }
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar!!, toolbarColor, requireContext().getColor(R.color.white))
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar!!, toolbarColor, requireContext().getColor(R.color.textLightest))
         } else if (isTablet && toolbarColor != 0) {
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar!!, toolbarColor, requireContext().getColor(R.color.white))
+            val textColor = if (toolbarColor == ThemePrefs.primaryColor) ThemePrefs.primaryTextColor else requireContext().getColor(R.color.textLightest)
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar!!, toolbarColor, textColor)
         } else {
             super.setupToolbar(courseColor)
         }

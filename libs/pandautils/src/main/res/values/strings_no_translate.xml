@@ -17,8 +17,8 @@
   -->
 
 <resources>
-    <string name="utils_mobileSupportEmailAddress" translatable="false">mobilesupport@instructure.com</string>
-    <string name="utils_supportEmailAddress" translatable="false">support@instructure.com</string>
+    <string name="utils_mobileSupportEmailAddress" translatable="false">TechSupport@digitalcampus.2U.com</string>
+    <string name="utils_supportEmailAddress" translatable="false">TechSupport@digitalcampus.2U.com</string>
     <string name="utils_dotWithSpaces" translatable="false">\u0020\u0020\u2022\u0020\u0020</string>
     <string name="remoteConfigParamsTitle" translatable="false">Remote Config Params</string>
 
@@ -28,4 +28,7 @@
     <string name="help_email" translatable="false">Email:</string>
     <string name="help_locale" translatable="false">Locale:</string>
     <string name="installDate" translatable="false">Install Date:</string>
+
+    <string name="degrees_edx_on_github" translatable="false">Degrees edX on GitHub</string>
+
 </resources>

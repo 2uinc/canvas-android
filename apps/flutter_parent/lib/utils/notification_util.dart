@@ -41,7 +41,7 @@ class NotificationUtil {
   }
 
   static Future<void> init(Completer<void>? appCompleter) async {
-    var initializationSettings = AndroidInitializationSettings('ic_notification_canvas_logo');
+    var initializationSettings = AndroidInitializationSettings('canvas_logo_white');
 
     if (_plugin == null) {
       _plugin = AndroidFlutterLocalNotificationsPlugin();

@@ -20,23 +20,28 @@ package com.instructure.parentapp.features.dashboard
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.ColorInt
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController.Companion.KEY_DEEP_LINK_INTENT
+import com.instructure.canvasapi2.models.LaunchDefinition
 import com.instructure.canvasapi2.models.User
+import com.instructure.canvasapi2.utils.Analytics
+import com.instructure.canvasapi2.utils.AnalyticsEventConstants
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryLaunch
 import com.instructure.loginapi.login.util.PreviousUsersUtils
 import com.instructure.pandautils.mvvm.ViewState
-import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.pandautils.utils.orDefault
+import com.instructure.pandautils.utils.studentColor
 import com.instructure.parentapp.R
 import com.instructure.parentapp.features.alerts.list.AlertsRepository
 import com.instructure.parentapp.util.ParentPrefs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,7 +63,7 @@ class DashboardViewModel @Inject constructor(
     private val selectedStudentHolder: SelectedStudentHolder,
     private val inboxCountUpdater: InboxCountUpdater,
     private val alertCountUpdater: AlertCountUpdater,
-    private val colorKeeper: ColorKeeper,
+    private val analytics: Analytics,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -106,6 +111,16 @@ class DashboardViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            inboxCountUpdater.increaseInboxCountFlow.collect { increaseBy ->
+                _data.update { data ->
+                    data.copy(
+                        unreadCount = data.unreadCount + increaseBy
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
             alertCountUpdater.shouldRefreshAlertCountFlow.collect { shouldUpdate ->
                 if (shouldUpdate) {
                     updateAlertCount()
@@ -117,6 +132,7 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.tryLaunch {
             _state.value = ViewState.Loading
 
+            loadLaunchDefinitions()
             setupUserInfo()
             loadStudents(forceNetwork)
             updateUnreadCount()
@@ -138,6 +154,22 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    private fun loadLaunchDefinitions() {
+        viewModelScope.async {
+            val launchDefinitions = repository.getLaunchDefinitions()
+            val launchDefinitionsViewData = launchDefinitions
+                .filter { it.domain != null && it.placements?.globalNavigation?.url != null }
+                .map { LaunchDefinitionViewData(it.name.orEmpty(), it.domain.orEmpty(), it.placements?.globalNavigation?.url.orEmpty()) }
+            if (launchDefinitionsViewData.isNotEmpty()) {
+                _data.update {
+                    it.copy(
+                        launchDefinitionViewData = launchDefinitionsViewData
+                    )
+                }
+            }
+        }
+    }
+
     private fun setupUserInfo() {
         apiPrefs.user?.let { user ->
             _data.update {
@@ -155,6 +187,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     private suspend fun loadStudents(forceNetwork: Boolean) {
+        selectedStudentHolder.updateSelectedStudent(null)
         val students = repository.getStudents(forceNetwork)
         val selectedStudent = if (this.students.isEmpty()) {
             students.find { it.id == currentUser?.selectedStudentId } ?: students.firstOrNull()
@@ -164,9 +197,7 @@ class DashboardViewModel @Inject constructor(
         this.students = students.toMutableList()
 
         parentPrefs.currentStudent = selectedStudent
-        selectedStudent?.let {
-            selectedStudentHolder.updateSelectedStudent(it)
-        }
+        selectedStudentHolder.updateSelectedStudent(selectedStudent)
 
         val studentItems = students.map { user ->
             StudentItemViewModel(
@@ -182,7 +213,7 @@ class DashboardViewModel @Inject constructor(
 
         val studentItemsWithAddStudent = if (studentItems.isNotEmpty()) {
             studentItems + AddStudentItemViewModel(
-                colorKeeper.getOrGenerateUserColor(selectedStudent).textAndIconColor(),
+                selectedStudent.studentColor,
                 ::addStudent
             )
         } else {
@@ -191,6 +222,10 @@ class DashboardViewModel @Inject constructor(
 
         _data.update { data ->
             data.copy(
+                studentSelectorContentDescription = getStudentSelectorContentDescription(
+                    data.studentSelectorExpanded,
+                    selectedStudent?.shortName.orEmpty()
+                ),
                 studentItems = studentItemsWithAddStudent,
                 selectedStudent = selectedStudent
             )
@@ -209,6 +244,7 @@ class DashboardViewModel @Inject constructor(
 
     private fun addStudent() {
         viewModelScope.launch {
+            analytics.logEvent(AnalyticsEventConstants.ADD_STUDENT_DASHBOARD)
             _events.send(DashboardViewModelAction.AddStudent)
         }
     }
@@ -221,10 +257,14 @@ class DashboardViewModel @Inject constructor(
         _data.update {
             it.copy(
                 studentSelectorExpanded = false,
+                studentSelectorContentDescription = getStudentSelectorContentDescription(
+                    false,
+                    student.shortName.orEmpty()
+                ),
                 selectedStudent = student,
                 studentItems = it.studentItems.map { item ->
                     if (item is AddStudentItemViewModel) {
-                        item.copy(color = colorKeeper.getOrGenerateUserColor(student).textAndIconColor())
+                        item.copy(color = student.studentColor)
                     } else {
                         item
                     }
@@ -247,8 +287,8 @@ class DashboardViewModel @Inject constructor(
     }
 
     private suspend fun updateAlertCount() {
-        _data.value.selectedStudent?.id?.let {
-            val alertCount = alertsRepository.getUnreadAlertCount(it)
+        _data.value.selectedStudent?.id?.let { selectedStudentId ->
+            val alertCount = alertsRepository.getUnreadAlertCount(selectedStudentId)
             _data.update {
                 it.copy(
                     alertCount = alertCount
@@ -257,9 +297,45 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    private fun openLtiTool(ltiViewData: LaunchDefinitionViewData?) {
+        ltiViewData?.let {
+            viewModelScope.launch {
+                _events.send(DashboardViewModelAction.OpenLtiTool(it.url, it.name))
+            }
+        }
+    }
+
+    private fun getStudentSelectorContentDescription(expanded: Boolean, selectedStudentName: String) = context.getString(
+        R.string.a11y_studentSelectorContentDescription,
+        context.getString(if (expanded) R.string.a11y_studentSelectorCollapse else R.string.a11y_studentSelectorExpand),
+        selectedStudentName
+    )
+
     fun toggleStudentSelector() {
         _data.update {
-            it.copy(studentSelectorExpanded = !it.studentSelectorExpanded)
+            it.copy(
+                studentSelectorExpanded = !it.studentSelectorExpanded,
+                studentSelectorContentDescription = getStudentSelectorContentDescription(
+                    !it.studentSelectorExpanded,
+                    it.selectedStudent?.shortName.orEmpty()
+                )
+            )
         }
+    }
+
+    fun updateColor(@ColorInt color: Int) {
+        _data.value.studentItems.find { it is AddStudentItemViewModel }?.let { addStudentItem ->
+            (addStudentItem as AddStudentItemViewModel).updateColor(color)
+        }
+    }
+
+    fun openMastery() {
+        val masteryLaunchDefinition = _data.value.launchDefinitionViewData.find { it.domain == LaunchDefinition.MASTERY_DOMAIN }
+        openLtiTool(masteryLaunchDefinition)
+    }
+
+    fun openStudio() {
+        val studioLaunchDefinition = _data.value.launchDefinitionViewData.find { it.domain == LaunchDefinition.STUDIO_DOMAIN }
+        openLtiTool(studioLaunchDefinition)
     }
 }

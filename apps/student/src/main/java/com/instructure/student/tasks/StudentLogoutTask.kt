@@ -21,17 +21,18 @@ import android.content.Intent
 import android.net.Uri
 import androidx.work.WorkManager
 import com.google.firebase.messaging.FirebaseMessaging
-import com.heapanalytics.android.Heap
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.tryOrNull
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.features.offline.sync.OfflineSyncWorker
+import com.instructure.pandautils.features.reminder.AlarmScheduler
 import com.instructure.pandautils.room.offline.DatabaseProvider
 import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.student.activity.LoginActivity
-import com.instructure.student.features.assignments.reminder.AlarmScheduler
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.util.StudentPrefs
 import com.instructure.student.widget.WidgetUpdater
+import sdk.pendo.io.Pendo
 import java.io.File
 
 class StudentLogoutTask(
@@ -44,9 +45,10 @@ class StudentLogoutTask(
 ) : LogoutTask(type, uri, canvasForElementaryFeatureFlag, typefaceBehavior) {
 
     override fun onCleanup() {
+        OfflineUtils.logout()
         StudentPrefs.safeClearPrefs()
         WidgetUpdater.updateWidgets()
-        Heap.setTrackingEnabled(false)
+        Pendo.endSession()
     }
 
     override fun createLoginIntent(context: Context): Intent {

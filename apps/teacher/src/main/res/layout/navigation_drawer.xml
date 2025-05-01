@@ -151,6 +151,26 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/navigationDrawerItem_mastery"
+                style="@style/NavigationDrawerItem"
+                android:visibility="gone"
+                tools:ignore="UseCompoundDrawables"
+                tools:visibility="visible">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    style="@style/NavigationDrawerIcon"
+                    app:srcCompat="@drawable/ic_navigation_mastery" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/masteryConnect"
+                    android:textColor="@color/textDarkest"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/navigationDrawerSettings"
                 style="@style/NavigationDrawerItem"
                 tools:ignore="UseCompoundDrawables">
@@ -181,6 +201,7 @@
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
                 android:text="@string/options"
+                android:importantForAccessibility="no"
                 android:textAllCaps="true"
                 android:letterSpacing="0.14"
                 android:layout_marginBottom="16dp"/>
@@ -205,10 +226,13 @@
                     android:textColor="@color/textDarkest"
                     android:textSize="16sp" />
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/navigationDrawerColorOverlaySwitch"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:minWidth="48dp"
+                    android:minHeight="48dp"
+                    app:theme="@style/Theme.Material3.DayNight"/>
 
             </LinearLayout>
 
@@ -268,6 +292,25 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/logout"
+                    android:textColor="@color/textDarkest"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/navigationDrawerItem_closeDrawer"
+                style="@style/NavigationDrawerItem"
+                android:visibility="gone"
+                tools:ignore="UseCompoundDrawables">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    style="@style/NavigationDrawerIcon"
+                    app:srcCompat="@drawable/ic_close" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/navigation_drawer_close"
                     android:textColor="@color/textDarkest"
                     android:textSize="16sp" />
 

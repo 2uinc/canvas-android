@@ -41,29 +41,51 @@ import androidx.work.WorkQuery
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.CourseNicknameManager
 import com.instructure.canvasapi2.managers.UserManager
-import com.instructure.canvasapi2.models.*
+import com.instructure.canvasapi2.models.CanvasColor
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.Course
+import com.instructure.canvasapi2.models.CourseNickname
+import com.instructure.canvasapi2.models.DashboardPositions
+import com.instructure.canvasapi2.models.Group
+import com.instructure.canvasapi2.utils.APIHelper
+import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageView
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
 import com.instructure.interactions.router.Route
+import com.instructure.pandautils.analytics.OfflineAnalyticsManager
 import com.instructure.pandautils.analytics.SCREEN_VIEW_DASHBOARD
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.dialogs.ColorPickerDialog
+import com.instructure.pandautils.dialogs.EditCourseNicknameDialog
 import com.instructure.pandautils.features.dashboard.DashboardCourseItem
 import com.instructure.pandautils.features.dashboard.edit.EditDashboardFragment
 import com.instructure.pandautils.features.dashboard.notifications.DashboardNotificationsFragment
 import com.instructure.pandautils.features.offline.offlinecontent.OfflineContentFragment
 import com.instructure.pandautils.features.offline.sync.AggregateProgressObserver
 import com.instructure.pandautils.features.offline.sync.OfflineSyncWorker
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.FeatureFlagProvider
+import com.instructure.pandautils.utils.NetworkStateProvider
+import com.instructure.pandautils.utils.NullableParcelableArg
+import com.instructure.pandautils.utils.Utils
+import com.instructure.pandautils.utils.fadeAnimationWithAction
+import com.instructure.pandautils.utils.isTablet
+import com.instructure.pandautils.utils.makeBundle
+import com.instructure.pandautils.utils.removeAllItemDecorations
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setMenu
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.toast
+import com.instructure.pandautils.utils.withRequireNetwork
 import com.instructure.student.R
 import com.instructure.student.adapter.DashboardRecyclerAdapter
 import com.instructure.student.databinding.CourseGridRecyclerRefreshLayoutBinding
 import com.instructure.student.databinding.FragmentCourseGridBinding
 import com.instructure.student.decorations.VerticalGridSpacingDecoration
-import com.instructure.student.dialog.ColorPickerDialog
-import com.instructure.pandautils.dialogs.EditCourseNicknameDialog
 import com.instructure.student.events.CoreDataFinishedLoading
 import com.instructure.student.events.CourseColorOverlayToggledEvent
 import com.instructure.student.events.ShowGradesToggledEvent
@@ -71,10 +93,14 @@ import com.instructure.student.features.coursebrowser.CourseBrowserFragment
 import com.instructure.student.features.dashboard.DashboardRepository
 import com.instructure.student.holders.CourseViewHolder
 import com.instructure.student.interfaces.CourseAdapterToFragmentCallback
+import com.instructure.student.offline.util.DownloadsRepository
+import com.instructure.student.offline.util.OfflineNotificationHelper
 import com.instructure.student.router.RouteMatcher
+import com.instructure.student.util.FirebaseAnalytics
 import com.instructure.student.util.StudentPrefs
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import com.twou.offline.Offline
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
@@ -104,6 +130,9 @@ class DashboardFragment : ParentFragment() {
     @Inject
     lateinit var firebaseCrashlytics: FirebaseCrashlytics
 
+    @Inject
+    lateinit var offlineAnalyticsManager: OfflineAnalyticsManager
+
     private val binding by viewBinding(FragmentCourseGridBinding::bind)
     private lateinit var recyclerBinding: CourseGridRecyclerRefreshLayoutBinding
 
@@ -127,7 +156,11 @@ class DashboardFragment : ParentFragment() {
 
     override fun title(): String = if (isAdded) getString(R.string.dashboard) else ""
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? =
         layoutInflater.inflate(R.layout.fragment_course_grid, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -140,6 +173,9 @@ class DashboardFragment : ParentFragment() {
             recyclerAdapter?.refresh()
             if (online) recyclerBinding.swipeRefreshLayout.isRefreshing = true
         }
+
+        Offline.getOfflineManager().start()
+        initFirebase()
 
         lifecycleScope.launch {
             if (featureFlagProvider.offlineEnabled()) {
@@ -168,45 +204,61 @@ class DashboardFragment : ParentFragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        recyclerAdapter = DashboardRecyclerAdapter(requireActivity(), object : CourseAdapterToFragmentCallback {
+        recyclerAdapter =
+            DashboardRecyclerAdapter(requireActivity(), object : CourseAdapterToFragmentCallback {
 
-            override fun onRefreshFinished() {
-                recyclerBinding.swipeRefreshLayout.isRefreshing = false
-                recyclerBinding.notificationsFragment.setVisible()
-            }
+                override fun onRefreshFinished() {
+                    recyclerBinding.swipeRefreshLayout.isRefreshing = false
+                    recyclerBinding.notificationsFragment.setVisible()
+                }
 
-            override fun onSeeAllCourses() {
-                RouteMatcher.route(requireActivity(), EditDashboardFragment.makeRoute())
-            }
+                override fun onSeeAllCourses() {
+                    RouteMatcher.route(requireActivity(), EditDashboardFragment.makeRoute())
+                }
 
-            override fun onGroupSelected(group: Group) {
-                canvasContext = group
-                RouteMatcher.route(requireActivity(), CourseBrowserFragment.makeRoute(group))
-            }
+                override fun onGroupSelected(group: Group) {
+                    canvasContext = group
+                    RouteMatcher.route(requireActivity(), CourseBrowserFragment.makeRoute(group))
+                }
 
-            override fun onCourseSelected(course: Course) {
-                canvasContext = course
-                RouteMatcher.route(requireActivity(), CourseBrowserFragment.makeRoute(course))
-            }
-
-            @Suppress("EXPERIMENTAL_FEATURE_WARNING")
-            override fun onEditCourseNickname(course: Course) {
-                EditCourseNicknameDialog.getInstance(requireFragmentManager(), course) { s ->
-                    tryWeave {
-                        val response = awaitApi<CourseNickname> { CourseNicknameManager.setCourseNickname(course.id, s, it) }
-                        if (response.nickname == null) {
-                            course.name = response.name!!
-                            course.originalName = null
-                        } else {
-                            course.name = response.nickname!!
-                            course.originalName = response.name
+                override fun onCourseSelected(course: Course) {
+                    lifecycleScope.launch {
+                        if (!repository.isOnline()) {
+                            offlineAnalyticsManager.reportCourseOpenedInOfflineMode()
                         }
-                        recyclerAdapter?.notifyDataSetChanged()
-                    } catch {
-                        toast(R.string.courseNicknameError)
+                        canvasContext = course
+                        RouteMatcher.route(requireActivity(), CourseBrowserFragment.makeRoute(course))
                     }
-                }.show(requireFragmentManager(), EditCourseNicknameDialog::class.java.simpleName)
-            }
+                }
+
+                @Suppress("EXPERIMENTAL_FEATURE_WARNING")
+                override fun onEditCourseNickname(course: Course) {
+                    EditCourseNicknameDialog.getInstance(requireFragmentManager(), course) { s ->
+                        tryWeave {
+                            val response = awaitApi<CourseNickname> {
+                                CourseNicknameManager.setCourseNickname(
+                                    course.id,
+                                    s,
+                                    it
+                                )
+                            }
+                            if (response.nickname == null) {
+                                course.name = response.name!!
+                                course.originalName = null
+                            } else {
+                                course.name = response.nickname!!
+                                course.originalName = response.name
+                            }
+                            DownloadsRepository.changeCourseName(course.id, course.name)
+                            recyclerAdapter?.notifyDataSetChanged()
+                        } catch {
+                            toast(R.string.courseNicknameError)
+                        }
+                    }.show(
+                        requireFragmentManager(),
+                        EditCourseNicknameDialog::class.java.simpleName
+                    )
+                }
 
             @Suppress("EXPERIMENTAL_FEATURE_WARNING")
             override fun onPickCourseColor(course: Course) {
@@ -221,18 +273,20 @@ class DashboardFragment : ParentFragment() {
                 }.show(requireFragmentManager(), ColorPickerDialog::class.java.simpleName)
             }
 
-            override fun onManageOfflineContent(course: Course) {
-                RouteMatcher.route(requireActivity(), OfflineContentFragment.makeRoute(course))
-            }
-        }, repository)
+                override fun onManageOfflineContent(course: Course) {
+                    RouteMatcher.route(requireActivity(), OfflineContentFragment.makeRoute(course))
+                }
+            }, repository)
 
         configureRecyclerView()
         recyclerBinding.listView.isSelectionEnabled = false
         initMenu()
+
+        OfflineNotificationHelper.setup()
     }
 
     override fun applyTheme() {
-        with (binding) {
+        with(binding) {
             toolbar.title = title()
             // Styling done in attachNavigationDrawer
             navigation?.attachNavigationDrawer(this@DashboardFragment, toolbar)
@@ -252,16 +306,19 @@ class DashboardFragment : ParentFragment() {
         }
 
         val dashboardLayoutMenuItem = toolbar.menu.findItem(R.id.menu_dashboard_cards)
-        val menuIconRes = if (StudentPrefs.listDashboard) R.drawable.ic_grid_dashboard else R.drawable.ic_list_dashboard
+        val menuIconRes =
+            if (StudentPrefs.listDashboard) R.drawable.ic_grid_dashboard else R.drawable.ic_list_dashboard
         dashboardLayoutMenuItem.setIcon(menuIconRes)
 
-        val menuTitleRes = if (StudentPrefs.listDashboard) R.string.dashboardSwitchToGridView else R.string.dashboardSwitchToListView
+        val menuTitleRes =
+            if (StudentPrefs.listDashboard) R.string.dashboardSwitchToGridView else R.string.dashboardSwitchToListView
         dashboardLayoutMenuItem.setTitle(menuTitleRes)
 
         lifecycleScope.launch {
             if (!featureFlagProvider.offlineEnabled()) {
                 toolbar.menu.removeItem(R.id.menu_dashboard_offline)
-                toolbar.menu.findItem(R.id.menu_dashboard_cards).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                toolbar.menu.findItem(R.id.menu_dashboard_cards)
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             }
         }
     }
@@ -289,14 +346,14 @@ class DashboardFragment : ParentFragment() {
             if (isTablet) {
                 binding.emptyCoursesView.setGuidelines(.37f, .49f, .6f, .7f, .12f, .88f)
             } else {
-                binding.emptyCoursesView.setGuidelines(.36f, .54f, .64f,.77f, .12f, .88f)
+                binding.emptyCoursesView.setGuidelines(.36f, .54f, .64f, .77f, .12f, .88f)
 
             }
         } else {
             if (isTablet) {
                 // Change nothing, at least for now
             } else {
-                binding.emptyCoursesView.setGuidelines(.27f, .52f, .58f,.73f, .15f, .85f)
+                binding.emptyCoursesView.setGuidelines(.27f, .52f, .58f, .73f, .15f, .85f)
             }
         }
     }
@@ -313,8 +370,10 @@ class DashboardFragment : ParentFragment() {
 
     private fun configureRecyclerView() = with(binding) {
         // Set up GridLayoutManager
-        courseColumns = if (StudentPrefs.listDashboard) LIST_SPAN_COUNT else resources.getInteger(R.integer.course_card_columns)
-        groupColumns = if (StudentPrefs.listDashboard) LIST_SPAN_COUNT else resources.getInteger(R.integer.group_card_columns)
+        courseColumns =
+            if (StudentPrefs.listDashboard) LIST_SPAN_COUNT else resources.getInteger(R.integer.course_card_columns)
+        groupColumns =
+            if (StudentPrefs.listDashboard) LIST_SPAN_COUNT else resources.getInteger(R.integer.group_card_columns)
         val layoutManager = GridLayoutManager(
             context,
             courseColumns * groupColumns,
@@ -334,7 +393,12 @@ class DashboardFragment : ParentFragment() {
 
         // Add decoration
         recyclerBinding.listView.removeAllItemDecorations()
-        recyclerBinding.listView.addItemDecoration(VerticalGridSpacingDecoration(requireContext(), layoutManager))
+        recyclerBinding.listView.addItemDecoration(
+            VerticalGridSpacingDecoration(
+                requireContext(),
+                layoutManager
+            )
+        )
         recyclerBinding.listView.layoutManager = layoutManager
         recyclerBinding.listView.itemAnimator = DefaultItemAnimator()
         recyclerBinding.listView.adapter = recyclerAdapter
@@ -383,7 +447,10 @@ class DashboardFragment : ParentFragment() {
 
                 if (viewHolder == null) return
                 val fromPosition = viewHolder.bindingAdapterPosition
-                val fromItem = recyclerAdapter?.getItem(DashboardRecyclerAdapter.ItemType.COURSE_HEADER, fromPosition - POSITION_MODIFIER) as? DashboardCourseItem
+                val fromItem = recyclerAdapter?.getItem(
+                    DashboardRecyclerAdapter.ItemType.COURSE_HEADER,
+                    fromPosition - POSITION_MODIFIER
+                ) as? DashboardCourseItem
 
                 itemToMove = fromItem
             }
@@ -396,9 +463,11 @@ class DashboardFragment : ParentFragment() {
                 val fromPosition = viewHolder.bindingAdapterPosition
                 val toPosition = target.bindingAdapterPosition
 
-                val itemsSize = recyclerAdapter?.getItems(DashboardRecyclerAdapter.ItemType.COURSE_HEADER)?.size ?: 0
+                val itemsSize =
+                    recyclerAdapter?.getItems(DashboardRecyclerAdapter.ItemType.COURSE_HEADER)?.size
+                        ?: 0
 
-                if (toPosition - POSITION_MODIFIER in 0..< itemsSize) {
+                if (toPosition - POSITION_MODIFIER in 0..<itemsSize) {
                     recyclerAdapter?.notifyItemMoved(fromPosition, toPosition)
                 }
 
@@ -430,12 +499,17 @@ class DashboardFragment : ParentFragment() {
                 }
 
                 itemToMove?.let {
-                    recyclerAdapter?.moveItems(DashboardRecyclerAdapter.ItemType.COURSE_HEADER, it, finishingPosition - 1)
+                    recyclerAdapter?.moveItems(
+                        DashboardRecyclerAdapter.ItemType.COURSE_HEADER,
+                        it,
+                        finishingPosition - 1
+                    )
                     recyclerAdapter?.notifyDataSetChanged()
                     itemToMove = null
                 }
 
-                val courseItems = recyclerAdapter?.getItems(DashboardRecyclerAdapter.ItemType.COURSE_HEADER)
+                val courseItems =
+                    recyclerAdapter?.getItems(DashboardRecyclerAdapter.ItemType.COURSE_HEADER)
                         ?.mapNotNull { it as? DashboardCourseItem } ?: emptyList()
                 val positions = courseItems
                     .mapIndexed { index, course -> Pair(course.course.contextId, index) }
@@ -456,13 +530,15 @@ class DashboardFragment : ParentFragment() {
 
     override fun onStart() {
         super.onStart()
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(somethingChangedReceiver, IntentFilter(Const.COURSE_THING_CHANGED))
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(somethingChangedReceiver, IntentFilter(Const.COURSE_THING_CHANGED))
         EventBus.getDefault().register(this)
     }
 
     override fun onStop() {
         super.onStop()
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(somethingChangedReceiver)
+        LocalBroadcastManager.getInstance(requireContext())
+            .unregisterReceiver(somethingChangedReceiver)
         EventBus.getDefault().unregister(this)
     }
 
@@ -489,12 +565,18 @@ class DashboardFragment : ParentFragment() {
         super.onDestroy()
     }
 
+    private fun initFirebase() {
+        val user = ApiPrefs.user ?: return
+        FirebaseAnalytics.identifyUser(user.id)
+    }
+
     companion object {
         fun newInstance(route: Route) =
-                DashboardFragment().apply {
-                    arguments = route.canvasContext?.makeBundle(route.arguments) ?: route.arguments
-                }
+            DashboardFragment().apply {
+                arguments = route.canvasContext?.makeBundle(route.arguments) ?: route.arguments
+            }
 
-        fun makeRoute(canvasContext: CanvasContext?) = Route(DashboardFragment::class.java, canvasContext)
+        fun makeRoute(canvasContext: CanvasContext?) =
+            Route(DashboardFragment::class.java, canvasContext)
     }
 }

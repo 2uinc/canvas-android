@@ -16,12 +16,12 @@
 package com.instructure.teacher.viewinterface
 
 import com.instructure.canvasapi2.StudentContextCardQuery.*
-import instructure.androidblueprint.FragmentViewInterface
+import com.instructure.pandautils.blueprint.FragmentViewInterface
 
 
 interface StudentContextView : FragmentViewInterface {
-    fun setData(course: AsCourse, student: User, summary: Analytics?, isStudent: Boolean)
-    fun addSubmissions(submissions: List<Submission>, course: AsCourse, student: User)
+    fun setData(course: OnCourse, student: User, summary: Analytics?, isStudent: Boolean)
+    fun addSubmissions(submissions: List<Submission>, course: OnCourse, student: User)
     fun showLoadMoreIndicator(show: Boolean)
     fun onErrorLoading(isDesigner: Boolean)
     fun clear()

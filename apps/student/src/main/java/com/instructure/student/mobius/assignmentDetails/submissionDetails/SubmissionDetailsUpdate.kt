@@ -19,7 +19,13 @@ package com.instructure.student.mobius.assignmentDetails.submissionDetails
 
 import android.net.Uri
 import android.webkit.MimeTypeMap
-import com.instructure.canvasapi2.models.*
+import com.instructure.canvasapi2.models.Assignment
+import com.instructure.canvasapi2.models.Attachment
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.LTITool
+import com.instructure.canvasapi2.models.LtiType
+import com.instructure.canvasapi2.models.Quiz
+import com.instructure.canvasapi2.models.Submission
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.validOrNull
 import com.instructure.pandautils.utils.AssignmentUtils2
@@ -76,7 +82,7 @@ class SubmissionDetailsUpdate : UpdateInit<SubmissionDetailsModel, SubmissionDet
                     event.assignment.dataOrNull,
                     model.canvasContext,
                     event.isStudioEnabled,
-                    event.ltiUrlResult?.dataOrNull,
+                    event.ltiTool?.dataOrNull,
                     event.quizResult?.dataOrNull,
                     event.studioLTIToolResult?.dataOrNull,
                     event.isObserver
@@ -156,7 +162,7 @@ class SubmissionDetailsUpdate : UpdateInit<SubmissionDetailsModel, SubmissionDet
         assignment: Assignment?,
         canvasContext: CanvasContext,
         isStudioEnabled: Boolean?,
-        ltiUrl: LTITool?,
+        ltiTool: LTITool?,
         quiz: Quiz?,
         studioLTITool: LTITool?,
         isObserver: Boolean = false
@@ -165,19 +171,25 @@ class SubmissionDetailsUpdate : UpdateInit<SubmissionDetailsModel, SubmissionDet
             Assignment.SubmissionType.NONE.apiString in assignment?.submissionTypesRaw.orEmpty() -> SubmissionDetailsContentType.NoneContent
             Assignment.SubmissionType.ON_PAPER.apiString in assignment?.submissionTypesRaw.orEmpty() -> SubmissionDetailsContentType.OnPaperContent
             Assignment.SubmissionType.EXTERNAL_TOOL.apiString in assignment?.submissionTypesRaw.orEmpty() -> {
-                if (assignment?.isAllowedToSubmit == true)
-                    SubmissionDetailsContentType.ExternalToolContent(canvasContext, ltiUrl?.url ?: "")
+                if (assignment != null && (assignment.isAllowedToSubmit || submission?.workflowState != "unsubmitted"))
+                    SubmissionDetailsContentType.ExternalToolContent(canvasContext, ltiTool, assignment.name.orEmpty(), assignment.ltiToolType())
                 else SubmissionDetailsContentType.LockedContent
             }
-            submission?.submissionType == null -> SubmissionDetailsContentType.NoSubmissionContent(canvasContext, assignment!!, isStudioEnabled!!, quiz, studioLTITool, isObserver, ltiUrl)
+            submission?.submissionType == null -> SubmissionDetailsContentType.NoSubmissionContent(canvasContext, assignment!!, isStudioEnabled!!, quiz, studioLTITool, isObserver, ltiTool)
             submission.workflowState != "submitted" && AssignmentUtils2.getAssignmentState(assignment, submission) in listOf(AssignmentUtils2.ASSIGNMENT_STATE_MISSING, AssignmentUtils2.ASSIGNMENT_STATE_GRADED_MISSING) -> SubmissionDetailsContentType.NoSubmissionContent(canvasContext, assignment!!, isStudioEnabled!!, quiz)
             else -> when (Assignment.getSubmissionTypeFromAPIString(submission.submissionType)) {
 
                 // LTI submission
-                Assignment.SubmissionType.BASIC_LTI_LAUNCH -> SubmissionDetailsContentType.ExternalToolContent(
+                Assignment.SubmissionType.BASIC_LTI_LAUNCH -> {
+                    val ltiUrl = submission.previewUrl.validOrNull() ?: assignment?.url?.validOrNull() ?: assignment?.htmlUrl ?: ""
+                    SubmissionDetailsContentType.ExternalToolContent(
                         canvasContext,
-                        submission.previewUrl.validOrNull() ?: assignment?.url?.validOrNull() ?: assignment?.htmlUrl ?: ""
-                )
+                        null,
+                        title = assignment?.name.orEmpty(),
+                        assignment?.ltiToolType() ?: LtiType.EXTERNAL_TOOL,
+                        ltiUrl
+                    )
+                }
 
                 // Text submission
                 Assignment.SubmissionType.ONLINE_TEXT_ENTRY -> SubmissionDetailsContentType.TextContent(submission.body ?: "")
@@ -193,7 +205,9 @@ class SubmissionDetailsUpdate : UpdateInit<SubmissionDetailsModel, SubmissionDet
                 } ?: SubmissionDetailsContentType.UnsupportedContent(assignment?.id ?: -1)
 
                 // File uploads
-                Assignment.SubmissionType.ONLINE_UPLOAD -> getAttachmentContent(submission.attachments[0])
+                Assignment.SubmissionType.ONLINE_UPLOAD -> submission.attachments.firstOrNull()?.let {
+                    getAttachmentContent(submission.attachments[0])
+                } ?: SubmissionDetailsContentType.UnsupportedContent(assignment?.id ?: -1)
 
                 // URL Submission
                 Assignment.SubmissionType.ONLINE_URL -> SubmissionDetailsContentType.UrlContent(submission.url!!, submission.attachments.firstOrNull()?.url)

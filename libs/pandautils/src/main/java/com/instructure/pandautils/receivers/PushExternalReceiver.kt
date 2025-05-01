@@ -19,7 +19,6 @@ package com.instructure.pandautils.receivers
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.annotation.ColorRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -115,7 +114,7 @@ abstract class PushExternalReceiver : FirebaseMessagingService() {
 
         private fun createGroup(context: Context, @ColorRes appColor: Int, channelId: String): Notification? {
             return NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(R.drawable.ic_notification_canvas_logo)
+                .setSmallIcon(R.drawable.ic_logo)
                 .setColor(ContextCompat.getColor(context, appColor))
                 .setDeleteIntent(createDeleteIntent(context, PushNotification.GROUP_ID))
                 .setAutoCancel(true)
@@ -134,12 +133,10 @@ abstract class PushExternalReceiver : FirebaseMessagingService() {
         ): Notification {
             // Use the app name if we're marshmallow or lower, as it won't display the app name for us. On later versions,
             // we'll still want a title, but it will already have our app name so instead we'll use this notification title
-            val title = context.getString(R.string.notificationPrimaryInboxTitle)
             return NotificationCompat.Builder(context, channelId)
-                .setContentTitle(title)
+                .setContentTitle(appName)
                 .setContentText(notification.alert)
-                .setSmallIcon(R.drawable.ic_notification_canvas_logo)
-                .setColor(ContextCompat.getColor(context, appColor))
+                .setSmallIcon(R.drawable.ic_logo)
                 .setContentIntent(createContentIntent(context, startingActivity, notification))
                 .setDeleteIntent(createDeleteIntent(context, notification.notificationId))
                 .setAutoCancel(true)

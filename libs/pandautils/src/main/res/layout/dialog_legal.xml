@@ -31,14 +31,15 @@
         android:layout_height="?android:attr/listPreferredItemHeightSmall"
         android:background="?android:attr/selectableItemBackground"
         android:gravity="center_vertical"
-        android:visibility="gone"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
         tools:ignore="UseCompoundDrawables">
 
         <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:importantForAccessibility="no"
-            app:srcCompat="@drawable/ic_document" />
+            app:srcCompat="@drawable/ic_admin" />
 
         <TextView
             android:id="@+id/privacyPolicyLabel"
@@ -59,12 +60,13 @@
         android:layout_height="?android:attr/listPreferredItemHeightSmall"
         android:background="?android:attr/selectableItemBackground"
         android:gravity="center_vertical"
-        android:visibility="gone"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
         tools:ignore="UseCompoundDrawables">
 
         <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:importantForAccessibility="no"
             app:srcCompat="@drawable/ic_document" />
 
@@ -87,7 +89,8 @@
         android:layout_height="?android:attr/listPreferredItemHeightSmall"
         android:background="?android:attr/selectableItemBackground"
         android:gravity="center_vertical"
-        android:visibility="gone"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
         tools:ignore="UseCompoundDrawables">
 
         <ImageView
@@ -103,7 +106,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:gravity="center_vertical"
-            android:text="@string/canvasOnGithub"
+            android:text="@string/degrees_edx_on_github"
             android:textColor="@color/textDarkest"
             android:textSize="16sp" />
 

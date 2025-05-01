@@ -18,8 +18,17 @@
 package com.instructure.teacher.ui.pages
 
 import com.instructure.dataseeding.model.CanvasUserApiModel
-import com.instructure.espresso.*
-import com.instructure.espresso.page.*
+import com.instructure.espresso.WaitForViewWithId
+import com.instructure.espresso.assertDisplayed
+import com.instructure.espresso.assertHasText
+import com.instructure.espresso.click
+import com.instructure.espresso.page.onView
+import com.instructure.espresso.page.plus
+import com.instructure.espresso.page.waitForView
+import com.instructure.espresso.page.withId
+import com.instructure.espresso.page.withParent
+import com.instructure.espresso.page.withText
+import com.instructure.espresso.scrollTo
 import com.instructure.teacher.R
 
 /**
@@ -39,10 +48,10 @@ class StudentContextPage : PersonContextPage() {
      *
      * @param student The student for which the information should be displayed.
      */
-    fun assertDisplaysStudentInfo(student: CanvasUserApiModel) {
-        waitForView(withParent(R.id.toolbar) + withText(student.shortName)).assertDisplayed()
-        studentName.assertHasText(student.shortName)
-        studentEmail.assertHasText(student.loginId)
+    fun assertDisplaysStudentInfo(shortName: String, loginId: String) {
+        waitForView(withParent(R.id.toolbar) + withText(shortName)).assertDisplayed()
+        studentName.assertHasText(shortName)
+        studentEmail.assertHasText(loginId)
         onView(withId(R.id.gradeItems)).scrollTo().assertDisplayed()
     }
 

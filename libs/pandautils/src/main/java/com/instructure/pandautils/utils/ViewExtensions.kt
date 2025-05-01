@@ -25,7 +25,13 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.content.res.TypedArray
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -33,8 +39,14 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.*
+import android.view.Menu
+import android.view.MenuItem
+import android.view.TouchDelegate
+import android.view.View
 import android.view.View.OnClickListener
+import android.view.ViewAnimationUtils
+import android.view.ViewGroup
+import android.view.ViewParent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.AlphaAnimation
@@ -46,7 +58,12 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.*
+import androidx.annotation.ColorInt
+import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
+import androidx.annotation.IdRes
+import androidx.annotation.MenuRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
@@ -67,6 +84,8 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.signature.ObjectKey
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.models.Attachment
 import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.utils.APIHelper
@@ -77,7 +96,8 @@ import com.instructure.canvasapi2.utils.weave.WeaveJob
 import com.instructure.canvasapi2.utils.weave.weave
 import com.instructure.pandautils.R
 import kotlinx.coroutines.delay
-import java.util.*
+import java.lang.reflect.Field
+import java.util.Locale
 import kotlin.math.hypot
 
 /** Convenience extension for setting a click listener */
@@ -376,13 +396,24 @@ fun View.onClickWithRequireNetwork(clickListener: OnClickListener) = onClick {
         clickListener.onClick(this)
     } else {
         //show dialog
-        AlertDialog.Builder(context)
-                .setTitle(R.string.noInternetConnectionTitle)
-                .setMessage(R.string.noInternetConnectionMessage)
-                .setCancelable(true)
-                .setPositiveButton(android.R.string.ok, { dialog, _ -> dialog.dismiss() })
-                .showThemed()
+        showNoConnectionDialog(context)
     }
+}
+
+fun Fragment.noConnectionDialogWithNetworkCheck() {
+    if (!APIHelper.hasNetworkConnection()) {
+        showNoConnectionDialog(requireContext()) { requireActivity().onBackPressed() }
+    }
+}
+
+fun showNoConnectionDialog(context: Context, actionAfterDismiss: () -> Unit = {}) {
+    AlertDialog.Builder(context)
+        .setTitle(R.string.noInternetConnectionTitle)
+        .setMessage(R.string.noInternetConnectionMessage)
+        .setCancelable(true)
+        .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+        .setOnDismissListener { _ -> actionAfterDismiss() }
+        .showThemed()
 }
 
 /**
@@ -429,8 +460,8 @@ private class CourseImageTransformation(val overlayColor: Int) : CenterCrop() {
         with(Canvas(cropped)) {
             // Draw image in grayscale
             drawBitmap(cropped, 0f, 0f, grayscalePaint)
-            // Draw color overlay at 75% (0xBF) opacity
-            drawColor(overlayColor and 0xBFFFFFFF.toInt())
+            // Draw color overlay at 84% (0xBF) opacity
+            drawColor(overlayColor and 0xDFFFFFFF.toInt())
         }
         return cropped
     }
@@ -648,10 +679,12 @@ fun EditText.onChangeDebounce(minLength: Int = 3, debounceDuration: Long = 400, 
 
 @Suppress("PLUGIN_WARNING")
 @JvmName("addToolbarSearch")
-fun Toolbar?.addSearch(hintText: String? = null, @ColorInt color: Int = Color.WHITE, onQueryChanged: (String) -> Unit) {
+fun Toolbar?.addSearch(hintText: String? = null, @ColorInt color: Int? = null, onQueryChanged: (String) -> Unit) {
     if (this == null || menu.findItem(R.id.search) != null) return
     inflateMenu(R.menu.search)
     val searchItem = menu.findItem(R.id.search)
+    val searchColor = color ?: context.getColor(R.color.textLightest)
+    val toolbar = this
     with(searchItem.actionView as SearchView) {
         maxWidth = Int.MAX_VALUE
         setIconifiedByDefault(false)
@@ -674,12 +707,34 @@ fun Toolbar?.addSearch(hintText: String? = null, @ColorInt color: Int = Color.WH
                 return true
             }
         })
-        findViewById<EditText>(R.id.search_src_text)?.apply {
-            setTextColor(color)
-            setCursorColor(color)
-            setHintTextColor(ColorUtils.setAlphaComponent(color, 0x66))
-            setCompoundDrawables(null, null, null, null)
-        }
+        themeSearchView(toolbar, searchColor)
+    }
+}
+
+fun SearchView.themeSearchView(
+    toolbar: Toolbar,
+    searchColor: Int,
+) {
+    toolbar.colorSearchViewBackButton(searchColor)
+    findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)?.apply {
+        setColorFilter(searchColor, PorterDuff.Mode.SRC_ATOP)
+    }
+    findViewById<EditText>(R.id.search_src_text)?.apply {
+        setTextColor(searchColor)
+        setCursorColor(searchColor)
+        setHintTextColor(ColorUtils.setAlphaComponent(searchColor, 0x66))
+        setCompoundDrawables(null, null, null, null)
+    }
+}
+
+private fun Toolbar.colorSearchViewBackButton(searchColor: Int) {
+    try {
+        val backIcon: Field = javaClass.getDeclaredField("mCollapseIcon")
+        backIcon.isAccessible = true
+        val backDrawable = backIcon.get(this) as? Drawable
+        backDrawable?.setTint(searchColor)
+    } catch (e: java.lang.Exception) {
+        FirebaseCrashlytics.getInstance().recordException(e)
     }
 }
 
@@ -897,4 +952,24 @@ fun View.animateCircularBackgroundColorChange(endColor: Int, image: ImageView, d
     }
 
     anim.start()
+}
+
+fun View.showSnackbar(
+    @StringRes message: Int,
+    @StringRes actionTextRes: Int? = R.string.retry,
+    @ColorRes actionTextColor: Int? = R.color.white,
+    actionCallback: (() -> Unit)? = null
+) {
+    val snackbar = Snackbar.make(this, message, Snackbar.LENGTH_SHORT)
+
+    actionTextColor?.let { snackbar.setActionTextColor(context.getColor(it)) }
+
+    actionTextRes?.let { textRes ->
+        actionCallback?.let {
+            snackbar.setAction(textRes) { it() }
+        }
+    }
+
+    snackbar.show()
+    snackbar.view.requestAccessibilityFocus(1000)
 }

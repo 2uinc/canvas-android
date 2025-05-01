@@ -16,6 +16,7 @@
 package com.instructure.pandautils.compose.composables
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.Icon
@@ -29,7 +30,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.pandautils.R
@@ -44,7 +51,7 @@ fun CanvasThemedAppBar(
     navigationActionClick: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String = "",
-    @DrawableRes navIconRes: Int = R.drawable.ic_back_arrow,
+    @DrawableRes navIconRes: Int? = R.drawable.ic_back_arrow,
     navIconContentDescription: String = stringResource(id = R.string.back),
     backgroundColor: Color = Color(color = ThemePrefs.primaryColor),
     contentColor: Color = Color(color = ThemePrefs.primaryTextColor),
@@ -52,25 +59,51 @@ fun CanvasThemedAppBar(
 ) {
     TopAppBar(
         title = {
-            Column {
-                Text(text = title, modifier.testTag("todoDetailsPageTitle"))
+            Column(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    isTraversalGroup = true
+                    traversalIndex = -1f
+                    heading()
+                }
+            ) {
+                Text(
+                    text = title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = modifier.testTag("todoDetailsPageTitle")
+                )
                 if (subtitle.isNotEmpty()) {
                     Text(
                         text = subtitle,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         },
         actions = actions,
-        backgroundColor = backgroundColor,
+        backgroundColor = if (backgroundColor.value == Color(color = ThemePrefs.primaryColor).value) {
+            if (isSystemInDarkTheme())
+                Color(0xFF2D3B45)
+            else
+                Color(0xFF00262B)
+        } else {
+            backgroundColor
+        },
         contentColor = contentColor,
-        navigationIcon = {
-            IconButton(onClick = navigationActionClick) {
-                Icon(painterResource(id = navIconRes), contentDescription = navIconContentDescription)
+        navigationIcon = if (navIconRes == null) null else {
+            {
+                IconButton(onClick = navigationActionClick) {
+                    Icon(
+                        painterResource(id = navIconRes),
+                        contentDescription = navIconContentDescription
+                    )
+                }
             }
         },
-        modifier = modifier.testTag("toolbar")
+        modifier = modifier.testTag("toolbar"),
+        elevation = 0.dp
     )
 }
 

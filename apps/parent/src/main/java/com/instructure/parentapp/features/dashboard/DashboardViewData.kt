@@ -25,10 +25,12 @@ import com.instructure.pandautils.mvvm.ItemViewModel
 data class DashboardViewData(
     val userViewData: UserViewData? = null,
     val studentSelectorExpanded: Boolean = false,
+    val studentSelectorContentDescription: String = "",
     val studentItems: List<ItemViewModel> = emptyList(),
     val selectedStudent: User? = null,
     val unreadCount: Int = 0,
     val alertCount: Int = 0,
+    val launchDefinitionViewData: List<LaunchDefinitionViewData> = emptyList(),
 )
 
 data class StudentItemViewData(
@@ -45,9 +47,16 @@ data class UserViewData(
     val email: String?
 )
 
+data class LaunchDefinitionViewData(
+    val name: String,
+    val domain: String,
+    val url: String
+)
+
 sealed class DashboardViewModelAction {
     data object AddStudent : DashboardViewModelAction()
     data class NavigateDeepLink(val deepLinkUri: Uri) : DashboardViewModelAction()
+    data class OpenLtiTool(val url: String, val name: String) : DashboardViewModelAction()
 }
 
 enum class StudentListViewType(val viewType: Int) {

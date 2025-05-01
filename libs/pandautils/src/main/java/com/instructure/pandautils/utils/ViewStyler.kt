@@ -40,12 +40,12 @@ import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.appcompat.widget.AppCompatRadioButton
 import androidx.appcompat.widget.AppCompatSpinner
-import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputLayout
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.pandautils.R
@@ -87,22 +87,22 @@ object ViewStyler {
         spinner.supportBackgroundTintList = makeColorStateList(defaultColor, brand)
     }
 
-    fun themeSwitch(context: Context, switch: SwitchCompat, @ColorInt brand: Int = ThemePrefs.brandColor) {
-        val thumbColor = brand
+    fun themeSwitch(context: Context, switch: MaterialSwitch, @ColorInt brand: Int = ThemePrefs.brandColor) {
+        switch.thumbTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(ContextCompat.getColor(context, R.color.switchThumbColorChecked), ContextCompat.getColor(context, R.color.switchThumbColor)))
 
-        // trackColor is the thumbColor with 30% transparency (77)
-        val trackColor = Color.argb(77, Color.red(thumbColor), Color.green(thumbColor), Color.blue(thumbColor))
+        switch.trackTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(brand, ContextCompat.getColor(context, R.color.switchTrackColor)))
 
-        // setting the thumb color
-        switch.thumbDrawable.setTintList(ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(thumbColor, ContextCompat.getColor(context, R.color.switchThumbColor)))
-        )
-
-        // setting the track color
-        switch.trackDrawable.setTintList(ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(trackColor, ContextCompat.getColor(context, R.color.switchTrackColor))))
+        switch.thumbIconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_switch_icon)
+        switch.thumbIconTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(brand, ContextCompat.getColor(context, R.color.switchIconColor)))
+        switch.trackDecorationTintList = ColorStateList(
+            arrayOf(intArrayOf()),
+            intArrayOf(ContextCompat.getColor(context, R.color.transparent)))
     }
 
     fun themeInputTextLayout(textInputLayout: TextInputLayout, @ColorInt color: Int) {
@@ -119,8 +119,8 @@ object ViewStyler {
 
     fun themeToolbarColored(activity: Activity, toolbar: Toolbar?, canvasContext: CanvasContext?) {
         if(toolbar == null || canvasContext == null) return
-        themeToolbar(activity, toolbar, canvasContext.backgroundColor, activity.getColor(R.color.white))
-        setStatusBarDark(activity, canvasContext.backgroundColor)
+        themeToolbar(activity, toolbar, canvasContext.color, activity.getColor(R.color.textLightest))
+        setStatusBarDark(activity, canvasContext.color)
     }
 
     fun themeToolbarColored(activity: Activity, toolbar: Toolbar, @ColorInt backgroundColor: Int, @ColorInt contentColor: Int) {
@@ -145,7 +145,11 @@ object ViewStyler {
     }
 
     private fun themeToolbar(activity: Activity, toolbar: Toolbar, @ColorInt backgroundColor: Int, @ColorInt contentColor: Int) {
-        toolbar.setBackgroundColor(backgroundColor)
+        if (backgroundColor == ThemePrefs.primaryColor) {
+            toolbar.setBackgroundColor(activity.getColor(R.color.licorice))
+        } else {
+            toolbar.setBackgroundColor(backgroundColor)
+        }
         toolbar.setTitleTextAppearance(activity, R.style.ToolbarStyle)
         toolbar.setSubtitleTextAppearance(activity, R.style.ToolbarStyle_Subtitle)
         colorToolbarIconsAndText(activity, toolbar, contentColor)
@@ -173,20 +177,27 @@ object ViewStyler {
     }
 
     fun themeFAB(fab: FloatingActionButton) {
-        val color = ThemePrefs.buttonColor
+        val color = Color.parseColor("#00262B")
         fab.backgroundTintList = makeColorStateList(color, ThemePrefs.darker(color))
         fab.setImageDrawable(ColorUtils.colorIt(ThemePrefs.buttonTextColor, fab.drawable))
     }
 
     fun themeButton(button: Button) {
         val drawable = button.background
-        drawable.mutate().colorFilter = PorterDuffColorFilter(ThemePrefs.buttonColor, PorterDuff.Mode.SRC_ATOP)
+        val color = Color.parseColor("#00262B")
+        drawable.mutate().colorFilter = PorterDuffColorFilter(
+            color, PorterDuff.Mode.SRC_ATOP
+        )
         button.background = drawable
         button.setTextColor(ThemePrefs.buttonTextColor)
     }
 
     fun setStatusBarDark(activity: Activity, @ColorInt color: Int) {
-        activity.window.statusBarColor = ThemePrefs.darker(color)
+        if (color == ThemePrefs.primaryColor) {
+            activity.window.statusBarColor = activity.getColor(R.color.licorice)
+        } else {
+            activity.window.statusBarColor = ThemePrefs.darker(color)
+        }
         var flags = activity.window.decorView.systemUiVisibility
         flags = flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
         activity.window.decorView.systemUiVisibility = flags
@@ -254,7 +265,7 @@ fun AppCompatCheckBox.applyTheme(@ColorInt brand: Int) {
     highlightColor = ThemePrefs.increaseAlpha(defaultColor)
 }
 
-fun SwitchCompat.applyTheme(@ColorInt color: Int = ThemePrefs.brandColor) {
+fun MaterialSwitch.applyTheme(@ColorInt color: Int = ThemePrefs.brandColor) {
     ViewStyler.themeSwitch(context, this, color)
 }
 

@@ -26,6 +26,7 @@ import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.student.R
 import com.instructure.student.databinding.ViewholderPageBinding
 import com.instructure.student.interfaces.AdapterToFragmentCallback
+import com.instructure.student.offline.initWithPageData
 
 class PageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
@@ -49,6 +50,8 @@ class PageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         )
 
         root.setOnClickListener { adapterToFragmentCallback.onRowClicked(page, adapterPosition, true) }
+
+        downloadItemView.initWithPageData(page, iconColor)
     }
 
     companion object {

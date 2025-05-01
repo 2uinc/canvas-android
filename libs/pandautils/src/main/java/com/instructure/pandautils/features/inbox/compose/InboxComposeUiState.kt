@@ -21,25 +21,44 @@ import com.instructure.canvasapi2.models.Recipient
 import com.instructure.canvasapi2.type.EnrollmentType
 import com.instructure.pandautils.compose.composables.MultipleValuesRowState
 import com.instructure.pandautils.compose.composables.SelectContextUiState
+import com.instructure.pandautils.features.inbox.utils.AttachmentCardItem
+import com.instructure.pandautils.features.inbox.utils.AttachmentStatus
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptionsDisabledFields
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptionsHiddenFields
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptionsMode
+import com.instructure.pandautils.features.inbox.utils.InboxComposeOptionsPreviousMessages
+import com.instructure.pandautils.utils.ScreenState
 import java.util.EnumMap
+import kotlin.math.max
 
 data class InboxComposeUiState(
+    val inboxComposeMode: InboxComposeOptionsMode = InboxComposeOptionsMode.NEW_MESSAGE,
     val selectContextUiState: SelectContextUiState = SelectContextUiState(),
     val recipientPickerUiState: RecipientPickerUiState = RecipientPickerUiState(),
     val inlineRecipientSelectorState: MultipleValuesRowState<Recipient> = MultipleValuesRowState(isSearchEnabled = true),
+    val disabledFields: InboxComposeOptionsDisabledFields = InboxComposeOptionsDisabledFields(),
+    val hiddenFields: InboxComposeOptionsHiddenFields = InboxComposeOptionsHiddenFields(),
+    val previousMessages: InboxComposeOptionsPreviousMessages? = null,
     val screenOption: InboxComposeScreenOptions = InboxComposeScreenOptions.None,
     val sendIndividual: Boolean = false,
     val subject: TextFieldValue = TextFieldValue(""),
     val body: TextFieldValue = TextFieldValue(""),
     val attachments: List<AttachmentCardItem> = emptyList(),
-    val screenState: ScreenState = ScreenState.Data,
+    val screenState: ScreenState = ScreenState.Content,
     val showConfirmationDialog: Boolean = false,
+    val hiddenBodyMessage: String? = null,
+    val enableCustomBackHandler: Boolean = true,
+    val signatureLoading: Boolean = false,
 ) {
     val isSendButtonEnabled: Boolean
         get() = selectContextUiState.selectedCanvasContext != null &&
                 recipientPickerUiState.selectedRecipients.isNotEmpty() &&
                 subject.text.isNotEmpty() && body.text.isNotEmpty() &&
                 attachments.all { it.status == AttachmentStatus.UPLOADED }
+    val isSendIndividualMandatory: Boolean
+        get() = recipientPickerUiState.selectedRecipients.sumOf { max(it.userCount, 1) } >= 100
+    val isSendIndividualEnabled: Boolean
+        get() = sendIndividual || isSendIndividualMandatory
 }
 
 sealed class InboxComposeViewModelAction {
@@ -47,6 +66,7 @@ sealed class InboxComposeViewModelAction {
     data object UpdateParentFragment: InboxComposeViewModelAction()
     data object OpenAttachmentPicker: InboxComposeViewModelAction()
     data class ShowScreenResult(val message: String): InboxComposeViewModelAction()
+    data class UrlSelected(val url: String): InboxComposeViewModelAction()
 }
 
 sealed class InboxComposeActionHandler {
@@ -65,6 +85,7 @@ sealed class InboxComposeActionHandler {
     data object AddAttachmentSelected : InboxComposeActionHandler()
     data class RemoveAttachment(val attachment: AttachmentCardItem) : InboxComposeActionHandler()
     data class OpenAttachment(val attachment: AttachmentCardItem) : InboxComposeActionHandler()
+    data class UrlSelected(val url: String) : InboxComposeActionHandler()
 }
 
 sealed class InboxComposeScreenOptions {
@@ -87,7 +108,7 @@ data class RecipientPickerUiState(
     val selectedRecipients: List<Recipient> = emptyList(),
     val searchValue: TextFieldValue = TextFieldValue(""),
     val screenOption: RecipientPickerScreenOption = RecipientPickerScreenOption.Roles,
-    val screenState: ScreenState = ScreenState.Data,
+    val screenState: ScreenState = ScreenState.Content,
 )
 
 sealed class RecipientPickerActionHandler {
@@ -102,11 +123,4 @@ sealed class RecipientPickerActionHandler {
 sealed class RecipientPickerScreenOption {
     data object Roles : RecipientPickerScreenOption()
     data object Recipients : RecipientPickerScreenOption()
-}
-
-sealed class ScreenState {
-    data object Loading: ScreenState()
-    data object Data: ScreenState()
-    data object Empty: ScreenState()
-    data object Error: ScreenState()
 }

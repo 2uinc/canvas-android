@@ -19,9 +19,11 @@ package com.instructure.parentapp.features.calendar
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.instructure.pandautils.analytics.SCREEN_VIEW_CALENDAR
+import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.features.calendar.BaseCalendarFragment
-import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.studentColor
 import com.instructure.parentapp.features.dashboard.SelectedStudentHolder
 import com.instructure.parentapp.util.ParentPrefs
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,6 +32,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
+@ScreenView(SCREEN_VIEW_CALENDAR)
 @AndroidEntryPoint
 class ParentCalendarFragment : BaseCalendarFragment() {
 
@@ -48,7 +52,7 @@ class ParentCalendarFragment : BaseCalendarFragment() {
 
     override fun applyTheme() {
         val student = ParentPrefs.currentStudent
-        val color = ColorKeeper.getOrGenerateUserColor(student).backgroundColor()
+        val color = student.studentColor
         ViewStyler.setStatusBarDark(requireActivity(), color)
     }
 

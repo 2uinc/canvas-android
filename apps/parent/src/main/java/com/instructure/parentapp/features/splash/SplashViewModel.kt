@@ -18,6 +18,7 @@
 package com.instructure.parentapp.features.splash
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.instructure.canvasapi2.models.User
@@ -25,12 +26,15 @@ import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryLaunch
 import com.instructure.pandautils.utils.ColorKeeper
-import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.FeatureFlagProvider
+import com.instructure.pandautils.utils.SHA256
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import sdk.pendo.io.Pendo
 import javax.inject.Inject
 
 
@@ -40,11 +44,14 @@ class SplashViewModel @Inject constructor(
     private val repository: SplashRepository,
     private val apiPrefs: ApiPrefs,
     private val colorKeeper: ColorKeeper,
-    private val themePrefs: ThemePrefs,
+    private val featureFlagProvider: FeatureFlagProvider,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _events = Channel<SplashAction>()
     val events = _events.receiveAsFlow()
+
+    private val qrMasqueradeId = savedStateHandle.get<Long>(Const.QR_CODE_MASQUERADE_ID) ?: 0L
 
     init {
         loadInitialData()
@@ -59,10 +66,32 @@ class SplashViewModel @Inject constructor(
             colors?.let { colorKeeper.addToCache(it) }
 
             val theme = repository.getTheme()
-            theme?.let { themePrefs.applyCanvasTheme(it, context) }
+            theme?.let { _events.send(SplashAction.ApplyTheme(it)) }
+
+            if (apiPrefs.canBecomeUser == null && qrMasqueradeId == 0L) {
+                if (apiPrefs.domain.startsWith("siteadmin", true)) {
+                    apiPrefs.canBecomeUser = true
+                } else {
+                    apiPrefs.canBecomeUser = repository.getBecomeUserPermission()
+                }
+            }
+
+            val sendUsageMetrics = repository.getSendUsageMetrics()
+            if (sendUsageMetrics) {
+                val userWithIds = repository.getSelfWithUuid()
+                val visitorData = mapOf(
+                    "locale" to apiPrefs.effectiveLocale,
+                )
+                val accountData = mapOf(
+                    "surveyOptOut" to featureFlagProvider.checkAccountSurveyNotificationsFlag()
+                )
+                Pendo.startSession(userWithIds?.uuid?.SHA256().orEmpty(), userWithIds?.accountUuid.orEmpty(), visitorData, accountData)
+            } else {
+                Pendo.endSession()
+            }
 
             val students = repository.getStudents()
-            if (students.isEmpty()) {
+            if (students.isEmpty() && apiPrefs.canBecomeUser == false) {
                 _events.send(SplashAction.NavigateToNotAParentScreen)
             } else {
                 _events.send(SplashAction.InitialDataLoadingFinished)

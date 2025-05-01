@@ -26,6 +26,7 @@ import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Page
 import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.interactions.bookmarks.Bookmarkable
 import com.instructure.interactions.bookmarks.Bookmarker
 import com.instructure.interactions.router.Route
@@ -41,6 +42,7 @@ import com.instructure.student.events.PageUpdatedEvent
 import com.instructure.student.features.pages.details.PageDetailsFragment
 import com.instructure.student.fragment.ParentFragment
 import com.instructure.student.interfaces.AdapterToFragmentCallback
+import com.instructure.student.offline.addOfflineDataForPage
 import com.instructure.student.router.RouteMatcher
 import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
@@ -60,7 +62,8 @@ class PageListFragment : ParentFragment(), Bookmarkable {
 
     private var rootView: View? = null
 
-    private var canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
+    @get:PageViewUrlParam("canvasContext")
+    var canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
 
     private var recyclerAdapter: PageListRecyclerAdapter? = null
     private var defaultSelectedPageTitle = PageListRecyclerAdapter.FRONT_PAGE_DETERMINER // blank string is used to determine front page
@@ -110,7 +113,7 @@ class PageListFragment : ParentFragment(), Bookmarkable {
                     PageDetailsFragment.makeRoute(
                         canvasContext,
                         page
-                    )
+                    ).addOfflineDataForPage(page)
                 )
             }
 

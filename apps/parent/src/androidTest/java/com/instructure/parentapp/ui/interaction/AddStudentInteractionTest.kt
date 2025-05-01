@@ -29,10 +29,6 @@ import com.instructure.canvas.espresso.mockCanvas.MockCanvas
 import com.instructure.canvas.espresso.mockCanvas.addPairingCode
 import com.instructure.canvas.espresso.mockCanvas.addStudent
 import com.instructure.canvas.espresso.mockCanvas.init
-import com.instructure.parentapp.ui.pages.AddStudentPage
-import com.instructure.parentapp.ui.pages.ManageStudentsPage
-import com.instructure.parentapp.ui.pages.PairingCodePage
-import com.instructure.parentapp.ui.pages.QrPairingPage
 import com.instructure.parentapp.utils.ParentComposeTest
 import com.instructure.parentapp.utils.tokenLogin
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -43,11 +39,6 @@ import org.junit.Test
 @HiltAndroidTest
 class AddStudentInteractionTest : ParentComposeTest() {
 
-    private val manageStudentPage = ManageStudentsPage(composeTestRule)
-    private val addStudentPage = AddStudentPage(composeTestRule)
-    private val pairingCodePage = PairingCodePage(composeTestRule)
-    private val qrPairingPage = QrPairingPage(composeTestRule)
-
     private lateinit var activityResult: Instrumentation.ActivityResult
 
     @Test
@@ -56,24 +47,24 @@ class AddStudentInteractionTest : ParentComposeTest() {
         val student = data.addStudent(data.courses.values.toList())
         val code = data.addPairingCode(student)
 
-        goToAddStudent(data)
-        addStudentPage.tapPairingCode()
+        goToManageStudentsAddStudent(data)
+        addStudentBottomPage.clickOnPairingCode()
 
         pairingCodePage.enterPairingCode(code)
-        pairingCodePage.tapSubmit()
+        pairingCodePage.clickOkButton()
 
         composeTestRule.waitForIdle()
-        manageStudentPage.assertStudentItemDisplayed(data.students.first())
+        manageStudentsPage.assertStudentItemDisplayed(data.students.first().shortName!!)
     }
 
     @Test
     fun testAddStudentCodeError() {
         val data = initData()
-        goToAddStudent(data)
-        addStudentPage.tapPairingCode()
+        goToManageStudentsAddStudent(data)
+        addStudentBottomPage.clickOnPairingCode()
 
         pairingCodePage.enterPairingCode("invalid")
-        pairingCodePage.tapSubmit()
+        pairingCodePage.clickOkButton()
         pairingCodePage.assertErrorDisplayed()
     }
 
@@ -90,8 +81,8 @@ class AddStudentInteractionTest : ParentComposeTest() {
             )
         })
 
-        goToAddStudent(data)
-        addStudentPage.tapQrCode()
+        goToManageStudentsAddStudent(data)
+        addStudentBottomPage.clickOnQRCode()
         Intents.init()
         try {
             intending(
@@ -105,14 +96,14 @@ class AddStudentInteractionTest : ParentComposeTest() {
         }
 
         composeTestRule.waitForIdle()
-        manageStudentPage.assertStudentItemDisplayed(data.students.first())
+        manageStudentsPage.assertStudentItemDisplayed(data.students.first().shortName!!)
     }
 
     @Test
     fun testAddStudentQrCodeError() {
         val data = initData()
-        goToAddStudent(data)
-        addStudentPage.tapQrCode()
+        goToManageStudentsAddStudent(data)
+        addStudentBottomPage.clickOnQRCode()
 
         activityResult = Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().apply {
             putExtra(
@@ -139,20 +130,20 @@ class AddStudentInteractionTest : ParentComposeTest() {
     @Test
     fun testAddStudentPairingCodeResetError() {
         val data = initData()
-        goToAddStudent(data)
+        goToManageStudentsAddStudent(data)
         val student = data.addStudent(data.courses.values.toList())
         val code = data.addPairingCode(student)
 
-        addStudentPage.tapPairingCode()
+        addStudentBottomPage.clickOnPairingCode()
 
         pairingCodePage.enterPairingCode("invalid")
-        pairingCodePage.tapSubmit()
+        pairingCodePage.clickOkButton()
         pairingCodePage.assertErrorDisplayed()
 
         pairingCodePage.enterPairingCode(code)
         pairingCodePage.assertErrorNotDisplayed()
-        pairingCodePage.tapSubmit()
-        manageStudentPage.assertStudentItemDisplayed(data.students.first())
+        pairingCodePage.clickOkButton()
+        manageStudentsPage.assertStudentItemDisplayed(data.students.first().shortName!!)
     }
 
     private fun initData(): MockCanvas {
@@ -165,13 +156,13 @@ class AddStudentInteractionTest : ParentComposeTest() {
         return data
     }
 
-    private fun goToAddStudent(data: MockCanvas) {
+    private fun goToManageStudentsAddStudent(data: MockCanvas) {
         val parent = data.parents.first()
         val token = data.tokenFor(parent)!!
         tokenLogin(data.domain, token, parent)
-        dashboardPage.openNavigationDrawer()
-        dashboardPage.tapManageStudents()
-        manageStudentPage.tapAddStudent()
+        dashboardPage.openLeftSideMenu()
+        leftSideNavigationDrawerPage.clickManageStudents()
+        manageStudentsPage.tapAddStudent()
     }
 
     override fun enableAndConfigureAccessibilityChecks() {

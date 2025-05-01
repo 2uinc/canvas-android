@@ -16,33 +16,58 @@
  */
 package com.instructure.parentapp.util.navigation
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.pandautils.navigation.WebViewRouter
+import com.instructure.pandautils.utils.toast
+import com.instructure.parentapp.R
+import com.instructure.parentapp.features.main.MainActivity
 
-class ParentWebViewRouter(val activity: FragmentActivity) : WebViewRouter {
+class ParentWebViewRouter(
+    private val activity: FragmentActivity,
+    private val navigation: Navigation
+) : WebViewRouter {
 
     override fun canRouteInternally(url: String, routeIfPossible: Boolean): Boolean {
-        TODO("Not yet implemented")
+        return navigation.canNavigate(activity, url, routeIfPossible)
     }
 
-    override fun routeInternally(url: String) {
-        TODO("Not yet implemented")
+    override fun routeInternally(url: String, extras: Bundle?) {
+        navigation.canNavigate(activity, url, true)
     }
 
-    override fun openMedia(url: String, mime: String, filename: String, canvasContext: CanvasContext?) {
-        TODO("Not yet implemented")
+    override fun openMedia(url: String, mime: String, filename: String, canvasContext: CanvasContext?) = navigate(url) {
+        navigation.navigate(activity, navigation.internalWebViewRoute(url, url))
     }
 
-    override fun routeExternally(url: String) {
-        TODO("Not yet implemented")
+    override fun routeExternally(url: String) = navigate(url) {
+        navigation.navigate(activity, navigation.internalWebViewRoute(url, url))
     }
 
-    override fun openLtiScreen(canvasContext: CanvasContext?, url: String) {
-        TODO("Not yet implemented")
+    override fun openLtiScreen(canvasContext: CanvasContext?, url: String) = navigate(url) {
+        navigation.navigate(activity, navigation.ltiLaunchRoute(url, activity.getString(R.string.utils_externalToolTitle), sessionlessLaunch = true))
     }
 
-    override fun launchInternalWebViewFragment(url: String, canvasContext: CanvasContext?) {
-        TODO("Not yet implemented")
+    override fun launchInternalWebViewFragment(url: String, canvasContext: CanvasContext?) = navigate(url) {
+        navigation.navigate(activity, navigation.internalWebViewRoute(url, canvasContext?.name ?: url))
+    }
+
+    private fun navigate(url: String, route: () -> Unit) {
+        if (activity is MainActivity) {
+            route()
+        } else {
+            navigateToExternalBrowser(url)
+        }
+    }
+
+    private fun navigateToExternalBrowser(url: String) = try {
+        val urlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        activity.startActivity(urlIntent)
+    } catch (e: ActivityNotFoundException) {
+        activity.toast(R.string.inboxMessageFailedToOpenUrl)
     }
 }

@@ -39,7 +39,7 @@ import com.instructure.teacher.viewinterface.ViewPdfFragmentView
 import com.pspdfkit.configuration.PdfConfiguration
 import com.pspdfkit.configuration.page.PageScrollDirection
 import com.pspdfkit.ui.PdfFragment
-import instructure.androidblueprint.PresenterFragment
+import com.instructure.pandautils.blueprint.PresenterFragment
 import org.greenrobot.eventbus.EventBus
 
 @ScreenView(SCREEN_VIEW_VIEW_PDF)
@@ -109,12 +109,13 @@ class ViewPdfFragment : PresenterFragment<ViewPdfFragmentPresenter, ViewPdfFragm
         if (isInModulesPager) {
             toolbar.setupBackButtonWithExpandCollapseAndBack(this@ViewPdfFragment) {
                 toolbar.updateToolbarExpandCollapseIcon(this@ViewPdfFragment)
-                ViewStyler.themeToolbarColored(requireActivity(), toolbar, mToolbarColor, requireContext().getColor(R.color.white))
+                ViewStyler.themeToolbarColored(requireActivity(), toolbar, mToolbarColor, requireContext().getColor(R.color.textLightest))
                 (activity as MasterDetailInteractions).toggleExpandCollapse()
             }
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar, mToolbarColor, requireContext().getColor(R.color.white))
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar, mToolbarColor, requireContext().getColor(R.color.textLightest))
         } else if (isTablet && mToolbarColor != 0) {
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar, mToolbarColor, requireContext().getColor(R.color.white))
+            val textColor = if (mToolbarColor == ThemePrefs.primaryColor) ThemePrefs.primaryTextColor else requireContext().getColor(R.color.textLightest)
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar, mToolbarColor, textColor)
         } else {
             toolbar.setupBackButton {
                 requireActivity().onBackPressed()

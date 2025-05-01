@@ -25,6 +25,7 @@ import com.instructure.student.activity.NavigationActivity
 import com.instructure.pandautils.receivers.PushExternalReceiver
 
 class StudentPushExternalReceiver : PushExternalReceiver() {
+
     override fun getAppColor() = R.color.login_studentAppTheme
 
     override fun getAppName(context: Context): String = context.getString(R.string.student_app_name)

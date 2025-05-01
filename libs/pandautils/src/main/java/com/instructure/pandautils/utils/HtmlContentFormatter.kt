@@ -17,6 +17,7 @@
 package com.instructure.pandautils.utils
 
 import android.content.Context
+import android.net.Uri
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.models.AuthenticatedSession
@@ -24,6 +25,7 @@ import com.instructure.canvasapi2.utils.weave.apiAsync
 import com.instructure.pandautils.R
 import com.instructure.pandautils.discussions.DiscussionHtmlTemplates
 import com.instructure.pandautils.views.CanvasWebView
+import org.jsoup.Jsoup
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
@@ -39,21 +41,63 @@ class HtmlContentFormatter(
 
     suspend fun formatHtmlWithIframes(html: String): String {
         try {
-            if (html.contains("<iframe")) {
-                var newHTML: String = html
+            var newHTML = html
+            val document = Jsoup.parse(newHTML)
+            document.getElementsByTag("iframe").forEach { element ->
+                if (isWistiaIFrame(element.outerHtml())) {
+                    // Replace the Wistia iFrame with the Wistia divs
+                    var stringToReplace = ""
+                    val src = element.attr("src")
+                    val srcUri = Uri.parse(src)
+                    val iFrameIndex = srcUri.pathSegments.indexOf("iframe")
+                    if (iFrameIndex != -1 && srcUri.pathSegments.size > iFrameIndex + 1) {
+                        val wistiaId = srcUri.pathSegments[iFrameIndex + 1]
+                        stringToReplace += "<script src=\"//fast.wistia.com/embed/medias/$wistiaId.jsonp\" async></script><div class=\"wistia_embed wistia_async_$wistiaId\" src=\"$src\" style=\"margin-top:10px;height:100%;width:100%\"></div>\n"
+                        val wistiaTranscriptionTag =
+                            "<wistia-transcript media-id=\"$wistiaId\" style=\"padding-top: 40px;height:400px;\"></wistia-transcript>"
+                        val parent = element.parent()
+                        var isTranscriptIncluded = false
+                        if (parent.attr("class") == "wistia_responsive_wrapper") {
+                            val parentOfParent = parent.parent()
+                            if (parentOfParent.attr("class") == "wistia_responsive_padding") {
+                                parentOfParent.after(wistiaTranscriptionTag)
+                                isTranscriptIncluded = true
+                            }
+                        }
+                        if (!isTranscriptIncluded) {
+                            stringToReplace = "<div class=\"wistia_responsive_padding\" style=\"padding: 56.25% 0 0 0; position: relative;\"> \n" +
+                                    "<div class=\"wistia_responsive_wrapper\" style=\"height: 100%; left: 0; position: absolute; top: 0; width: 100%;\">$stringToReplace</div></div>" +
+                                    wistiaTranscriptionTag
+                        }
+                        val v1Link = "https://fast.wistia.com/assets/external/E-v1.js"
+                        if (!newHTML.contains(v1Link)) {
+                            stringToReplace += "<script src=\"$v1Link\" async></script>\n"
+                        }
+                        val transcriptLink = "https://fast.wistia.net/assets/external/transcript.js"
+                        if (!newHTML.contains(transcriptLink)) {
+                            stringToReplace += "<script src=\"$transcriptLink\" async></script>\n"
+                        }
+                        element.replaceWith(Jsoup.parse(stringToReplace))
 
+                        newHTML = document.html()
+                    }
+                }
+            }
+
+            newHTML = newHTML.replace("<#root>", "")
+
+            if (newHTML.contains("<iframe")) {
                 // First we need to find LTIs by looking for iframes
-                val iframeMatcher = Pattern.compile("<iframe(.|\\n)*?iframe>").matcher(html)
+                val iframeMatcher = Pattern.compile("<iframe(.|\\n)*?iframe>").matcher(newHTML)
 
                 while (iframeMatcher.find()) {
-                    val iframe = iframeMatcher.group(0)
+                    val iframe = iframeMatcher.group(0) ?: ""
                     // We found an iframe, we need to do a few things...
                     val matcher = Pattern.compile("src=\"([^\"]+)\"").matcher(iframe)
                     // First we find the src
                     if (matcher.find()) {
                         // Snag that src
-                        val srcUrl = matcher.group(1)
-
+                        val srcUrl = matcher.group(1) ?: ""
                         if (hasExternalTools(srcUrl)) {
                             // Handle the LTI case
                             val newIframe = externalToolIframe(srcUrl, iframe, context)
@@ -87,12 +131,17 @@ class HtmlContentFormatter(
 
                 return CanvasWebView.applyWorkAroundForDoubleSlashesAsUrlSource(newHTML)
             } else {
-                return html
+                return newHTML
             }
         } catch (e: Exception) {
             crashlytics.recordException(e)
             return html
         }
+    }
+
+    private fun isWistiaIFrame(iFrame: String): Boolean {
+        return iFrame.contains("wistia") &&
+                iFrame.contains("embed")
     }
 
     private suspend fun externalToolIframe(srcUrl: String, iframe: String, context: Context): String {

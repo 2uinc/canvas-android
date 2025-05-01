@@ -16,13 +16,14 @@
  */
 package com.instructure.student.navigation
 
+import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.pandautils.features.lti.LtiLaunchFragment
 import com.instructure.pandautils.navigation.WebViewRouter
 import com.instructure.student.activity.BaseRouterActivity
 import com.instructure.student.fragment.InternalWebviewFragment
-import com.instructure.student.fragment.LtiLaunchFragment
 import com.instructure.student.router.RouteMatcher
 
 class StudentWebViewRouter(val activity: FragmentActivity) : WebViewRouter {
@@ -31,13 +32,17 @@ class StudentWebViewRouter(val activity: FragmentActivity) : WebViewRouter {
         return RouteMatcher.canRouteInternally(activity, url, ApiPrefs.domain, routeIfPossible = routeIfPossible, allowUnsupported = false)
     }
 
-    override fun routeInternally(url: String) {
-        RouteMatcher.canRouteInternally(activity, url, ApiPrefs.domain, routeIfPossible = true, allowUnsupported = false)
+    override fun routeInternally(url: String, extras: Bundle?) {
+        if (extras != null) {
+            RouteMatcher.routeUrl(activity, url, ApiPrefs.domain, extras)
+        } else {
+            RouteMatcher.canRouteInternally(activity, url, ApiPrefs.domain, routeIfPossible = true, allowUnsupported = false)
+        }
     }
 
     override fun openMedia(url: String, mime: String, filename: String, canvasContext: CanvasContext?) {
         if (canvasContext != null && activity is BaseRouterActivity) {
-            activity.openMedia(canvasContext, mime, url, filename)
+            activity.openMedia(canvasContext, mime, url, filename, null)
         } else {
             RouteMatcher.openMedia(activity, url)
         }
@@ -48,7 +53,7 @@ class StudentWebViewRouter(val activity: FragmentActivity) : WebViewRouter {
     }
 
     override fun openLtiScreen(canvasContext: CanvasContext?, url: String) {
-        LtiLaunchFragment.routeLtiLaunchFragment(activity, canvasContext, url)
+        RouteMatcher.route(activity, LtiLaunchFragment.makeSessionlessLtiUrlRoute(activity, canvasContext, url))
     }
 
     override fun launchInternalWebViewFragment(url: String, canvasContext: CanvasContext?) {

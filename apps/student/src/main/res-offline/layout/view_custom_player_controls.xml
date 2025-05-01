@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/controlsWrapper"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/container_controllers"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_weight="1"
+        android:background="@drawable/custom_player_controls_bg"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <FrameLayout
+            android:id="@+id/playLayout"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/exo_play"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/customPlayerColor"
+                app:srcCompat="@drawable/exo_controls_play" />
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/exo_pause"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/customPlayerColor"
+                app:srcCompat="@drawable/exo_controls_pause" />
+        </FrameLayout>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/exo_position"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/playLayout"
+            android:gravity="center"
+            android:padding="5dp"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/playLayout"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="SmallSp"
+            tools:text="00:00:00" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/exo_duration"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="4dp"
+            android:gravity="center"
+            android:padding="5dp"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/controlsRightPanelLayout"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="SmallSp"
+            tools:text="00:00:00" />
+
+        <com.google.android.exoplayer2.ui.DefaultTimeBar
+            android:id="@id/exo_progress"
+            android:layout_width="0dp"
+            android:layout_height="26dp"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/exo_duration"
+            android:layout_toEndOf="@id/exo_position"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/exo_duration"
+            app:layout_constraintStart_toEndOf="@id/exo_position"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/controlsRightPanelLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <FrameLayout
+                android:id="@+id/subtitleLayout"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:visibility="gone">
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/subtitleOnButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:tint="@android:color/white"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_baseline_subtitles_on" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/subtitleOffButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:tint="@android:color/white"
+                    app:srcCompat="@drawable/ic_baseline_subtitles_off" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/audioLayout"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/muteButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:tint="@android:color/white"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_baseline_volume_off" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/unMuteButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:tint="@android:color/white"
+                    app:srcCompat="@drawable/ic_baseline_volume_up" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/fullscreenLayout"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/enterFullscreenButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:tint="@android:color/white"
+                    app:srcCompat="@drawable/ic_fullscreen_black" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/exitFullscreenButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:tint="@android:color/white"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_fullscreen_exit_black" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/speedLayout"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/speedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/customPlayerColor"
+                    android:tint="@android:color/white"
+                    app:srcCompat="@drawable/ic_baseline_slow_motion_video_24" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/castLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:visibility="gone">
+
+                <androidx.mediarouter.app.MediaRouteButton
+                    android:id="@+id/castButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:mediaRouteButtonTint="@android:color/white" />
+            </FrameLayout>
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+         

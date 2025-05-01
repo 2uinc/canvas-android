@@ -1,0 +1,1339 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="minimal-ui,width=device-width,initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="apple-mobile-web-app-title" content="onlyWebPro">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    #PLAYER#
+
+    <style>
+        .u--sr-only {
+            border: 0;
+            clip: rect(0, 0, 0, 0);
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            padding: 0;
+            position: absolute;
+            width: 1px
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        #hemingway .app-header {
+            display: none
+        }
+
+        #hemingway #component-holder {
+            height: 100% !important
+        }
+
+        #hemingway #ghostbar,#hemingway #ghostbar-backdrop {
+            display: none !important;
+            pointer-events: none !important
+        }
+
+        #hemingway .panel-otherAssets h3 {
+            display: none !important
+        }
+
+        #hemingway .main-toolbar {
+            display: none !important
+        }
+
+        #hemingway .video-viewer .video-holder {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important
+        }
+
+        #hemingway .main-toolbar {
+            display: none
+        }
+
+        #hemingway header {
+            height: 45px;
+            background: #111
+        }
+
+        #hemingway .annotate-container {
+            height: calc(100% - 60px);
+            width: 100%
+        }
+
+        #hemingway .global-right-sidebar .tabs {
+            display: none !important
+        }
+
+        #hemingway .header-select {
+            color: #fff;
+            background: #111;
+            border: 0;
+            height: 100%;
+            font-size: 20px;
+            float: left;
+            margin-right: 2em
+        }
+
+        #hemingway .comment-reply-root {
+            display: none !important
+        }
+
+        #hemingway div#video-annotator {
+            right: 0;
+            top: 0
+        }
+
+        .sidebarResize {
+            display: none !important
+        }
+
+        .vjs-new-annotation,.vjs-showannotations-annotation,.vjs-statistics-annotation {
+            display: none !important
+        }
+
+        .main-toolbar {
+            display: none !important
+        }
+
+        .video-viewer .video-holder {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important
+        }
+
+        .main-toolbar {
+            display: none
+        }
+
+        .annotate-container {
+            height: calc(100% - 60px);
+            width: 100%
+        }
+
+        .global-right-sidebar .tabs {
+            display: none !important
+        }
+
+        .header-select {
+            color: #fff;
+            background: #111;
+            border: 0;
+            height: 100%;
+            font-size: 20px;
+            float: left;
+            margin-right: 2em
+        }
+
+        .video-holder.top {
+            margin: 0
+        }
+
+        .video-js {
+            background: none
+        }
+
+        .video-js .vjs-progress-control:hover .vjs-play-progress .vjs-time-tooltip {
+            visibility: hidden
+        }
+
+        .global-widget-holder {
+            background: #000;
+            overflow: inherit !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-tech {
+            margin-top: 54px;
+            margin-bottom: 53px;
+            position: unset !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js.no-chapter-nav .vjs-tech {
+            margin-top: 0
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-menu .vjs-menu-content {
+            background-color: rgba(0,0,0,0.8) !important;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px 0 rgba(4,15,26,0.5);
+            font-size: 14px;
+            bottom: 3em;
+            max-height: 20em;
+            width: 70px;
+            border-color: #6f6f6f;
+            border-style: solid;
+            border-width: 1px;
+            margin-bottom: 0 !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-menu .vjs-menu-content .vjs-menu-item:hover {
+            background-color: rgba(255,255,255,0.3);
+            color: inherit;
+            font-weight: normal
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-menu .vjs-menu-content .vjs-menu-item:hover.vjs-selected {
+            font-weight: 900
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-playback-rate .vjs-menu li {
+            font-size: 0.9em
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-progress-control .vjs-progress-holder .vjs-play-progress {
+            background: linear-gradient(270deg, #4464F9 0%, #6ADBE0 100%) !important;
+            display: block !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-progress-control .vjs-progress-holder .vjs-play-progress::after {
+            background: #CFD8E1;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px 0 rgba(0,0,0,0.5);
+            content: '';
+            height: 16px;
+            right: -8px;
+            position: absolute;
+            bottom: -3px;
+            width: 16px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-play-control {
+            width: 32px;
+            margin-left: 4px;
+            margin-right: -6px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-button:nth-last-child(5) {
+            width: 30px !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-button .vjs-icon-placeholder::before {
+            line-height: 1.9583333333
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-playback-rate {
+            width: 32px;
+            margin-right: 4px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-playback-rate .vjs-playback-rate-value {
+            line-height: 48px !important;
+            font-size: 14px !important;
+            font-weight: 600
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-menu-button {
+            min-width: initial
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-oyster-caption-button-label {
+            vertical-align: bottom
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-menu-button-popup .vjs-menu {
+            left: -25px !important;
+            height: 4em;
+            margin-bottom: 5px !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control.vjs-fullscreen-control {
+            width: 38px !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-picture-in-picture-control {
+            width: 38px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-volume-panel {
+            width: 38px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-volume-panel.vjs-hover {
+            width: 10em
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-time-control {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            font-size: 14px !important;
+            max-width: 38px
+        }
+
+        @media screen and (max-width: 1090px) {
+            .hemingway .video-viewer .video-holder .video-js .vjs-time-control {
+                display:none !important
+            }
+        }
+
+        @media screen and (max-width: 1090px) {
+            .hemingway .video-viewer .video-holder .video-js #vjs-quality-selection-menu {
+                display:none !important
+            }
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-oyster-quality-selection .vjs-control-text {
+            font-weight: 600;
+            line-height: 46px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-oyster-caption-button-label.active::after,.hemingway .video-viewer .video-holder .video-js .vjs-oyster-view-selection-label.active::after {
+            left: 3px
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-text-track-display {
+            z-index: 10000;
+            transform: translateY(-3em)
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-text-track-display>div>div {
+            top: initial !important;
+            bottom: 0px !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-text-track-display>div>div>div {
+            display: inline-block !important;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px 0 rgba(4,15,26,0.5);
+            padding: 8px 14px;
+            border-color: #6f6f6f;
+            border-style: solid;
+            border-width: 1px;
+            background-color: rgba(0,0,0,0.8) !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-tech,.video-js .vjs-tech,.hemingway .video-viewer .video-holder .video-js,.video-annotator-dimensions,.video-js,#hemingway .video-viewer .video-holder,.hemingway .video-viewer .video-holder,.video-viewer .video-holder,.video-viewer .video-holder,.hemingway .global-widget-holder,.hemingway .renderer-container,#hemingway #component-holder,.hemingway #component-holder,.hemingway,#hemingway,.player-wrapper {
+            height: initial !important
+        }
+
+        .slides {
+            color: initial;
+            font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+            height: 100%;
+            line-height: 1.1
+        }
+
+        .slides .slide {
+            padding: 1rem;
+            font-size: 0.875rem;
+            min-width: 30rem;
+            transform-origin: 0 0
+        }
+
+        .slides .slide ul,.slides .slide ol {
+            margin: 0.25rem
+        }
+
+        .slides .slide .lowlight {
+            opacity: .4
+        }
+
+        .slides .slide h4.highlight {
+            padding: 0.375rem 0.5rem;
+            display: inline-block
+        }
+
+        .slides .slide span.MathJax_MathML,.slides .slide span.MathJax {
+            display: block;
+            text-align: center;
+            font-size: 1.5rem
+        }
+
+        .slides .slide span.MathJax_MathML span.mrow,.slides .slide span.MathJax span.mrow {
+            padding-bottom: 0.12rem;
+            white-space: nowrap
+        }
+
+        .slides .slide span.mrow,.slides .slide mrow {
+            padding-bottom: 0.12rem;
+            white-space: nowrap
+        }
+
+        .slides .slide h1 span.MathJax_MathML,.slides .slide h1 span.MathJax,.slides .slide h2 span.MathJax_MathML,.slides .slide h2 span.MathJax,.slides .slide h3 span.MathJax_MathML,.slides .slide h3 span.MathJax,.slides .slide h4 span.MathJax_MathML,.slides .slide h4 span.MathJax,.slides .slide p span.MathJax_MathML,.slides .slide p span.MathJax,.slides .slide li span.MathJax_MathML,.slides .slide li span.MathJax {
+            display: inline
+        }
+
+        .slides .fade-top {
+            min-height: 20px;
+            width: 100%;
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            opacity: 0.8;
+            top: 85px
+        }
+
+        .slides .fade-bottom {
+            min-height: 50px;
+            width: 100%;
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            bottom: 0;
+            opacity: 0.8;
+            transform: translateY(-50%)
+        }
+
+        .slides .slide-announce {
+            display: none
+        }
+
+        .slide-controls {
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-top: 4px
+        }
+
+        .slide-controls .slide-next[disabled],.slide-controls .slide-prev[disabled] {
+            opacity: 0.25
+        }
+
+        .slide-controls .slide-count {
+            margin: 0 0.5rem
+        }
+
+        .slide-controls .slide-count span {
+            font-size: 0.875rem;
+            margin: 0 0.125rem;
+            vertical-align: top
+        }
+
+        .slide-controls .slide-count span:first-child {
+            font-weight: bold
+        }
+
+        .slide-controls button {
+            padding: 0;
+            color: #fff;
+            background: none;
+            border: none;
+            cursor: pointer
+        }
+
+        .slide-controls .print-button {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-right: 1rem;
+            color: #41bdff;
+            font-weight: bold
+        }
+
+        .slide-controls .print-button i.print-icon {
+            margin-right: 10px
+        }
+
+        .slides-wrapper {
+            padding: 2rem;
+            min-height: calc(100% - 4rem)
+        }
+
+        .slides-wrapper .highlight {
+            background-color: #fff98a;
+            padding: 0 0.25rem;
+            border-radius: 1px
+        }
+
+        .u--sr-only {
+            border: 0;
+            clip: rect(0, 0, 0, 0);
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            padding: 0;
+            position: absolute;
+            width: 1px
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        body,html {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%
+        }
+
+        #hemingway {
+            height: 100%;
+            width: 100%;
+            background: #333
+        }
+
+        body {
+            background: #212021;
+            color: #fff;
+            font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+            display: grid
+        }
+
+        #oyster {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            position: relative
+        }
+
+        .oyster-wrapper {
+            max-width: 90rem;
+            margin: 0 auto
+        }
+
+        .oyster-heading {
+            margin: 2.3125rem 2rem 0
+        }
+
+        @media (min-width: 1280px) {
+            .oyster-heading {
+                margin-left:4rem;
+                margin-right: 4rem
+            }
+        }
+
+        .oyster-heading h1 {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0
+        }
+
+        .oyster-grid {
+            background: #212021;
+            display: grid;
+            grid-template-rows: 10px auto minmax(25.4375rem, 1fr);
+            grid-template-columns: repeat(12, minmax(2.75rem, 1fr));
+            grid-gap: 1.5rem 2.125rem;
+            margin: 0 auto;
+            max-width: 90rem;
+            max-height: 47.5rem;
+            padding: 0 2rem 2rem
+        }
+
+        @media (min-width: 1280px) {
+            .oyster-grid {
+                grid-column-gap:5rem;
+                grid-template-columns: repeat(12, 1fr);
+                padding-left: 4rem;
+                padding-right: 4rem
+            }
+        }
+
+        .oyster-grid .oyster-grid-video {
+            background: #0C121A;
+            grid-column-end: span 4;
+            grid-row-start: 2
+        }
+
+        .oyster-grid .oyster-grid-stage {
+            background: #fff;
+            color: #404040;
+            grid-row-start: 2;
+            grid-row-end: span 2;
+            grid-column-start: 5;
+            grid-column-end: span 8;
+            overflow-x: auto
+        }
+
+        .oyster-grid .oyster-grid-transcript {
+            padding: 1.5rem 2rem;
+            background: #2f2f2f;
+            grid-column-end: span 4;
+            grid-column-start: 1
+        }
+
+        .oyster-grid .oyster-grid-transcript.transcript-only {
+            grid-row-end: span 2;
+            grid-column-start: 5;
+            grid-column-end: span 8
+        }
+
+        .oyster-grid .stage-header {
+            align-items: center;
+            display: grid;
+            grid-column-end: span 12
+        }
+
+        .player-wrapper {
+            overflow: hidden;
+            position: relative
+        }
+
+        .player-wrapper #app {
+            background: #000000;
+            width: 100%;
+            height: 100%
+        }
+
+        .player-wrapper #index {
+            grid-row-start: 2;
+            grid-row-end: 2;
+            grid-column: 1;
+            width: 100%;
+            position: absolute;
+            z-index: 1000
+        }
+
+        .player-wrapper.transcript-only .hemingway .video-viewer .video-holder .video-js .vjs-tech {
+            margin-top: 0
+        }
+
+        .hemingway #component-holder .vjs-oyster-view-selection-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            margin: 0 auto;
+            padding: 30px 0;
+            background: #fff;
+            z-index: 0
+        }
+
+        .hemingway #component-holder .vjs-oyster-view-selection-container .pip-slides {
+            height: 100%;
+            margin: 0 auto;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            transform: translate(-15%, 0);
+            width: calc(55% + 1rem)
+        }
+
+        .hemingway #component-holder .vjs-oyster-view-selection-container .pip-slides.has-vertical-scroll {
+            overflow-y: scroll
+        }
+
+        @media screen and (max-width: 63.9375rem) {
+            .hemingway #component-holder .vjs-oyster-view-selection-container .pip-slides {
+                transform:translate(0, 0);
+                width: 80%
+            }
+        }
+
+        @media screen and (max-width: 47.9375rem) {
+            .hemingway #component-holder .vjs-oyster-view-selection-container .pip-slides {
+                width:100%
+            }
+        }
+
+        @media screen and (min-width: 64.0625rem) {
+            .hemingway #component-holder .vjs-oyster-view-selection-container .pip-slides .slide {
+                transform:scale(1.25);
+                width: 80%
+            }
+        }
+
+        @media screen and (min-width: 80.0625rem) and (min-height: 51.9375rem) {
+            .hemingway #component-holder .vjs-oyster-view-selection-container .pip-slides .slide {
+                transform:scale(1.5);
+                width: 68%
+            }
+        }
+
+        .hemingway #component-holder .vjs-oyster-view-selection-container .pip-video {
+            top: unset;
+            left: unset;
+            right: 10px;
+            bottom: 75px;
+            border-radius: 8px;
+            box-shadow: 0 0 2px 0 rgba(22,43,63,0.25),0 1px 8px 0 rgba(22,43,63,0.15);
+            max-height: 216px;
+            max-width: 384px;
+            height: 16.35vw;
+            width: 28.9vw;
+            z-index: 100;
+            pointer-events: none;
+            position: absolute
+        }
+
+        .hemingway #component-holder {
+            height: 100%
+        }
+
+        .app-header {
+            display: none
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-overlay {
+            z-index: 1000000
+        }
+
+        .video-holder {
+            background: #000
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-big-play-button {
+            display: none
+        }
+
+        .circular {
+            margin: 0 auto;
+            -webkit-animation: rotate 2s linear infinite;
+            animation: rotate 2s linear infinite;
+            height: 20%;
+            -webkit-transform-origin: center center;
+            transform-origin: center center;
+            width: 20%;
+            display: block;
+            position: fixed;
+            left: 40%;
+            top: 40%;
+            z-index: 1
+        }
+
+        .path {
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            -webkit-animation: dash 1.5s ease-in-out infinite, color 6s ease-in-out infinite;
+            animation: dash 1.8s ease-in-out infinite, color 6s ease-in-out infinite;
+            stroke-linecap: round
+        }
+
+        @-webkit-keyframes rotate {
+            100% {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg)
+            }
+        }
+
+        @keyframes rotate {
+            100% {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg)
+            }
+        }
+
+        @-webkit-keyframes dash {
+            0% {
+                stroke-dasharray: 1, 200;
+                stroke-dashoffset: 0
+            }
+
+            50% {
+                stroke-dasharray: 89, 200;
+                stroke-dashoffset: -35px
+            }
+
+            100% {
+                stroke-dasharray: 89, 200;
+                stroke-dashoffset: -124px
+            }
+        }
+
+        @keyframes dash {
+            0% {
+                stroke-dasharray: 1, 200;
+                stroke-dashoffset: 0
+            }
+
+            50% {
+                stroke-dasharray: 89, 200;
+                stroke-dashoffset: -35px
+            }
+
+            100% {
+                stroke-dasharray: 89, 200;
+                stroke-dashoffset: -124px
+            }
+        }
+
+        @-webkit-keyframes color {
+            100%,0% {
+                stroke: #1673cd
+            }
+
+            66% {
+                stroke: #2fdb9f
+            }
+        }
+
+        @keyframes color {
+            100%,0% {
+                stroke: #1673cd
+            }
+
+            66% {
+                stroke: #2fdb9f
+            }
+        }
+
+        .showbox {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 5%
+        }
+
+        .u--sr-only {
+            border: 0;
+            clip: rect(0, 0, 0, 0);
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            padding: 0;
+            position: absolute;
+            width: 1px
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .vjs-control-bar {
+            background: #2f2f2f !important
+        }
+
+        .vjs-texttrack-settings {
+            display: none !important
+        }
+
+        .vjs-current-time-display {
+            font-weight: bold
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-progress-control .vjs-progress-holder {
+            background-color: #BFCEDE !important;
+            height: 9px
+        }
+
+        .vjs-chapter-selection-control {
+            position: absolute;
+            width: 400px;
+            height: 250px;
+            background: rgba(0,3,10,0.9);
+            box-shadow: rgba(0,0,0,0.3) 0px 0px 3px;
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 100000;
+            bottom: 71px;
+            left: 1px;
+            overflow-y: hidden
+        }
+
+        .vjs-chapter-selection-control.hidden {
+            display: none
+        }
+
+        .vjs-chapter-selection-control ol {
+            margin: 0;
+            padding: 0;
+            text-align: left
+        }
+
+        .vjs-chapter-selection-control ol li {
+            list-style: none;
+            display: flex;
+            margin: 0;
+            padding: 15px 6px;
+            min-height: 30px
+        }
+
+        .vjs-chapter-selection-control ol li .chapter-number {
+            width: 20%
+        }
+
+        .vjs-chapter-selection-control ol li .chapter-name {
+            width: 60%
+        }
+
+        .vjs-chapter-selection-control ol li .chapter-time {
+            width: 20%;
+            text-align: right
+        }
+
+        .vjs-chapter-selection-control ol li .chapter-number,.vjs-chapter-selection-control ol li .chapter-name,.vjs-chapter-selection-control ol li .chapter-time {
+            display: block;
+            height: 30px;
+            float: left
+        }
+
+        .vjs-chapter-selection-control ol li:hover {
+            background: rgba(255,255,255,0.1)
+        }
+
+        .copy-to-clipboard-button {
+            display: flex;
+            align-items: center;
+            background: none;
+            border: none;
+            text-align: center;
+            color: #41bdff;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.29;
+            padding: 0
+        }
+
+        .copy-to-clipboard-button:hover {
+            cursor: pointer
+        }
+
+        .copy-to-clipboard-button:hover+.tooltip {
+            visibility: visible;
+            opacity: 1
+        }
+
+        .copy-to-clipboard-button>.material-icons {
+            margin-right: 8px;
+            font-size: 20px
+        }
+
+        .transcript-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            flex-direction: column
+        }
+
+        .transcript-header button {
+            margin-top: 1.0625rem
+        }
+
+        @media (min-width: 1280px) {
+            .transcript-header {
+                flex-direction:row
+            }
+
+            .transcript-header button {
+                margin-top: 0
+            }
+        }
+
+        .transcript-only .transcript-header {
+            flex-direction: row
+        }
+
+        .transcript-only .transcript-header button {
+            margin-top: 0
+        }
+
+        .tooltip {
+            position: relative;
+            display: block;
+            float: right;
+            font-size: 12px;
+            width: 120px;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+            background: #fff;
+            color: #2f2f2f;
+            top: 8px;
+            right: 15px;
+            visibility: hidden
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            margin-top: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent transparent #fff
+        }
+
+        .copy-to-clipboard-message {
+            display: flex;
+            justify-content: flex-end;
+            flex: 1;
+            padding: 0 10px;
+            user-select: none
+        }
+
+        .copy-to-clipboard-message .material-icons {
+            vertical-align: middle;
+            font-size: 14px;
+            margin-right: 4px
+        }
+
+        .copy-to-clipboard-message .toast {
+            color: #dedede;
+            text-align: center;
+            font-size: 14px;
+            vertical-align: middle;
+            animation: fadeIn .25s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .dot-learn-button {
+            padding: 10px 5px;
+            margin-bottom: 10px;
+            color: #fff;
+            border-radius: 15px;
+            background: none;
+            width: 300px
+        }
+
+        .dot-learn-button:hover {
+            color: #0C121A;
+            background: #fff
+        }
+
+        .video-js {
+            padding: 0
+        }
+
+        .video-js .vjs-control-bar .vjs-control {
+            width: 2.2em
+        }
+
+        .video-js .vjs-control-bar .vjs-menu-button-popup {
+            min-width: 70px
+        }
+
+        .vjs-control-bar .vjs-button {
+            cursor: pointer
+        }
+
+        .vjs-control-bar .vjs-button .vjs-icon-placeholder::before {
+            font-size: 1.5em;
+            line-height: 1.9
+        }
+
+        .vjs-menu li {
+            padding: 0
+        }
+
+        .vjs-menu .vjs-menu-item {
+            line-height: 2.5
+        }
+
+        .vjs-menu li.vjs-selected {
+            background: inherit;
+            color: #fff;
+            font-weight: 900
+        }
+
+        .video-js .vjs-volume-bar {
+            background: #5F7080
+        }
+
+        .video-js .vjs-volume-bar.vjs-slider-vertical {
+            border-radius: 4px;
+            height: 7.7em;
+            margin: 0.95em auto;
+            width: .5rem
+        }
+
+        .transcripts-container {
+            color: #fff;
+            height: 100%;
+            display: grid;
+            grid-template-rows: min-content auto
+        }
+
+        .transcripts-container p {
+            line-height: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 2em
+        }
+
+        .transcripts-container p:last-of-type {
+            margin-bottom: 0
+        }
+
+        .transcripts-container h2 {
+            font-size: 1.125rem;
+            font-weight: normal;
+            margin: 0
+        }
+
+        .transcripts-container hr.divider {
+            border: none;
+            border-radius: 2px;
+            background: #212021;
+            height: 4px;
+            margin-bottom: 1.9375rem
+        }
+
+        .transcripts-container .transcript-wrapper {
+            overflow-y: auto;
+            font-size: 14px
+        }
+
+        .vjs-custom-control-spacer+.vjs-control {
+            margin-left: auto !important
+        }
+
+        .vjs-oyster-quality-selection {
+            font-family: Arial, Helvetica, sans-serif !important
+        }
+
+        .vjs-oyster-quality-selection .vjs-control-text {
+            width: 300px;
+            height: 40px;
+            position: static;
+            font-size: 14px;
+            font-weight: 900
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar {
+            z-index: 10000;
+            display: flex !important
+        }
+
+        .hemingway .video-viewer .video-holder .video-js .vjs-control-bar .vjs-progress-control {
+            bottom: 43px !important
+        }
+
+        .vjs-big-play-button {
+            display: none !important
+        }
+
+        #vjs-rewind-button {
+            width: 30px
+        }
+
+        .vjs-desktop-toolbar {
+            background: #2f2f2f;
+            z-index: 1000;
+            font-size: 0.875rem;
+            opacity: 0.9;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            display: flex;
+            transition: opacity 0.3s;
+            padding: 0.625rem 1rem
+        }
+
+        .vjs-desktop-toolbar>:first-child,.vjs-desktop-toolbar>:last-child {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            height: 34px;
+            overflow: hidden
+        }
+
+        .vjs-desktop-toolbar>:last-child {
+            justify-content: flex-end
+        }
+
+        .vjs-desktop-toolbar .vjs-desktop-overlay-slide-controls {
+            margin-left: auto
+        }
+
+        .vjs-desktop-overlay-chapter-controls {
+            position: relative;
+            cursor: pointer
+        }
+
+        .vjs-desktop-overlay-chapter-controls .vjs-desktop-overlay-chapter-label {
+            margin: 0 4px 0 8px;
+            display: inline-block;
+            max-width: 550px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left
+        }
+
+        .vjs-desktop-overlay-chapter-controls:focus .vjs-desktop-overlay-chapter-dropdown {
+            display: block
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            font-size: 16px;
+            background: #2f2f2f;
+            color: #fff;
+            overflow-y: auto;
+            z-index: 1001
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown[aria-hidden="true"],.vjs-desktop-overlay-chapter-dropdown.hidden {
+            display: none;
+            pointer-events: none
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper {
+            margin: 0
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .close-button {
+            color: #fff;
+            background: none;
+            border: 0;
+            width: 100%
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .close-button:hover,.vjs-desktop-overlay-chapter-dropdown .wrapper .close-button:focus {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin: 0 -8px;
+            padding: 0 8px
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper button.item {
+            width: 100%
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .dropdown-header {
+            height: 54px;
+            border-bottom: 1px solid #212021;
+            padding: 0 24px
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .dropdown-header .dropdown-close {
+            font-size: 24px;
+            height: 24px
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .dropdown-header .dropdown-close .close-button {
+            cursor: pointer;
+            padding: 0;
+            margin: 0
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .dropdown-header .dropdown-headline {
+            padding: 26px 0;
+            font-weight: bold
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .item .section-left {
+            padding-right: 24px
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper .item .section-right {
+            padding: 13px 0;
+            text-align: left;
+            justify-content: space-between;
+            display: flex;
+            flex: 1
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul {
+            position: absolute;
+            top: 54px;
+            bottom: 52px;
+            left: 0;
+            right: 0;
+            overflow-y: scroll;
+            padding: 17px 17px 10px 19px;
+            margin: 0
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li {
+            list-style: none;
+            transition: background-color 0.2s
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li:hover,.vjs-desktop-overlay-chapter-dropdown .wrapper ul li:focus {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin: 0 -8px;
+            padding: 0 8px
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li .item {
+            cursor: pointer
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li:before {
+            content: "\200B";
+            position: absolute
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li.active-chapter .chapter-title {
+            font-weight: bold
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li.active-chapter .section-left {
+            color: transparent;
+            padding-right: 0
+        }
+
+        .vjs-desktop-overlay-chapter-dropdown .wrapper ul li.active-chapter .section-left span {
+            transform: translateX(-7px);
+            color: #fff
+        }
+
+        .vjs-oyster-caption-button-label::after,.vjs-oyster-view-selection-label::after {
+            content: '';
+            background: #BFCEDE;
+            border-radius: 6px;
+            display: block;
+            height: 4px;
+            left: 24px;
+            position: absolute;
+            transition: width 0.3s, left 0.3s;
+            width: 0
+        }
+
+        .vjs-oyster-caption-button-label.active::after,.vjs-oyster-view-selection-label.active::after {
+            left: 12px;
+            width: 24px
+        }
+
+        .vjs-subs-caps-button {
+            display: none
+        }
+
+        .player-wrapper {
+            height: 100%
+        }
+
+    </style>
+</head>
+<body>
+<div id="oyster" style="height: fit-content;">
+    <div class="offline-video-player" id="video_0" src="#VIDEO#" subtitle_url="#SUBTITLE#"></div>
+
+    <div class="oyster-grid-transcript" style="padding: 20px;">
+        <div>
+            <div>
+                <header class="transcript-header" aria-label="Transcript">
+                    <h2>Transcript</h2>
+                </header>
+                <hr class="divider" aria-hidden="true">
+            </div>
+            <div class="transcript-wrapper">
+                #TRANSCRIPT#
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

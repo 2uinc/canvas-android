@@ -57,7 +57,7 @@ void main() {
     ));
 
     AndroidInitializationSettings initSettings = verification.captured[0];
-    expect(initSettings.defaultIcon, 'ic_notification_canvas_logo');
+    expect(initSettings.defaultIcon, 'canvas_logo_white');
 
     var callback = verification.captured[1];
     expect(callback, isNotNull);

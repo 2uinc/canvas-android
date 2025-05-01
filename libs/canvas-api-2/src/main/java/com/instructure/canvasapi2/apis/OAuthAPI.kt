@@ -25,7 +25,13 @@ import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.DataResult
 import com.instructure.canvasapi2.utils.dataResult
 import retrofit2.Call
-import retrofit2.http.*
+import retrofit2.http.DELETE
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Query
+import retrofit2.http.Tag
 import java.io.IOException
 
 
@@ -52,6 +58,9 @@ object OAuthAPI {
 
         @GET("/api/v1/login/session_token")
         fun getAuthenticatedSessionMasquerading(@Query("return_to") targetUrl: String, @Query("as_user_id") userId: Long): Call<AuthenticatedSession>
+
+        @GET("/api/v1/login/session_token")
+        suspend fun getAuthenticatedSessionMasquerading(@Query("return_to") targetUrl: String, @Query("as_user_id") userId: Long, @Tag params: RestParams): DataResult<AuthenticatedSession>
 
         @FormUrlEncoded
         @POST("/login/oauth2/token")

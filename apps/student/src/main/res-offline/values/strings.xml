@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="controls_playback_speeds">
+        <item>0.25x</item>
+        <item>0.5x</item>
+        <item>0.75x</item>
+        <item>Normal</item>
+        <item>1.25x</item>
+        <item>1.5x</item>
+        <item>2x</item>
+    </string-array>
+
+    <string name="downloads">Downloads</string>
+    <string name="downloads_courses_title">Downloads</string>
+
+    <string name="download_no_intent_msg">There is no app installed to open this</string>
+
+    <string name="download_no_courses">No Downloads</string>
+    <string name="download_no_courses_subtext">To download content, open a content type and press save.\nDownloaded modules will appear here.</string>
+
+    <string name="download_course_modules">Modules</string>
+    <string name="download_course_pages">Pages</string>
+    <string name="download_course_files">Files</string>
+
+    <string name="download_modules_remove_all">Delete all</string>
+    <string name="download_modules_remove_all_dialog_title">Are you sure you want to remove all contents?</string>
+
+    <string name="download_content_not_downloaded">This content is not downloaded yet</string>
+
+</resources>

@@ -16,11 +16,16 @@
 #   public *;
 #}
 
+#Offline Mode
+-keep public class com.instructure.student.offline.item.** { *; }
+-keep public class com.instructure.student.offline.util.** { *; }
+-keep public class com.twou.offline.** { *; }
+
 -dontoptimize
 -verbose
 
 -dontpreverify
--optimizations !code/simplification/arithmetic
+-optimizations !code/simplification/arithmetic,!code/allocation/variable
 
 -keepattributes *Annotation*,Signature,EnclosingMethod,ElementList,Root,Annotation,InnerClasses,SourceFile,LineNumberTable
 
@@ -262,3 +267,10 @@
 -dontwarn okio.**
 -keep class retrofit2.** { *; }
 -dontwarn retrofit2.**
+
+# AGP 8 update
+-dontwarn java.beans.MethodDescriptor
+-dontwarn java.beans.SimpleBeanInfo
+
+-keep class androidx.navigation.** { *; }
+    -keep interface androidx.navigation.** { *; }

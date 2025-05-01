@@ -19,7 +19,9 @@ package com.instructure.parentapp.features.addstudent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.canvasapi2.utils.Analytics
+import com.instructure.canvasapi2.utils.AnalyticsEventConstants
+import com.instructure.pandautils.utils.studentColor
 import com.instructure.parentapp.features.dashboard.SelectedStudentHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,17 +35,15 @@ import javax.inject.Inject
 @HiltViewModel
 class AddStudentViewModel @Inject constructor(
     selectedStudentHolder: SelectedStudentHolder,
-    private val colorKeeper: ColorKeeper,
     private val repository: AddStudentRepository,
-    private val crashlytics: FirebaseCrashlytics
+    private val crashlytics: FirebaseCrashlytics,
+    private val analytics: Analytics
 ) : ViewModel() {
 
     private val _uiState =
         MutableStateFlow(
             AddStudentUiState(
-                color = colorKeeper.getOrGenerateUserColor(
-                    selectedStudentHolder.selectedStudentState.value
-                ).textAndIconColor(),
+                color = selectedStudentHolder.selectedStudentState.value.studentColor,
                 actionHandler = this::handleAction
             )
         )
@@ -56,7 +56,7 @@ class AddStudentViewModel @Inject constructor(
         viewModelScope.launch {
             selectedStudentHolder.selectedStudentChangedFlow.collectLatest { user ->
                 _uiState.value = _uiState.value.copy(
-                    color = colorKeeper.getOrGenerateUserColor(user).textAndIconColor()
+                    color = user.studentColor
                 )
             }
         }
@@ -64,6 +64,7 @@ class AddStudentViewModel @Inject constructor(
 
     fun handleAction(action: AddStudentAction) {
         when (action) {
+            is AddStudentAction.UnpairStudent -> unpairStudent(action.studentId)
             is AddStudentAction.PairStudent -> pairStudent(action.pairingCode)
             is AddStudentAction.ResetError -> resetError()
         }
@@ -75,10 +76,26 @@ class AddStudentViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = true, isError = false)
                 repository.pairStudent(pairingCode).dataOrThrow
                 _events.emit(AddStudentViewModelAction.PairStudentSuccess)
+                analytics.logEvent(AnalyticsEventConstants.ADD_STUDENT_SUCCESS)
                 _uiState.value = _uiState.value.copy(isLoading = false)
             } catch (e: Exception) {
                 crashlytics.recordException(e)
+                analytics.logEvent(AnalyticsEventConstants.ADD_STUDENT_FAILURE)
                 _uiState.value = _uiState.value.copy(isLoading = false, isError = true)
+            }
+        }
+    }
+
+    private fun unpairStudent(studentId: Long) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true, isError = false)
+                repository.unpairStudent(studentId).dataOrThrow
+                _events.emit(AddStudentViewModelAction.UnpairStudentSuccess)
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            } catch (e: Exception) {
+                crashlytics.recordException(e)
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }

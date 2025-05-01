@@ -1,0 +1,56 @@
+<html>
+<head>
+    <title>Course Player</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <base target="_blank">
+    <link rel="stylesheet" href="https://whitelabel.2u.com/cdn/v1/corp-prod/whitelabel.min.css">
+
+    #PLAYER#
+
+    <script>
+        function onTranscriptClick() {
+            var display = document.getElementById("transcript").style.display;
+            var classList = document.getElementsByClassName("icon")[0].classList;
+
+            if (display == "none") {
+                document.getElementById("transcript").style.display = "block";
+                document.getElementsByTagName("button")[0].style.borderRadius = "0.375rem 0.375rem 0px 0px";
+                classList.remove("icon--caret-right");
+                classList.add("icon--caret-down");
+
+            } else {
+                document.getElementById("transcript").style.display = "none";
+                document.getElementsByTagName("button")[0].style.borderRadius = "0.375rem";
+                classList.remove("icon--caret-down");
+                classList.add("icon--caret-right");
+            }
+        }
+    </script>
+</head>
+<body style="background:#fff;color: #282828;font-family: Proxima Nova,Helvetica Neue,Arial,sans-serif;font-weight: 400;line-height: 1.5;margin: 0;text-size-adjust: 100%;">
+<div style="box-sizing: inherit;">
+    <div style="padding: 1.4375rem;box-sizing: inherit;">
+        <div class="offline-video-player" id="video_0" src="#VIDEO#" subtitle_url="#SUBTITLE#"
+             style="height:202px!important"/>
+
+        <button aria-expanded="true" onclick="onTranscriptClick()"
+                style="display: block;margin-top: 1.4375rem;border: 0.0625rem solid rgb(204, 204, 204);border-radius: 0.375rem;padding: 0px;width: 100%;text-align: left;background-color: transparent;color: inherit;font-size: inherit;line-height: inherit;font: inherit;cursor: default;">
+            <span style="position: relative;display: inline-block;margin-left: 1rem;width: 0.75rem;top: 0.0625rem;">
+                <span class="icon icon--caret-right" aria-hidden="true"></span>
+            </span>
+            <h5 style="margin: 1rem 0px;display: inline-block;">Transcript</h5>
+        </button>
+
+        <div style="width: 100%;">
+            <div id="transcript" style="display: none;padding-top: 5px;border-left: 0.0625rem solid rgb(204, 204, 204);border-right: 0.0625rem solid rgb(204, 204, 204);border-bottom: 0.0625rem solid rgb(204, 204, 204);border-radius: 0px 0px 0.375rem 0.375rem;background: initial;color: rgb(119, 119, 119);font-size: 0.875rem;">
+                <div style="margin: 1rem;">
+                    <p> #TRANSCRIPT#</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

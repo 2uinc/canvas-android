@@ -1,5 +1,9 @@
 package com.instructure.canvasapi2.di
 
+import android.content.Context
+import com.instructure.canvasapi2.LoginRouter
+import com.instructure.canvasapi2.TokenRefresher
+import com.instructure.canvasapi2.apis.AccountNotificationAPI
 import com.instructure.canvasapi2.apis.AnnouncementAPI
 import com.instructure.canvasapi2.apis.AssignmentAPI
 import com.instructure.canvasapi2.apis.CalendarEventAPI
@@ -23,6 +27,8 @@ import com.instructure.canvasapi2.apis.PlannerAPI
 import com.instructure.canvasapi2.apis.ProgressAPI
 import com.instructure.canvasapi2.apis.QuizAPI
 import com.instructure.canvasapi2.apis.RecipientAPI
+import com.instructure.canvasapi2.apis.SectionAPI
+import com.instructure.canvasapi2.apis.SmartSearchApi
 import com.instructure.canvasapi2.apis.StudioApi
 import com.instructure.canvasapi2.apis.SubmissionAPI
 import com.instructure.canvasapi2.apis.TabAPI
@@ -54,10 +60,15 @@ import com.instructure.canvasapi2.managers.TabManager
 import com.instructure.canvasapi2.managers.ToDoManager
 import com.instructure.canvasapi2.managers.UserManager
 import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.CanvasAuthenticator
+import com.instructure.canvasapi2.utils.pageview.PandataApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.EarlyEntryPoint
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -66,6 +77,12 @@ const val PLANNER_API_SERIALIZE_NULLS = "PLANNER_API_SERIALIZE_NULLS"
 @Module
 @InstallIn(SingletonComponent::class)
 class ApiModule {
+
+    @Provides
+    @Singleton
+    fun provideCanvasAuthenticator(tokenRefresher: TokenRefresher): CanvasAuthenticator {
+        return CanvasAuthenticator(tokenRefresher)
+    }
 
     @Provides
     fun provideCourseManager(): CourseManager {
@@ -163,6 +180,11 @@ class ApiModule {
     @Provides
     fun provideAccountNotificationManager(): AccountNotificationManager {
         return AccountNotificationManager
+    }
+
+    @Provides
+    fun provideAccountNotificationApi(): AccountNotificationAPI.AccountNotificationInterface {
+        return RestBuilder().build(AccountNotificationAPI.AccountNotificationInterface::class.java, RestParams())
     }
 
     @Provides
@@ -335,4 +357,31 @@ class ApiModule {
     fun provideStudioApi(): StudioApi {
         return RestBuilder().build(StudioApi::class.java, RestParams())
     }
+
+    @Provides
+    fun provideSmartSearchApi(): SmartSearchApi {
+        return RestBuilder().build(SmartSearchApi::class.java, RestParams())
+    }
+
+    @Provides
+    fun providePandataApi(): PandataApi.PandataInterface {
+        return RestBuilder().build(PandataApi.PandataInterface::class.java, RestParams())
+    }
+
+    @Provides
+    fun provideSectionApi(): SectionAPI.SectionsInterface {
+        return RestBuilder().build(SectionAPI.SectionsInterface::class.java, RestParams())
+    }
+
+    @Provides
+    @Singleton
+    fun provideTokenRefresher(@ApplicationContext context: Context, loginRouter: LoginRouter, eventBus: EventBus): TokenRefresher {
+        return TokenRefresher(context, loginRouter, eventBus)
+    }
+}
+
+@EarlyEntryPoint
+@InstallIn(SingletonComponent::class)
+interface CanvasAuthenticatorEntryPoint {
+    fun canvasAuthenticator(): CanvasAuthenticator
 }

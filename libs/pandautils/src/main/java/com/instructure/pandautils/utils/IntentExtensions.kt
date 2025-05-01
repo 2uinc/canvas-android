@@ -17,8 +17,6 @@ package com.instructure.pandautils.utils
 
 import android.content.ComponentName
 import android.content.Intent
-import android.os.Build
-import androidx.annotation.RequiresApi
 
 /**
  * Creates a chooser from this intent that will exclude Instructure components (i.e. student, parent, and teacher apps).
@@ -27,10 +25,13 @@ import androidx.annotation.RequiresApi
 fun Intent.asChooserExcludingInstructure(title: String? = null): Intent {
     val excludeComponents = arrayOf(
         // Student
+        ComponentName("com.instructure.candroid.twou", "com.instructure.student.activity.InterwebsToApplication"),
+
+        // Student
         ComponentName("com.instructure.candroid", "com.instructure.student.activity.InterwebsToApplication"),
 
         // Parent (native)
-        ComponentName("com.instructure.parentapp", "com.instructure.parentapp.activity.RouteValidatorActivity"),
+        ComponentName("com.instructure.parentapp", "com.instructure.parentapp.features.login.routevalidator.RouteValidatorActivity"),
 
         // Parent (flutter)
         ComponentName("com.instructure.parentapp", "com.instructure.parentapp.MainActivity"),

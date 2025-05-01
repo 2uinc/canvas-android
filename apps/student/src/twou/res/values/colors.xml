@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="licorice">#00262B</color>
+    <color name="textInfo">#ED5C13</color>
+    <color name="loginButton">#E0DDD3</color>
+
+    <color name="offlineColorPrimaryDark">#00262B</color>
+    <color name="offlineColorToolbar">#00262B</color>
+
+</resources>

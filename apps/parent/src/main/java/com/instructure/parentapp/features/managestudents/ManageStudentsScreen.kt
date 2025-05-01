@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
@@ -39,7 +41,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -51,7 +53,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -101,11 +105,11 @@ internal fun ManageStudentsScreen(
                     EmptyContent(
                         emptyMessage = stringResource(id = R.string.noStudentsErrorDescription),
                         imageRes = R.drawable.panda_manage_students,
-                        buttonText = stringResource(id = R.string.retry),
+                        buttonText = stringResource(id = R.string.noStudentsRefresh),
                         buttonClick = {
                             actionHandler(ManageStudentsAction.Refresh)
                         },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     )
                 } else {
                     StudentListContent(
@@ -233,10 +237,11 @@ private fun StudentListItem(
                 .testTag("studentColor")
                 .semantics(mergeDescendants = true) {
                     contentDescription = changeColorContentDescription
+                    role = Role.Button
                 }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
-                    indication = rememberRipple(color = Color(uiState.studentColor.backgroundColor()))
+                    indication = ripple(color = Color(uiState.studentColor.color()))
                 ) {
                     actionHandler(ManageStudentsAction.ShowColorPickerDialog(uiState.studentId, uiState.studentColor))
                 }
@@ -245,7 +250,7 @@ private fun StudentListItem(
                 modifier = Modifier
                     .size(20.dp)
                     .clip(CircleShape)
-                    .background(color = Color(uiState.studentColor.backgroundColor()))
+                    .background(color = Color(uiState.studentColor.color()))
             )
         }
     }

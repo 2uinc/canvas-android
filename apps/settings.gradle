@@ -1,17 +1,3 @@
-pluginManagement {
-    buildscript {
-        repositories {
-            mavenCentral()
-            maven {
-                url = uri("https://storage.googleapis.com/r8-releases/raw")
-            }
-        }
-        dependencies {
-            classpath("com.android.tools:r8:8.2.47")
-        }
-    }
-}
-
 /* Top-level project modules */
 include ':student'
 include ':teacher'
@@ -19,7 +5,6 @@ include ':parent'
 
 /* Library modules */
 include ':annotations'
-include ':blueprint'
 include ':canvas-api-2'
 include ':dataseedingapi'
 include ':espresso'
@@ -33,7 +18,6 @@ include ':pandares'
 include ':DocumentScanner'
 
 project(':annotations').projectDir = new File(rootProject.projectDir, '/../libs/annotations')
-project(':blueprint').projectDir = new File(rootProject.projectDir, '/../libs/blueprint')
 project(':canvas-api-2').projectDir = new File(rootProject.projectDir, '/../libs/canvas-api-2')
 project(':dataseedingapi').projectDir = new File(rootProject.projectDir, '/../automation/dataseedingapi')
 project(':espresso').projectDir = new File(rootProject.projectDir, '/../automation/espresso')
@@ -45,3 +29,5 @@ project(':rceditor').projectDir = new File(rootProject.projectDir, '/../libs/rce
 project(':recyclerview').projectDir = new File(rootProject.projectDir, '/../libs/recyclerview')
 project(':pandares').projectDir = new File(rootProject.projectDir, '/../libs/pandares')
 project(':DocumentScanner').projectDir = new File(rootProject.projectDir, '/../libs/DocumentScanner')
+
+include ':mobile-offline-downloader-android'

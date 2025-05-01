@@ -51,13 +51,15 @@ import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.models.User
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.pandautils.R
+import com.instructure.pandautils.compose.CanvasTheme
 import com.instructure.pandautils.utils.ThemePrefs
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.isCourse
 import com.instructure.pandautils.utils.isGroup
 import com.instructure.pandautils.utils.isUser
 import com.jakewharton.threetenabp.AndroidThreeTen
 
+private const val FAVORITE_COURSES_KEY = "favorite_courses"
 private const val COURSES_KEY = "courses"
 private const val GROUPS_KEY = "groups"
 private const val HEADER_CONTENT_TYPE = "header"
@@ -72,26 +74,28 @@ fun SelectContextScreen(
     modifier: Modifier = Modifier,
     @DrawableRes navIconRes: Int = R.drawable.ic_close,
 ) {
-    Scaffold(
-        backgroundColor = colorResource(id = R.color.backgroundLightest),
-        topBar = {
-            CanvasAppBar(
-                title = title,
-                navigationActionClick = navigationActionClick,
-                navIconRes = navIconRes,
-                navIconContentDescription = stringResource(id = R.string.back)
-            )
-        },
-        content = { padding ->
-            SelectContextContent(
-                uiState = uiState,
-                onContextSelected = onContextSelected,
-                modifier = modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            )
-        }
-    )
+    CanvasTheme {
+        Scaffold(
+            backgroundColor = colorResource(id = R.color.backgroundLightest),
+            topBar = {
+                CanvasAppBar(
+                    title = title,
+                    navigationActionClick = navigationActionClick,
+                    navIconRes = navIconRes,
+                    navIconContentDescription = stringResource(id = R.string.back)
+                )
+            },
+            content = { padding ->
+                SelectContextContent(
+                    uiState = uiState,
+                    onContextSelected = onContextSelected,
+                    modifier = modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                )
+            }
+        )
+    }
 }
 
 @Composable
@@ -114,12 +118,18 @@ private fun SelectContextContent(
                 val selected = user.contextId == uiState.selectedCanvasContext?.contextId
                 SelectContextItem(user, selected, onContextSelected, Modifier.fillMaxWidth())
             }
-            if (uiState.courses.isNotEmpty()) {
-                item(key = COURSES_KEY, contentType = HEADER_CONTENT_TYPE) {
-                    ListHeaderItem(text = stringResource(id = R.string.calendarFilterCourse))
+
+            if (uiState.favoriteCourses.isNotEmpty()) {
+                item(key = FAVORITE_COURSES_KEY, contentType = HEADER_CONTENT_TYPE) {
+                    val titleResource = if (uiState.moreCourses.isNotEmpty()) {
+                        stringResource(id = R.string.calendarFilterFavoriteCourse)
+                    } else {
+                        stringResource(id = R.string.calendarFilterCourse)
+                    }
+                    ListHeaderItem(text = titleResource)
                 }
                 items(
-                    uiState.courses,
+                    uiState.favoriteCourses,
                     key = { it.contextId },
                     contentType = { FILTER_ITEM_CONTENT_TYPE }) { course ->
                     val selected = course.contextId == uiState.selectedCanvasContext?.contextId
@@ -131,6 +141,29 @@ private fun SelectContextContent(
                     )
                 }
             }
+            if (uiState.moreCourses.isNotEmpty()) {
+                item(key = COURSES_KEY, contentType = HEADER_CONTENT_TYPE) {
+                    val titleResource = if (uiState.favoriteCourses.isNotEmpty()) {
+                        stringResource(id = R.string.calendarFilterMoreCourse)
+                    } else {
+                        stringResource(id = R.string.calendarFilterCourse)
+                    }
+                    ListHeaderItem(text = titleResource)
+                }
+                items(
+                    uiState.moreCourses,
+                    key = { it.contextId },
+                    contentType = { FILTER_ITEM_CONTENT_TYPE }) { course ->
+                    val selected = course.contextId == uiState.selectedCanvasContext?.contextId
+                    SelectContextItem(
+                        course,
+                        selected,
+                        onContextSelected,
+                        Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
             if (uiState.groups.isNotEmpty()) {
                 item(key = GROUPS_KEY, contentType = HEADER_CONTENT_TYPE) {
                     ListHeaderItem(text = stringResource(id = R.string.calendarFilterGroup))
@@ -159,7 +192,7 @@ private fun SelectContextItem(
         if (canvasContext is User) {
             ThemePrefs.brandColor
         } else {
-            canvasContext.backgroundColor
+            canvasContext.color
         }
     )
     Row(
@@ -213,8 +246,10 @@ data class SelectContextUiState(
 ) {
     val users: List<CanvasContext>
         get() = canvasContexts.filter { it.isUser }
-    val courses: List<CanvasContext>
-        get() = canvasContexts.filter { it.isCourse }
+    val favoriteCourses: List<CanvasContext>
+        get() = canvasContexts.filter { it.isCourse && (it as Course).isFavorite }
+    val moreCourses: List<CanvasContext>
+        get() = canvasContexts.filter { it.isCourse && !(it as Course).isFavorite }
     val groups: List<CanvasContext>
         get() = canvasContexts.filter { it.isGroup }
 

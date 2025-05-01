@@ -17,8 +17,7 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.instructure.student">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission
@@ -76,12 +75,24 @@
         tools:replace="android:supportsRtl"
         tools:overrideLibrary="com.instructure.canvasapi">
 
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
+
+        <activity android:name="sdk.pendo.io.activities.PendoGateActivity" android:launchMode="singleInstance" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="pendo-889d43f7"/>
+            </intent-filter>
+        </activity>
+
         <!--Fun fact. LoginActivity is called that because activity-alias are not supported by pspdfkit, should be InitLoginActivity-->
         <activity
             android:name=".activity.LoginActivity"
             android:label="@string/student_app_name"
             android:windowSoftInputMode="stateHidden|adjustPan"
-            android:clearTaskOnLaunch="true"
             android:launchMode="singleTop"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@style/LoginFlowTheme.Splash_Student"
@@ -113,13 +124,41 @@
         </activity>
 
         <activity
+            android:name=".offline.activity.OfflineLoginLandingPageActivity"
+            android:launchMode="singleTop"
+            android:theme="@style/LoginFlowTheme.NoActionBar" />
+        <activity
+            android:name=".offline.activity.DownloadsContentActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsCoursesActivity"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsCourseActivity"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsModulesActivity"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsPagesActivity"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <activity
+            android:name=".offline.activity.DownloadsFilesActivity"
+            android:theme="@style/CanvasMaterialTheme_Default" />
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="com.google.android.exoplayer2.ext.cast.DefaultCastOptionsProvider" />
+
+        <service
+            android:name=".offline.util.OfflineModeService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+        <activity
             android:name=".activity.CandroidPSPDFActivity"
             android:theme="@style/PSPDFKitTheme"
             android:windowSoftInputMode="adjustNothing" />
-
-        <activity
-            android:name=".activity.SettingsActivity"
-            android:theme="@style/CanvasMaterialTheme_Default"/>
 
         <activity android:name=".activity.PandaAvatarActivity"
             android:label="@string/pandaAvatar"
@@ -228,11 +267,6 @@
         </activity>
 
         <service
-            android:name=".mobius.common.ui.SubmissionService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-
-        <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
@@ -255,7 +289,7 @@
 
         <activity
             android:name=".activity.BookmarkShortcutActivity"
-            android:icon="@drawable/ic_bookmark_shortcut"
+            android:icon="@mipmap/ic_launcher_round"
             android:label="@string/student_app_name"
             android:theme="@style/CanvasMaterialTheme_DefaultNoTransparency"
             android:exported="true">
@@ -266,6 +300,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.StudentLoginWithQRActivity" />
+        <activity android:name=".activity.Five9SupportActivity"
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".activity.StudentViewStarterActivity"
@@ -304,7 +341,7 @@
 
         <!--Reminder-->
         <receiver
-            android:name=".receivers.AlarmReceiver"
+            android:name="com.instructure.pandautils.receivers.alarm.AlarmReceiver"
             android:exported="false" />
 
         <!-- To do widget -->
@@ -369,11 +406,6 @@
         <service
             android:name=".widget.NotificationViewWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"/>
-
-        <service
-            android:name=".service.StudentPageViewService"
-            android:exported="true"
-            android:permission="android.permission.BIND_JOB_SERVICE"/>
 
         <!-- End of Widget Items -->
 

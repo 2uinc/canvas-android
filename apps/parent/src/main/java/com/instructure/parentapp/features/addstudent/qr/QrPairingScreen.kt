@@ -16,6 +16,7 @@
  */
 package com.instructure.parentapp.features.addstudent.qr
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -34,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -66,16 +67,13 @@ fun QrPairingScreen(
                         }
                     ),
                     navigationActionClick = onBackClicked,
-                    backgroundColor = R.color.backgroundLightestElevated,
                     actions = {
                         if (!uiState.isError) {
                             TextButton(onClick = onNextClicked) {
                                 Text(
                                     text = stringResource(id = R.string.next),
-                                    style = TextStyle(
-                                        color = colorResource(id = R.color.textInfo),
-                                        fontSize = 16.sp
-                                    )
+                                    color = colorResource(id = R.color.textInfo),
+                                    fontSize = 16.sp
                                 )
                             }
                         }
@@ -128,32 +126,29 @@ private fun QrPairingError(
         Text(
             modifier = Modifier.padding(bottom = 8.dp),
             text = stringResource(id = R.string.qrPairingErrorTitle),
-            style = TextStyle(
-                color = colorResource(id = R.color.textDarkest),
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center
-            )
+            color = colorResource(id = R.color.textDarkest),
+            textAlign = TextAlign.Center,
+            fontSize = 18.sp
         )
         Text(
             text = stringResource(id = R.string.qrPairingErrorDescription),
-            style = TextStyle(
-                color = colorResource(id = R.color.textDarkest),
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
+            color = colorResource(id = R.color.textDarkest),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
         )
         OutlinedButton(
             modifier = Modifier.padding(top = 16.dp),
+            border = BorderStroke(1.dp, colorResource(id = R.color.textDark)),
+            colors = ButtonDefaults.buttonColors(backgroundColor = colorResource(id = R.color.backgroundLightest)),
             onClick = {
                 onRetryClicked()
                 actionHandler(AddStudentAction.ResetError)
-            }) {
+            }
+        ) {
             Text(
                 text = stringResource(id = R.string.retry),
-                style = TextStyle(
-                    color = colorResource(id = R.color.textDarkest),
-                    fontSize = 18.sp,
-                )
+                color = colorResource(id = R.color.textDarkest),
+                fontSize = 18.sp,
             )
         }
         Spacer(
@@ -172,10 +167,8 @@ private fun QrPairingContent() {
     ) {
         Text(
             text = stringResource(id = R.string.qrPairingDescription),
-            style = TextStyle(
-                color = colorResource(id = R.color.textDarkest),
-                fontSize = 18.sp
-            )
+            color = colorResource(id = R.color.textDarkest),
+            fontSize = 18.sp
         )
         Spacer(
             modifier = Modifier

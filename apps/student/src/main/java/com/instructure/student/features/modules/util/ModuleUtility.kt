@@ -27,10 +27,10 @@ import com.instructure.canvasapi2.utils.APIHelper.expandTildeId
 import com.instructure.canvasapi2.utils.findWithPrevious
 import com.instructure.canvasapi2.utils.isLocked
 import com.instructure.interactions.router.Route
+import com.instructure.pandautils.features.assignments.details.AssignmentDetailsFragment
+import com.instructure.pandautils.features.assignments.details.AssignmentDetailsFragment.Companion.makeRoute
 import com.instructure.pandautils.features.discussion.details.DiscussionDetailsWebViewFragment
 import com.instructure.student.R
-import com.instructure.student.features.assignments.details.AssignmentDetailsFragment
-import com.instructure.student.features.assignments.details.AssignmentDetailsFragment.Companion.makeRoute
 import com.instructure.student.features.discussion.details.DiscussionDetailsFragment
 import com.instructure.student.features.discussion.details.DiscussionDetailsFragment.Companion.makeRoute
 import com.instructure.student.features.files.details.FileDetailsFragment
@@ -42,10 +42,12 @@ import com.instructure.student.fragment.InternalWebviewFragment
 import com.instructure.student.fragment.InternalWebviewFragment.Companion.makeRoute
 import com.instructure.student.fragment.MasteryPathSelectionFragment
 import com.instructure.student.fragment.MasteryPathSelectionFragment.Companion.makeRoute
+import com.instructure.student.offline.addOfflineDataForModule
 import java.util.Date
 
 object ModuleUtility {
     fun getFragment(
+        position: Int,
         item: ModuleItem,
         course: Course,
         moduleObject: ModuleObject?,
@@ -55,7 +57,7 @@ object ModuleUtility {
         syncedFileIds: List<Long>,
         context: Context
     ): Fragment? = when (item.type) {
-        "Page" -> PageDetailsFragment.newInstance(PageDetailsFragment.makeRoute(course, item.title, item.pageUrl, navigatedFromModules))
+        "Page" -> PageDetailsFragment.newInstance(PageDetailsFragment.makeRoute(course, item.title, item.pageUrl, navigatedFromModules).addOfflineDataForModule(position, item, moduleObject))
         "Assignment" -> {
             createFragmentWithOfflineCheck(isOnline, course, item, syncedTabs, context, setOf(Tab.ASSIGNMENTS_ID, Tab.GRADES_ID, Tab.SYLLABUS_ID)) {
                 AssignmentDetailsFragment.newInstance(makeRoute(course, getAssignmentId(item)))
@@ -84,17 +86,17 @@ object ModuleUtility {
         }
         "ExternalUrl", "ExternalTool" -> {
             if (item.isLocked()) {
-                LockedModuleItemFragment.newInstance(LockedModuleItemFragment.makeRoute(course, item.title!!, item.moduleDetails?.lockExplanation ?: ""))
+                LockedModuleItemFragment.newInstance(LockedModuleItemFragment.makeRoute(course, item.title!!, item.moduleDetails?.lockExplanation ?: "").addOfflineDataForModule(position, item, moduleObject))
             } else {
                 createFragmentWithOfflineCheck(isOnline, course, item, syncedTabs, context) {
                     val uri = Uri.parse(item.htmlUrl).buildUpon().appendQueryParameter("display", "borderless").build()
-                    val route = makeRoute(course, uri.toString(), item.title!!, true, true, true)
+                    val route = makeRoute(course, uri.toString(), item.title!!, true, true, true).addOfflineDataForModule(position, item, moduleObject)
                     InternalWebviewFragment.newInstance(route)
                 }
             }
         }
         "File" -> { // TODO Handle offline availability after files sync
-            createFileDetailsFragmentWithOfflineCheck(isOnline, course, item, moduleObject, syncedFileIds, context)
+            createFileDetailsFragmentWithOfflineCheck(position, isOnline, course, item, moduleObject, syncedFileIds, context)
         }
         else -> null
     }
@@ -117,6 +119,7 @@ object ModuleUtility {
     }
 
     private fun createFileDetailsFragmentWithOfflineCheck(
+        position: Int,
         isOnline: Boolean,
         course: Course,
         item: ModuleItem,
@@ -142,7 +145,7 @@ object ModuleUtility {
                         item.id,
                         url!!,
                         item.contentId
-                    )
+                    ).addOfflineDataForModule(position, item, moduleObject)
                 )
             }
         } else {

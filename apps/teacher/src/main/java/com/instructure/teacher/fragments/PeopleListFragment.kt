@@ -20,18 +20,27 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.RecyclerView
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.User
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_PEOPLE_LIST
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.fragments.BaseSyncFragment
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.closeSearch
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.isDesigner
+import com.instructure.pandautils.utils.nonNullArgs
+import com.instructure.pandautils.utils.themeSearchView
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.PeopleListRecyclerAdapter
 import com.instructure.teacher.adapters.StudentContextFragment
@@ -46,7 +55,6 @@ import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.RecyclerViewUtils
 import com.instructure.teacher.utils.setupBackButton
 import com.instructure.teacher.viewinterface.PeopleListView
-import java.util.*
 
 @PageView(url = "{canvasContext}/users")
 @ScreenView(SCREEN_VIEW_PEOPLE_LIST)
@@ -56,7 +64,8 @@ class PeopleListFragment : BaseSyncFragment<User, PeopleListPresenter, PeopleLis
 
     private lateinit var swipeRefreshLayoutContainerBinding: RecyclerSwipeRefreshLayoutBinding
 
-    private val canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
+    @get:PageViewUrlParam("canvasContext")
+    val canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
     private var canvasContextsSelected: ArrayList<CanvasContext>? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -83,6 +92,10 @@ class PeopleListFragment : BaseSyncFragment<User, PeopleListPresenter, PeopleLis
         peopleListToolbar.subtitle = canvasContext!!.name
         if (peopleListToolbar.menu.size() == 0) peopleListToolbar.inflateMenu(R.menu.menu_people_list)
         val searchView = peopleListToolbar.menu.findItem(R.id.search).actionView as SearchView
+        searchView.themeSearchView(binding.peopleListToolbar, requireContext().getColor(R.color.textLightest))
+        searchView.findViewById<ImageView>(com.instructure.pandautils.R.id.search_mag_icon)?.setImageDrawable(null)
+        searchView.queryHint = requireContext().getString(com.instructure.pandautils.R.string.search)
+        searchView.setIconifiedByDefault(false)
 
         peopleListToolbar.menu.findItem(R.id.search).setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean {
@@ -126,7 +139,7 @@ class PeopleListFragment : BaseSyncFragment<User, PeopleListPresenter, PeopleLis
         }
 
         setupTitle(presenter.canvasContextList)
-        ViewStyler.themeToolbarColored(requireActivity(), peopleListToolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), peopleListToolbar, canvasContext.color, requireContext().getColor(R.color.textLightest))
         peopleListToolbar.setupBackButton(this@PeopleListFragment)
     }
 

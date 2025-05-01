@@ -17,15 +17,38 @@
 
 package com.instructure.student.util
 
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerFactory
+import com.bugfender.sdk.Bugfender
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
+import com.instructure.pandautils.analytics.pageview.PageViewUploadWorker
+import com.instructure.pandautils.features.reminder.AlarmScheduler
 import com.instructure.pandautils.room.offline.DatabaseProvider
 import com.instructure.pandautils.typeface.TypefaceBehavior
-import com.instructure.student.features.assignments.reminder.AlarmScheduler
+import com.instructure.student.BuildConfig
+import com.instructure.student.offline.util.DownloadsRepository
+import com.instructure.student.offline.util.OfflineDownloaderCreator
+import com.instructure.student.offline.util.OfflineModeService
+import com.instructure.student.offline.util.OfflineUtils
 import com.instructure.student.tasks.StudentLogoutTask
+import com.twou.offline.Offline
+import com.twou.offline.OfflineManager
+import com.twou.offline.data.IOfflineLoggerInterceptor
+import com.twou.offline.item.KeyOfflineItem
+import com.twou.offline.util.BaseOfflineUtils.Companion.isOnline
+import com.twou.offline.util.OfflineLoggerType
+import com.twou.offline.util.OfflineLogs
 import dagger.hilt.android.HiltAndroidApp
+import sdk.pendo.io.Pendo
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -43,6 +66,9 @@ class AppManager : BaseAppManager() {
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
 
+    @Inject
+    lateinit var workManager: WorkManager
+
     override fun onCreate() {
         super.onCreate()
         MasqueradeHelper.masqueradeLogoutTask = Runnable {
@@ -53,6 +79,129 @@ class AppManager : BaseAppManager() {
                 alarmScheduler = alarmScheduler
             ).execute()
         }
+
+        Offline.init(
+            this, Offline.Builder().setHtmlErrorOverlay(OfflineUtils.getHtmlErrorOverlay())
+                .setHtmlErrorScript("").setHtmlErrorCSS("")
+                .setOfflineLoggerInterceptor(object : IOfflineLoggerInterceptor {
+                    override fun onLogMessage(
+                        keyItem: KeyOfflineItem?, type: OfflineLoggerType, message: String
+                    ) {
+                        OfflineLogs.w(
+                            OFFLINE_KEY,
+                            keyItem?.key + "; " + keyItem?.title + "; " + type + "; " + message
+                        )
+                        if (type != OfflineLoggerType.DEBUG) {
+                            FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeError)
+                        }
+                        keyItem ?: return
+                        when (type) {
+                            OfflineLoggerType.COMMON -> {
+                                Bugfender.e(
+                                    OFFLINE_KEY, "${
+                                        OfflineUtils.getPrettyOfflineKey(keyItem)
+                                    }, with message: $message"
+                                )
+                            }
+
+                            OfflineLoggerType.PREPARE -> {
+                                val errorMessage = "▧ %s preparing content: ${
+                                    OfflineUtils.getPrettyOfflineKey(keyItem)
+                                }, with message: $message"
+                                if (isOnline(this@AppManager)) {
+                                    val errorType = "[ERROR]"
+                                    Bugfender.e(OFFLINE_KEY, String.format(errorMessage, errorType))
+                                } else {
+                                    val errorType = "[ERROR NON-CRITICAL]"
+                                    Bugfender.w(OFFLINE_KEY, String.format(errorMessage, errorType))
+                                }
+                            }
+
+                            OfflineLoggerType.DOWNLOAD_ERROR -> {
+                                if (isOnline(this@AppManager)) {
+                                    val errorMessage = "▧ [ERROR] downloading content: ${
+                                        OfflineUtils.getPrettyOfflineKey(keyItem)
+                                    }, with message: $message"
+                                    Bugfender.e(OFFLINE_KEY, errorMessage)
+
+                                } else {
+                                    val errorMessage =
+                                        "▧ [ERROR NON-CRITICAL] downloading content: ${
+                                            OfflineUtils.getPrettyOfflineKey(keyItem)
+                                        }, with message: $message"
+                                    Bugfender.w(OFFLINE_KEY, errorMessage)
+                                }
+                            }
+
+                            OfflineLoggerType.DOWNLOAD_WARNING -> {
+                                val errorMessage =
+                                    "▧ [ERROR NON-CRITICAL] downloading content: ${
+                                        OfflineUtils.getPrettyOfflineKey(keyItem)
+                                    }, with message: $message"
+                                Bugfender.w(OFFLINE_KEY, errorMessage)
+                            }
+
+                            OfflineLoggerType.DEBUG -> Unit
+                        }
+                    }
+                })
+        ) { OfflineDownloaderCreator(it) }
+
+        Offline.getOfflineManager().addListener(object : OfflineManager.OfflineListener() {
+            override fun onItemAdded(key: String) {
+                onItemStartedDownload(key)
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeStarted)
+            }
+
+            override fun onItemStartedDownload(key: String) {
+                if (!OfflineModeService.isStarted) {
+                    ContextCompat.startForegroundService(
+                        this@AppManager,
+                        Intent(this@AppManager, OfflineModeService::class.java)
+                    )
+                }
+            }
+
+            override fun onItemRemoved(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeDeleted)
+            }
+
+            override fun onItemsRemoved(keys: List<String>) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeDeletedAll)
+            }
+
+            override fun onItemPaused(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModePaused)
+            }
+
+            override fun onItemResumed(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeResumed)
+            }
+
+            override fun onItemDownloaded(key: String) {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeCompleted)
+            }
+
+            override fun onPausedAll() {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModePausedAll)
+            }
+
+            override fun onResumedAll() {
+                FirebaseAnalytics.logEvent(AnalyticsEvent.OfflineModeResumedAll)
+            }
+        })
+
+        DownloadsRepository.loadData()
+
+        Bugfender.init(this, BuildConfig.BUGFENDER_KEY, BuildConfig.DEBUG)
+
+        schedulePandataUpload()
+        initPendo()
+    }
+
+    private fun initPendo() {
+        val options = Pendo.PendoOptions.Builder().setJetpackComposeBeta(true).build()
+        Pendo.setup(this, BuildConfig.PENDO_TOKEN, options, null)
     }
 
     override fun performLogoutOnAuthError() {
@@ -65,4 +214,15 @@ class AppManager : BaseAppManager() {
     }
 
     override fun getWorkManagerFactory(): WorkerFactory = workerFactory
+
+    private fun schedulePandataUpload() {
+        val workRequest = PeriodicWorkRequestBuilder<PageViewUploadWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+        workManager.enqueueUniquePeriodicWork("pageView-student", ExistingPeriodicWorkPolicy.KEEP, workRequest)
+    }
+
+    companion object {
+        const val OFFLINE_KEY = "OfflineTest"
+    }
 }

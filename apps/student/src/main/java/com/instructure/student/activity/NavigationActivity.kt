@@ -15,6 +15,7 @@
  *
  */
 @file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.instructure.student.activity
 
 import android.Manifest
@@ -28,6 +29,7 @@ import android.os.Handler
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.CompoundButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -49,8 +51,6 @@ import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.CanvasRestAdapter
-import com.instructure.canvasapi2.apis.OAuthAPI
-import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.managers.GroupManager
 import com.instructure.canvasapi2.managers.UserManager
 import com.instructure.canvasapi2.models.CanvasContext
@@ -60,7 +60,6 @@ import com.instructure.canvasapi2.models.StorageQuotaExceededError
 import com.instructure.canvasapi2.models.User
 import com.instructure.canvasapi2.utils.APIHelper
 import com.instructure.canvasapi2.utils.ApiPrefs
-import com.instructure.canvasapi2.utils.LocaleUtils
 import com.instructure.canvasapi2.utils.Logger
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.canvasapi2.utils.Pronouns
@@ -78,13 +77,19 @@ import com.instructure.interactions.router.RouteContext
 import com.instructure.interactions.router.RouterParams
 import com.instructure.loginapi.login.dialog.MasqueradingDialog
 import com.instructure.loginapi.login.tasks.LogoutTask
+import com.instructure.pandautils.analytics.OfflineAnalyticsManager
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.features.calendar.CalendarFragment
 import com.instructure.pandautils.features.calendarevent.details.EventFragment
 import com.instructure.pandautils.features.help.HelpDialogFragment
+import com.instructure.pandautils.features.inbox.compose.InboxComposeFragment
+import com.instructure.pandautils.features.inbox.details.InboxDetailsFragment
 import com.instructure.pandautils.features.inbox.list.InboxFragment
+import com.instructure.pandautils.features.lti.LtiLaunchFragment
 import com.instructure.pandautils.features.notification.preferences.PushNotificationPreferencesFragment
 import com.instructure.pandautils.features.offline.sync.OfflineSyncHelper
+import com.instructure.pandautils.features.reminder.AlarmScheduler
+import com.instructure.pandautils.features.settings.SettingsFragment
 import com.instructure.pandautils.features.themeselector.ThemeSelectorBottomSheet
 import com.instructure.pandautils.interfaces.NavigationCallbacks
 import com.instructure.pandautils.models.PushNotification
@@ -95,6 +100,7 @@ import com.instructure.pandautils.typeface.TypefaceBehavior
 import com.instructure.pandautils.update.UpdateManager
 import com.instructure.pandautils.utils.ActivityResult
 import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.LocaleUtils
 import com.instructure.pandautils.utils.NetworkStateProvider
 import com.instructure.pandautils.utils.OnActivityResults
 import com.instructure.pandautils.utils.OnBackStackChangedEvent
@@ -105,10 +111,11 @@ import com.instructure.pandautils.utils.RequestCodes.PICK_FILE_FROM_DEVICE
 import com.instructure.pandautils.utils.RequestCodes.PICK_IMAGE_GALLERY
 import com.instructure.pandautils.utils.ThemePrefs
 import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.WebViewAuthenticator
 import com.instructure.pandautils.utils.applyTheme
 import com.instructure.pandautils.utils.hideKeyboard
+import com.instructure.pandautils.utils.isAccessibilityEnabled
 import com.instructure.pandautils.utils.items
-import com.instructure.pandautils.utils.loadUrlIntoHeadlessWebView
 import com.instructure.pandautils.utils.onClickWithRequireNetwork
 import com.instructure.pandautils.utils.post
 import com.instructure.pandautils.utils.postSticky
@@ -126,16 +133,11 @@ import com.instructure.student.events.CourseColorOverlayToggledEvent
 import com.instructure.student.events.ShowConfettiEvent
 import com.instructure.student.events.ShowGradesToggledEvent
 import com.instructure.student.events.UserUpdatedEvent
-import com.instructure.student.features.assignments.reminder.AlarmScheduler
 import com.instructure.student.features.files.list.FileListFragment
 import com.instructure.student.features.modules.progression.CourseModuleProgressionFragment
 import com.instructure.student.features.navigation.NavigationRepository
 import com.instructure.student.fragment.BookmarksFragment
 import com.instructure.student.fragment.DashboardFragment
-import com.instructure.student.fragment.InboxComposeMessageFragment
-import com.instructure.student.fragment.InboxConversationFragment
-import com.instructure.student.fragment.InboxRecipientsFragment
-import com.instructure.student.fragment.LtiLaunchFragment
 import com.instructure.student.fragment.NotificationListFragment
 import com.instructure.student.fragment.ToDoListFragment
 import com.instructure.student.mobius.assignmentDetails.submission.picker.PickerSubmissionUploadEffectHandler
@@ -144,6 +146,9 @@ import com.instructure.student.navigation.AccountMenuItem
 import com.instructure.student.navigation.NavigationBehavior
 import com.instructure.student.navigation.NavigationMenuItem
 import com.instructure.student.navigation.OptionsMenuItem
+import com.instructure.student.offline.activity.DownloadsCoursesActivity
+import com.instructure.student.offline.util.OfflineNotificationHelper
+import com.instructure.student.router.EnabledTabs
 import com.instructure.student.router.RouteMatcher
 import com.instructure.student.router.RouteResolver
 import com.instructure.student.tasks.StudentLogoutTask
@@ -209,7 +214,13 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     lateinit var alarmScheduler: AlarmScheduler
 
     @Inject
-    lateinit var oAuthApi: OAuthAPI.OAuthInterface
+    lateinit var offlineAnalyticsManager: OfflineAnalyticsManager
+
+    @Inject
+    lateinit var enabledCourseTabs: EnabledTabs
+
+    @Inject
+    lateinit var webViewAuthenticator: WebViewAuthenticator
 
     private var routeJob: WeaveJob? = null
     private var debounceJob: Job? = null
@@ -219,7 +230,8 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     private val bottomNavScreensStack: Deque<String> = ArrayDeque()
 
-    private val notificationsPermissionContract = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    private val notificationsPermissionContract =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     override fun contentResId(): Int = R.layout.activity_navigation
 
@@ -231,31 +243,46 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             closeNavigationDrawer()
             delay(250)
             when (v.id) {
-                R.id.navigationDrawerItem_help -> {
-                    HelpDialogFragment.show(this@NavigationActivity)
+                R.id.navigationDrawerItem_liveChat -> {
+                    startActivity(Five9SupportActivity.newInstance(this@NavigationActivity))
                 }
-                R.id.navigationDrawerItem_files -> {
-                    ApiPrefs.user?.let { handleRoute(FileListFragment.makeRoute(it)) }
-                }
-                R.id.navigationDrawerItem_gauge, R.id.navigationDrawerItem_studio -> {
-                    val launchDefinition = v.tag as? LaunchDefinition ?: return@weave
+
+                R.id.navigationDrawerItem_placementPortal -> {
                     val user = ApiPrefs.user ?: return@weave
-                    val title = getString(if (launchDefinition.isGauge) R.string.gauge else R.string.studio)
-                    val route = LtiLaunchFragment.makeRoute(
-                        canvasContext = CanvasContext.currentUserContext(user),
-                        url = launchDefinition.placements.globalNavigation.url,
-                        title = title,
-                        sessionLessLaunch = true
+                    val route = LtiLaunchFragment.routeLtiLaunchFragment(
+                        this@NavigationActivity,
+                        CanvasContext.currentUserContext(user),
+                        LtiLaunchFragment.getPlacementPortalUrl()
                     )
                     RouteMatcher.route(this@NavigationActivity, route)
                 }
+
+                R.id.navigationDrawerItem_help -> {
+                    HelpDialogFragment.show(this@NavigationActivity)
+                }
+
+                R.id.navigationDrawerItem_files -> {
+                    ApiPrefs.user?.let { handleRoute(FileListFragment.makeRoute(it)) }
+                }
+
+                R.id.navigationDrawerItem_downloads -> {
+                    startActivity(DownloadsCoursesActivity.newIntent(this@NavigationActivity))
+                }
+
+                R.id.navigationDrawerItem_gauge, R.id.navigationDrawerItem_studio, R.id.navigationDrawerItem_mastery -> {
+                    val launchDefinition = v.tag as? LaunchDefinition ?: return@weave
+                    launchLti(launchDefinition)
+                }
+
                 R.id.navigationDrawerItem_bookmarks -> {
                     val route = BookmarksFragment.makeRoute(ApiPrefs.user)
                     addFragment(
-                            BookmarksFragment.newInstance(route) {
-                                RouteMatcher.routeUrl(this@NavigationActivity, it.url!!)
-                            }, route)
+                        BookmarksFragment.newInstance(route) {
+                            RouteMatcher.routeUrl(this@NavigationActivity, it.url!!)
+                        }, route
+                    )
                 }
+
                 R.id.navigationDrawerItem_changeUser -> {
                     StudentLogoutTask(
                         if (ApiPrefs.isStudentView) LogoutTask.Type.LOGOUT else LogoutTask.Type.SWITCH_USERS,
@@ -264,30 +291,58 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                         alarmScheduler = alarmScheduler
                     ).execute()
                 }
+
                 R.id.navigationDrawerItem_logout -> {
                     AlertDialog.Builder(this@NavigationActivity)
-                            .setTitle(R.string.logout_warning)
-                            .setPositiveButton(android.R.string.ok) { _, _ ->
-                                StudentLogoutTask(
-                                    LogoutTask.Type.LOGOUT,
-                                    typefaceBehavior = typefaceBehavior,
-                                    databaseProvider = databaseProvider,
-                                    alarmScheduler = alarmScheduler
-                                ).execute()
-                            }
-                            .setNegativeButton(android.R.string.cancel, null)
-                            .create()
-                            .show()
+                        .setTitle(R.string.logout_warning)
+                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                            OfflineNotificationHelper.unsubscribeUserFromSNS()
+                            StudentLogoutTask(
+                                LogoutTask.Type.LOGOUT,
+                                typefaceBehavior = typefaceBehavior,
+                                databaseProvider = databaseProvider,
+                                alarmScheduler = alarmScheduler
+                            ).execute()
+                        }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .create()
+                        .show()
                 }
+
                 R.id.navigationDrawerItem_startMasquerading -> {
-                    MasqueradingDialog.show(supportFragmentManager, ApiPrefs.domain, null, !isTablet)
+                    MasqueradingDialog.show(
+                        supportFragmentManager,
+                        ApiPrefs.domain,
+                        null,
+                        !isTablet
+                    )
                 }
+
                 R.id.navigationDrawerItem_stopMasquerading -> {
                     MasqueradeHelper.stopMasquerading(startActivityClass)
                 }
-                R.id.navigationDrawerSettings -> startActivity(SettingsActivity.createIntent(applicationContext, featureFlagProvider.offlineEnabled()))
+                R.id.navigationDrawerSettings -> {
+                    val route = SettingsFragment.makeRoute(featureFlagProvider.offlineEnabled())
+                    val fragment = SettingsFragment.newInstance(route)
+                    addFragment(fragment, route)
+                }
+                R.id.navigationDrawerItem_closeDrawer -> {
+                    closeNavigationDrawer()
+                }
             }
         }
+    }
+
+    private fun launchLti(launchDefinition: LaunchDefinition) {
+        val user = ApiPrefs.user ?: return
+        val title = launchDefinition.name
+        val route = LtiLaunchFragment.makeRoute(
+            canvasContext = CanvasContext.currentUserContext(user),
+            url = launchDefinition.placements?.globalNavigation?.url.orEmpty(),
+            title = title,
+            sessionLessLaunch = true
+        )
+        RouteMatcher.route(this, route)
     }
 
     private val onBackStackChangedListener = FragmentManager.OnBackStackChangedListener {
@@ -301,13 +356,14 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
              from external sources. */
             val visible = isBottomNavFragment(it) || supportFragmentManager.backStackEntryCount <= 1
             binding.bottomBar.setVisible(visible)
-            binding.divider.setVisible(visible)
+            binding.bottomBarDivider.setVisible(visible)
         }
     }
 
     override fun onResume() {
         super.onResume()
         applyCurrentFragmentTheme()
+        webViewAuthenticator.authenticateWebViews(lifecycleScope, this)
     }
 
     private fun checkAppUpdates() {
@@ -335,12 +391,17 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         super.onCreate(savedInstanceState)
         RouteMatcher.offlineDb = offlineDatabase
         RouteMatcher.networkStateProvider = networkStateProvider
+        RouteMatcher.enabledTabs = enabledCourseTabs
         navigationDrawerBinding = NavigationDrawerBinding.bind(binding.root)
         canvasLoadingBinding = LoadingCanvasViewBinding.bind(binding.root)
         setContentView(binding.root)
         val masqueradingUserId: Long = intent.getLongExtra(Const.QR_CODE_MASQUERADE_ID, 0L)
         if (masqueradingUserId != 0L) {
-            MasqueradeHelper.startMasquerading(masqueradingUserId, ApiPrefs.domain, NavigationActivity::class.java)
+            MasqueradeHelper.startMasquerading(
+                masqueradingUserId,
+                ApiPrefs.domain,
+                NavigationActivity::class.java
+            )
             finish()
         }
 
@@ -372,6 +433,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         requestNotificationsPermission()
 
         networkStateProvider.isOnlineLiveData.observe(this) { isOnline ->
+            logOfflineEvents(isOnline)
             setOfflineState(!isOnline)
             handleTokenCheck(isOnline)
         }
@@ -383,20 +445,14 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         }
 
         scheduleAlarms()
-
-        if (ApiPrefs.isFirstMasqueradingStart) {
-            loadAuthenticatedSession()
-            ApiPrefs.isFirstMasqueradingStart = false
-        }
     }
 
-    private fun loadAuthenticatedSession() {
+    private fun logOfflineEvents(isOnline: Boolean) {
         lifecycleScope.launch {
-            oAuthApi.getAuthenticatedSession(
-                ApiPrefs.fullDomain,
-                RestParams(isForceReadFromNetwork = true)
-            ).dataOrNull?.sessionUrl?.let {
-                loadUrlIntoHeadlessWebView(this@NavigationActivity, it)
+            if (isOnline) {
+                offlineAnalyticsManager.offlineModeEnded()
+            } else {
+                offlineAnalyticsManager.offlineModeStarted()
             }
         }
     }
@@ -433,24 +489,56 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         currentFragment?.let {
             val visible = isBottomNavFragment(it) || supportFragmentManager.backStackEntryCount <= 1
             binding.bottomBar.setVisible(visible)
-            binding.divider.setVisible(visible)
+            binding.bottomBarDivider.setVisible(visible)
         }
     }
 
     private fun setupNavDrawerItems() {
-        navigationDrawerBinding.navigationDrawerItemFiles.setVisible(navigationBehavior.visibleNavigationMenuItems.contains(NavigationMenuItem.FILES))
-        navigationDrawerBinding.navigationDrawerItemBookmarks.setVisible(navigationBehavior.visibleNavigationMenuItems.contains(NavigationMenuItem.BOOKMARKS))
-        navigationDrawerBinding.navigationDrawerSettings.setVisible(navigationBehavior.visibleNavigationMenuItems.contains(NavigationMenuItem.SETTINGS))
+        navigationDrawerBinding.navigationDrawerItemFiles.setVisible(
+            navigationBehavior.visibleNavigationMenuItems.contains(
+                NavigationMenuItem.FILES
+            )
+        )
+        navigationDrawerBinding.navigationDrawerItemBookmarks.setVisible(
+            navigationBehavior.visibleNavigationMenuItems.contains(
+                NavigationMenuItem.BOOKMARKS
+            )
+        )
+        navigationDrawerBinding.navigationDrawerSettings.setVisible(
+            navigationBehavior.visibleNavigationMenuItems.contains(
+                NavigationMenuItem.SETTINGS
+            )
+        )
         navigationDrawerBinding.navigationMenuItemsDivider.setVisible(navigationBehavior.visibleNavigationMenuItems.isNotEmpty())
 
         navigationDrawerBinding.optionsMenuTitle.setVisible(navigationBehavior.visibleOptionsMenuItems.isNotEmpty())
-        navigationDrawerBinding.navigationDrawerItemShowGrades.setVisible(navigationBehavior.visibleOptionsMenuItems.contains(OptionsMenuItem.SHOW_GRADES))
-        navigationDrawerBinding.navigationDrawerItemColorOverlay.setVisible(navigationBehavior.visibleOptionsMenuItems.contains(OptionsMenuItem.COLOR_OVERLAY))
+        navigationDrawerBinding.navigationDrawerItemShowGrades.setVisible(
+            navigationBehavior.visibleOptionsMenuItems.contains(
+                OptionsMenuItem.SHOW_GRADES
+            )
+        )
+        navigationDrawerBinding.navigationDrawerItemColorOverlay.setVisible(
+            navigationBehavior.visibleOptionsMenuItems.contains(
+                OptionsMenuItem.COLOR_OVERLAY
+            )
+        )
         navigationDrawerBinding.optionsMenuItemsDivider.setVisible(navigationBehavior.visibleOptionsMenuItems.isNotEmpty())
 
-        navigationDrawerBinding.navigationDrawerItemHelp.setVisible(navigationBehavior.visibleAccountMenuItems.contains(AccountMenuItem.HELP))
-        navigationDrawerBinding.navigationDrawerItemChangeUser.setVisible(navigationBehavior.visibleAccountMenuItems.contains(AccountMenuItem.CHANGE_USER))
-        navigationDrawerBinding.navigationDrawerItemLogout.setVisible(navigationBehavior.visibleAccountMenuItems.contains(AccountMenuItem.LOGOUT))
+        navigationDrawerBinding.navigationDrawerItemHelp.setVisible(
+            navigationBehavior.visibleAccountMenuItems.contains(
+                AccountMenuItem.HELP
+            )
+        )
+        navigationDrawerBinding.navigationDrawerItemChangeUser.setVisible(
+            navigationBehavior.visibleAccountMenuItems.contains(
+                AccountMenuItem.CHANGE_USER
+            )
+        )
+        navigationDrawerBinding.navigationDrawerItemLogout.setVisible(
+            navigationBehavior.visibleAccountMenuItems.contains(
+                AccountMenuItem.LOGOUT
+            )
+        )
     }
 
     override fun initialCoreDataLoadingComplete() {
@@ -459,10 +547,14 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             loadLandingPage(true)
         }
 
-        if (ApiPrefs.user == null ) {
+        if (ApiPrefs.user == null) {
             // Hard case to repro but it's possible for a user to force exit the app before we finish saving the user but they will still launch into the app
             // If that happens, log out
-            StudentLogoutTask(LogoutTask.Type.LOGOUT, databaseProvider = databaseProvider, alarmScheduler = alarmScheduler).execute()
+            StudentLogoutTask(
+                LogoutTask.Type.LOGOUT,
+                databaseProvider = databaseProvider,
+                alarmScheduler = alarmScheduler
+            ).execute()
         }
 
         setupBottomNavigation()
@@ -475,11 +567,13 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     override fun onStart() {
         super.onStart()
         EventBus.getDefault().register(this)
+        logOfflineEvents(networkStateProvider.isOnline())
     }
 
     override fun onStop() {
         super.onStop()
         EventBus.getDefault().unregister(this)
+        logOfflineEvents(true)
     }
 
     override fun onDestroy() {
@@ -519,12 +613,20 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             when (placement) {
                 AppShortcutManager.APP_SHORTCUT_BOOKMARKS -> {
                     val route = BookmarksFragment.makeRoute(ApiPrefs.user)
-                    addFragment(BookmarksFragment.newInstance(route) { RouteMatcher.routeUrl(this, it.url!!) }, route)
+                    addFragment(BookmarksFragment.newInstance(route) {
+                        RouteMatcher.routeUrl(
+                            this,
+                            it.url!!
+                        )
+                    }, route)
                 }
                 AppShortcutManager.APP_SHORTCUT_CALENDAR -> selectBottomNavFragment(
                     CalendarFragment::class.java)
                 AppShortcutManager.APP_SHORTCUT_TODO -> selectBottomNavFragment(ToDoListFragment::class.java)
-                AppShortcutManager.APP_SHORTCUT_NOTIFICATIONS -> selectBottomNavFragment(NotificationListFragment::class.java)
+                AppShortcutManager.APP_SHORTCUT_NOTIFICATIONS -> selectBottomNavFragment(
+                    NotificationListFragment::class.java
+                )
+
                 AppShortcutManager.APP_SHORTCUT_INBOX -> {
                     if (ApiPrefs.isStudentView) {
                         // Inbox not available in Student View
@@ -579,7 +681,11 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         if (user != null) {
             navigationDrawerUserName.text = Pronouns.span(user.shortName, user.pronouns)
             navigationDrawerUserEmail.text = user.primaryEmail
-            ProfileUtils.loadAvatarForUser(navigationDrawerProfileImage, user.shortName, user.avatarUrl)
+            ProfileUtils.loadAvatarForUser(
+                navigationDrawerProfileImage,
+                user.shortName,
+                user.avatarUrl
+            )
         }
     }
 
@@ -593,24 +699,64 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     override fun <F> attachNavigationDrawer(fragment: F, toolbar: Toolbar?) where F : Fragment, F : FragmentInteractions {
         //Navigation items
-        navigationDrawerBinding.navigationDrawerItemFiles.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemGauge.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemStudio.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemBookmarks.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemChangeUser.setOnClickListener(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemHelp.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemLogout.setOnClickListener(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerSettings.setOnClickListener(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemStartMasquerading.setOnClickListener(mNavigationDrawerItemClickListener)
-        navigationDrawerBinding.navigationDrawerItemStopMasquerading.setOnClickListener(mNavigationDrawerItemClickListener)
+        with(navigationDrawerBinding) {
+            navigationDrawerItemFiles.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemGauge.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemStudio.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemMastery.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemBookmarks.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemChangeUser.setOnClickListener(mNavigationDrawerItemClickListener)
+            navigationDrawerItemLiveChat.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemPlacementPortal.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemHelp.onClickWithRequireNetwork(mNavigationDrawerItemClickListener)
+            navigationDrawerItemDownloads.setOnClickListener(mNavigationDrawerItemClickListener)
+            navigationDrawerItemLogout.setOnClickListener(mNavigationDrawerItemClickListener)
+            navigationDrawerSettings.setOnClickListener(mNavigationDrawerItemClickListener)
+            navigationDrawerItemStartMasquerading.setOnClickListener(mNavigationDrawerItemClickListener)
+            navigationDrawerItemStopMasquerading.setOnClickListener(mNavigationDrawerItemClickListener)
+            navigationDrawerItemCloseDrawer.setOnClickListener(mNavigationDrawerItemClickListener)
+            listOf(
+                navigationDrawerItemFiles,
+                navigationDrawerItemGauge,
+                navigationDrawerItemStudio,
+                navigationDrawerItemMastery,
+                navigationDrawerItemBookmarks,
+                navigationDrawerItemChangeUser,
+                navigationDrawerItemLiveChat,
+                navigationDrawerItemPlacementPortal,
+                navigationDrawerItemHelp,
+                navigationDrawerItemDownloads,
+                navigationDrawerItemLogout,
+                navigationDrawerSettings,
+                navigationDrawerItemStartMasquerading,
+                navigationDrawerItemStopMasquerading,
+                navigationDrawerItemCloseDrawer
+            ).forEach {
+                it.accessibilityDelegate = object : View.AccessibilityDelegate() {
+                    override fun onInitializeAccessibilityNodeInfo(
+                        host: View,
+                        info: AccessibilityNodeInfo
+                    ) {
+                        super.onInitializeAccessibilityNodeInfo(host, info)
+                        info.className = "android.widget.Button"
+                    }
+                }
+            }
+        }
+
 
         //Load Show Grades
-        navigationDrawerBinding.navigationDrawerShowGradesSwitch.isChecked = StudentPrefs.showGradesOnCard
+        navigationDrawerBinding.navigationDrawerShowGradesSwitch.isChecked =
+            StudentPrefs.showGradesOnCard
         navigationDrawerBinding.navigationDrawerShowGradesSwitch.setOnCheckedChangeListener { _, isChecked ->
             StudentPrefs.showGradesOnCard = isChecked
             EventBus.getDefault().post(ShowGradesToggledEvent)
         }
-        ViewStyler.themeSwitch(this@NavigationActivity, navigationDrawerBinding.navigationDrawerShowGradesSwitch, ThemePrefs.brandColor)
+        ViewStyler.themeSwitch(
+            this@NavigationActivity,
+            navigationDrawerBinding.navigationDrawerShowGradesSwitch,
+            ThemePrefs.brandColor
+        )
 
         // Set up Color Overlay setting
         setUpColorOverlaySwitch()
@@ -618,8 +764,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         //Load version
         try {
             val navigationDrawerVersion = findViewById<TextView>(R.id.navigationDrawerVersion)
-            navigationDrawerVersion.text = String.format(getString(R.string.version),
-                    packageManager.getPackageInfo(applicationInfo.packageName, 0).versionName)
+            navigationDrawerVersion.text = String.format(
+                getString(R.string.version),
+                packageManager.getPackageInfo(applicationInfo.packageName, 0).versionName
+            )
         } catch (e: PackageManager.NameNotFoundException) {
             Logger.e("Error getting version: " + e)
         }
@@ -636,10 +784,16 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
         binding.drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
 
-        mDrawerToggle = object : ActionBarDrawerToggle(this@NavigationActivity, binding.drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
+        mDrawerToggle = object : ActionBarDrawerToggle(
+            this@NavigationActivity,
+            binding.drawerLayout,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        ) {
             override fun onDrawerOpened(drawerView: View) {
                 super.onDrawerOpened(drawerView)
                 invalidateOptionsMenu()
+                setCloseDrawerVisibility()
             }
 
             override fun onDrawerClosed(drawerView: View) {
@@ -661,6 +815,11 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
         navigationDrawerBinding.navigationDrawerItemStartMasquerading.setVisible(!ApiPrefs.isMasquerading && ApiPrefs.canBecomeUser == true)
         navigationDrawerBinding.navigationDrawerItemStopMasquerading.setVisible(ApiPrefs.isMasquerading)
+
+        val placementPortalUrl = LtiLaunchFragment.getPlacementPortalUrl()
+        if (placementPortalUrl.isNotEmpty()) {
+            navigationDrawerBinding.navigationDrawerItemPlacementPortal.visibility = View.VISIBLE
+        }
     }
 
     private fun setUpColorOverlaySwitch() = with(navigationDrawerBinding) {
@@ -686,7 +845,11 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             }
         }
         navigationDrawerColorOverlaySwitch.setOnCheckedChangeListener(checkListener)
-        ViewStyler.themeSwitch(this@NavigationActivity, navigationDrawerColorOverlaySwitch, ThemePrefs.brandColor)
+        ViewStyler.themeSwitch(
+            this@NavigationActivity,
+            navigationDrawerColorOverlaySwitch,
+            ThemePrefs.brandColor
+        )
     }
 
     private fun setOfflineState(isOffline: Boolean) {
@@ -720,7 +883,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onUserUpdatedEvent(event: UserUpdatedEvent){
+    fun onUserUpdatedEvent(event: UserUpdatedEvent) {
         event.once(javaClass.simpleName) {
             setupUserDetails(it)
         }
@@ -741,25 +904,30 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     //region Bottom Bar Navigation
 
-    private val bottomBarItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item: MenuItem ->
-        when (item.itemId) {
-            R.id.bottomNavigationHome -> selectBottomNavFragment(navigationBehavior.homeFragmentClass)
-            R.id.bottomNavigationCalendar -> selectBottomNavFragment(CalendarFragment::class.java)
-            R.id.bottomNavigationToDo -> selectBottomNavFragment(ToDoListFragment::class.java)
-            R.id.bottomNavigationNotifications -> selectBottomNavFragment(NotificationListFragment::class.java)
-            R.id.bottomNavigationInbox -> {
-                if (ApiPrefs.isStudentView) {
-                    selectBottomNavFragment(NothingToSeeHereFragment::class.java)
-                } else {
-                    selectBottomNavFragment(InboxFragment::class.java)
+    private val bottomBarItemSelectedListener =
+        BottomNavigationView.OnNavigationItemSelectedListener { item: MenuItem ->
+            when (item.itemId) {
+                R.id.bottomNavigationHome -> selectBottomNavFragment(navigationBehavior.homeFragmentClass)
+                R.id.bottomNavigationCalendar -> selectBottomNavFragment(CalendarFragment::class.java)
+                R.id.bottomNavigationToDo -> selectBottomNavFragment(ToDoListFragment::class.java)
+                R.id.bottomNavigationNotifications -> selectBottomNavFragment(
+                    NotificationListFragment::class.java
+                )
+
+                R.id.bottomNavigationInbox -> {
+                    if (ApiPrefs.isStudentView) {
+                        selectBottomNavFragment(NothingToSeeHereFragment::class.java)
+                    } else {
+                        selectBottomNavFragment(InboxFragment::class.java)
+                    }
                 }
             }
+            true
         }
-        true
-    }
 
-    private val bottomBarItemReselectedListener = BottomNavigationView.OnNavigationItemReselectedListener { item: MenuItem ->
-        // If the top fragment != courses, calendar, to-do, notifications, inbox then load the item
+    private val bottomBarItemReselectedListener =
+        BottomNavigationView.OnNavigationItemReselectedListener { item: MenuItem ->
+            // If the top fragment != courses, calendar, to-do, notifications, inbox then load the item
 
         var abortReselect = true
         topFragment?.let {
@@ -774,26 +942,32 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             }
         }
 
-        if(!abortReselect) {
-            when (item.itemId) {
-                R.id.bottomNavigationHome -> selectBottomNavFragment(navigationBehavior.homeFragmentClass)
-                R.id.bottomNavigationCalendar -> selectBottomNavFragment(CalendarFragment::class.java)
-                R.id.bottomNavigationToDo -> selectBottomNavFragment(ToDoListFragment::class.java)
-                R.id.bottomNavigationNotifications -> selectBottomNavFragment(NotificationListFragment::class.java)
-                R.id.bottomNavigationInbox -> {
-                    if (ApiPrefs.isStudentView) {
-                        selectBottomNavFragment(NothingToSeeHereFragment::class.java)
-                    } else {
-                        selectBottomNavFragment(InboxFragment::class.java)
+            if (!abortReselect) {
+                when (item.itemId) {
+                    R.id.bottomNavigationHome -> selectBottomNavFragment(navigationBehavior.homeFragmentClass)
+                    R.id.bottomNavigationCalendar -> selectBottomNavFragment(CalendarFragment::class.java)
+                    R.id.bottomNavigationToDo -> selectBottomNavFragment(ToDoListFragment::class.java)
+                    R.id.bottomNavigationNotifications -> selectBottomNavFragment(
+                        NotificationListFragment::class.java
+                    )
+
+                    R.id.bottomNavigationInbox -> {
+                        if (ApiPrefs.isStudentView) {
+                            selectBottomNavFragment(NothingToSeeHereFragment::class.java)
+                        } else {
+                            selectBottomNavFragment(InboxFragment::class.java)
+                        }
                     }
                 }
             }
         }
-    }
 
     private fun setupBottomNavigation() = with(binding) {
         Logger.d("NavigationActivity:setupBottomNavigation()")
-        bottomBar.applyTheme(ThemePrefs.brandColor, ContextCompat.getColor(this@NavigationActivity, R.color.textDarkest))
+        bottomBar.applyTheme(
+            ThemePrefs.brandColor,
+            ContextCompat.getColor(this@NavigationActivity, R.color.textDarkest)
+        )
         bottomBar.setOnNavigationItemSelectedListener(bottomBarItemSelectedListener)
         bottomBar.setOnNavigationItemReselectedListener(bottomBarItemReselectedListener)
         updateBottomBarContentDescriptions()
@@ -813,9 +987,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         /* Manually apply content description on each MenuItem since BottomNavigationView won't
         automatically set it from either the title or content description specified in the menu xml */
         loop@ binding.bottomBar.menu.items.forEach {
-            val title = if (it.itemId == itemId) getString(R.string.selected) + " " + it.title else it.title
+            val title =
+                if (it.itemId == itemId) getString(R.string.selected) + " " + it.title else it.title
             // skip inbox, we set it with the unread count even if there are no new messages
-            if(it.itemId != R.id.bottomNavigationInbox) {
+            if (it.itemId != R.id.bottomNavigationInbox) {
                 MenuItemCompat.setContentDescription(it, title)
             }
         }
@@ -825,22 +1000,23 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
      * Determines which tab is highlighted in the bottom navigation bar.
      */
     private fun setBottomBarItemSelected(fragment: Fragment) {
-        when(fragment) {
+        when (fragment) {
             //Calendar
             is CalendarFragment -> setBottomBarItemSelected(R.id.bottomNavigationCalendar)
             is EventFragment -> setBottomBarItemSelected(R.id.bottomNavigationCalendar)
             //To-do
             is ToDoListFragment -> setBottomBarItemSelected(R.id.bottomNavigationToDo)
             //Notifications
-            is NotificationListFragment-> {
-                setBottomBarItemSelected(if(fragment.isCourseOrGroup()) R.id.bottomNavigationHome
-                else R.id.bottomNavigationNotifications)
+            is NotificationListFragment -> {
+                setBottomBarItemSelected(
+                    if (fragment.isCourseOrGroup()) R.id.bottomNavigationHome
+                    else R.id.bottomNavigationNotifications
+                )
             }
             //Inbox
             is InboxFragment,
-            is InboxConversationFragment,
-            is InboxComposeMessageFragment,
-            is InboxRecipientsFragment -> setBottomBarItemSelected(R.id.bottomNavigationInbox)
+            is InboxDetailsFragment,
+            is InboxComposeFragment -> setBottomBarItemSelected(R.id.bottomNavigationInbox)
             //courses
             else -> setBottomBarItemSelected(R.id.bottomNavigationHome)
         }
@@ -855,7 +1031,11 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
         if (item.itemId == R.id.bookmark) {
             if (!APIHelper.hasNetworkConnection()) {
-                Toast.makeText(context, context.getString(R.string.notAvailableOffline), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.notAvailableOffline),
+                    Toast.LENGTH_SHORT
+                ).show()
                 return true
             }
             addBookmark()
@@ -881,32 +1061,41 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         if (routeJob?.isActive == true) return
 
         routeJob = tryWeave {
-            if(route.routeContext == RouteContext.EXTERNAL) showLoadingIndicator()
+            if (route.routeContext == RouteContext.EXTERNAL) showLoadingIndicator()
 
             // When statements not being used, for some reason they are breaking with the Route enum types.
-            if(route.canvasContext == null) {
+            if (route.canvasContext == null) {
                 val contextId = Route.extractCourseId(route)
                 if (contextId != 0L) {
                     when {
                         RouteContext.FILE == route.routeContext && route.secondaryClass != CourseModuleProgressionFragment::class.java -> {
                             if (route.queryParamsHash.containsKey(RouterParams.VERIFIER) && route.queryParamsHash.containsKey(RouterParams.DOWNLOAD_FRD)) {
-                                if(route.uri != null) openMedia(CanvasContext.getGenericContext(CanvasContext.Type.COURSE, contextId, ""), route.uri.toString())
+                                if(route.uri != null) openMedia(CanvasContext.getGenericContext(CanvasContext.Type.COURSE, contextId, ""), route.uri.toString(), null)
                             }
                             route.paramsHash[RouterParams.FILE_ID]?.let { handleSpecificFile(contextId, it) }
 
                             if(route.canvasContext != null) addFragment(RouteResolver.getFragment(route), route)
                         }
+
                         RouteContext.LTI == route.routeContext -> {
                             val contextType = route.getContextType()
                             when (contextType) {
                                 CanvasContext.Type.COURSE -> {
                                     route.canvasContext = repository.getCourse(contextId, false)
-                                    if(route.canvasContext == null) showMessage(getString(R.string.could_not_route_course))
+                                    if (route.canvasContext == null) showMessage(getString(R.string.could_not_route_course))
                                 }
+
                                 CanvasContext.Type.GROUP -> {
-                                    route.canvasContext = awaitApi<Group> { GroupManager.getDetailedGroup(contextId, it, false) }
-                                    if(route.canvasContext == null) showMessage(getString(R.string.could_not_route_group))
+                                    route.canvasContext = awaitApi<Group> {
+                                        GroupManager.getDetailedGroup(
+                                            contextId,
+                                            it,
+                                            false
+                                        )
+                                    }
+                                    if (route.canvasContext == null) showMessage(getString(R.string.could_not_route_group))
                                 }
+
                                 CanvasContext.Type.USER -> route.canvasContext = ApiPrefs.user
                                 else -> showMessage(getString(R.string.could_not_route_unknown))
                             }
@@ -916,27 +1105,47 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                                 RouteMatcher.route(this@NavigationActivity, ltiRoute)
                             }
                         }
+
                         RouteContext.NOTIFICATION_PREFERENCES == route.routeContext -> {
-                            Analytics.trackAppFlow(this@NavigationActivity, PushNotificationPreferencesFragment::class.java)
-                            RouteMatcher.route(this@NavigationActivity, Route(PushNotificationPreferencesFragment::class.java, null))
+                            Analytics.trackAppFlow(
+                                this@NavigationActivity,
+                                PushNotificationPreferencesFragment::class.java
+                            )
+                            RouteMatcher.route(
+                                this@NavigationActivity,
+                                Route(PushNotificationPreferencesFragment::class.java, null)
+                            )
                         }
+
                         else -> {
                             //fetch the CanvasContext
                             val contextType = route.getContextType()
                             when (contextType) {
                                 CanvasContext.Type.COURSE -> {
                                     route.canvasContext = repository.getCourse(contextId, false)
-                                    if(route.canvasContext == null) showMessage(getString(R.string.could_not_route_course))
+                                    if (route.canvasContext == null) showMessage(getString(R.string.could_not_route_course))
                                 }
+
                                 CanvasContext.Type.GROUP -> {
-                                    route.canvasContext = awaitApi<Group> { GroupManager.getDetailedGroup(contextId, it, false) }
-                                    if(route.canvasContext == null) showMessage(getString(R.string.could_not_route_group))
+                                    route.canvasContext = awaitApi<Group> {
+                                        GroupManager.getDetailedGroup(
+                                            contextId,
+                                            it,
+                                            false
+                                        )
+                                    }
+                                    if (route.canvasContext == null) showMessage(getString(R.string.could_not_route_group))
                                 }
+
                                 CanvasContext.Type.USER -> route.canvasContext = ApiPrefs.user
                                 else -> showMessage(getString(R.string.could_not_route_unknown))
                             }
 
-                            if(route.canvasContext != null) addFragment(RouteResolver.getFragment(route), route)
+                            if (route.canvasContext != null) addFragment(
+                                RouteResolver.getFragment(
+                                    route
+                                ), route
+                            )
                         }
                     }
                 } else {
@@ -955,7 +1164,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     }
 
     private fun addFragment(fragment: Fragment?, route: Route) {
-        if (fragment != null && fragment::class.java.name in getBottomNavFragmentNames() && isBottomNavFragment(currentFragment)) {
+        if (fragment != null && fragment::class.java.name in getBottomNavFragmentNames() && isBottomNavFragment(
+                currentFragment
+            )
+        ) {
             selectBottomNavFragment(fragment::class.java)
         } else {
             addFullScreenFragment(fragment, route.removePreviousScreen)
@@ -967,9 +1179,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
         (topFragment as? DashboardFragment)?.cancelCardDrag()
 
-        if (selectedFragment == null) {
+        if (selectedFragment == null || selectedFragment.tag?.contains(CalendarFragment::class.java.name) == true) {
             val fragment = createBottomNavFragment(fragmentClass.name)
-            val newArguments = if (fragment?.arguments != null) fragment.requireArguments() else Bundle()
+            val newArguments =
+                if (fragment?.arguments != null) fragment.requireArguments() else Bundle()
             newArguments.putBoolean(BOTTOM_NAV_SCREEN, true)
             fragment?.arguments = newArguments
             addFullScreenFragment(fragment)
@@ -981,7 +1194,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         bottomNavScreensStack.push(fragmentClass.name)
     }
 
-    private fun addFullScreenFragment(fragment: Fragment?, removePreviousFragment: Boolean = false) {
+    private fun addFullScreenFragment(
+        fragment: Fragment?,
+        removePreviousFragment: Boolean = false
+    ) {
         if (fragment == null) {
             Logger.e("NavigationActivity:addFullScreenFragment() - Could not route null Fragment.")
             return
@@ -1055,7 +1271,8 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             finish()
         } else if (bottomNavScreensStack.size == 1) {
             bottomNavScreensStack.pop()
-            val previousFragment = supportFragmentManager.findFragmentByTag(navigationBehavior.homeFragmentClass.name)
+            val previousFragment =
+                supportFragmentManager.findFragmentByTag(navigationBehavior.homeFragmentClass.name)
             if (previousFragment != null) {
                 showHiddenFragment(previousFragment)
                 applyCurrentFragmentTheme()
@@ -1075,7 +1292,8 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         get() {
             val stackSize = supportFragmentManager.backStackEntryCount
             if (stackSize > 0) {
-                val backStackEntryName = supportFragmentManager.getBackStackEntryAt(stackSize - 1).name
+                val backStackEntryName =
+                    supportFragmentManager.getBackStackEntryAt(stackSize - 1).name
                 return if (backStackEntryName in getBottomNavFragmentNames()) {
                     currentFragment
                 } else {
@@ -1099,16 +1317,19 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         get() {
             val fragment = supportFragmentManager.findFragmentById(R.id.fullscreen)
             return if (fragment != null && isBottomNavFragment(fragment)) {
-                val currentFragmentName = bottomNavScreensStack.peek() ?: navigationBehavior.homeFragmentClass.name
+                val currentFragmentName =
+                    bottomNavScreensStack.peek() ?: navigationBehavior.homeFragmentClass.name
                 supportFragmentManager.findFragmentByTag(currentFragmentName)
             } else {
                 fragment
             }
         }
 
-    private fun isBottomNavFragment(fragment: Fragment?) = fragment?.arguments?.getBoolean(BOTTOM_NAV_SCREEN) == true
+    private fun isBottomNavFragment(fragment: Fragment?) =
+        fragment?.arguments?.getBoolean(BOTTOM_NAV_SCREEN) == true
 
-    private fun getBottomNavFragmentNames() = navigationBehavior.bottomNavBarFragments.map { it.name }
+    private fun getBottomNavFragmentNames() =
+        navigationBehavior.bottomNavBarFragments.map { it.name }
 
     private fun clearBackStack(cls: Class<*>?) {
         val fragment = topFragment
@@ -1116,7 +1337,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             return
         }
         try {
-            supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+            supportFragmentManager.popBackStackImmediate(
+                null,
+                FragmentManager.POP_BACK_STACK_INCLUSIVE
+            )
         } catch (e: Exception) {
             Logger.e("NavigationActivity: clearBackStack() - Unable to clear backstack. $e")
         }
@@ -1151,7 +1375,13 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
                 val htmlUrl = extras.getString(PushNotification.HTML_URL, "")
 
-                if (!RouteMatcher.canRouteInternally(this, htmlUrl, ApiPrefs.domain, true) && ApiPrefs.user != null) {
+                if (!RouteMatcher.canRouteInternally(
+                        this,
+                        htmlUrl,
+                        ApiPrefs.domain,
+                        true
+                    ) && ApiPrefs.user != null
+                ) {
                     RouteMatcher.route(this, NotificationListFragment.makeRoute(ApiPrefs.user!!))
                 }
             }
@@ -1170,17 +1400,20 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
 
     private fun hasLocalNotificationLink(extras: Bundle?): Boolean {
         val flag = extras != null && extras.containsKey(Const.LOCAL_NOTIFICATION)
-            && extras.getBoolean(Const.LOCAL_NOTIFICATION, false)
+                && extras.getBoolean(Const.LOCAL_NOTIFICATION, false)
         if (flag) {
             // Clear the flag if we are handling this, so subsequent app opens don't deep link again
-            extras!!.putBoolean(Const.LOCAL_NOTIFICATION,false)
+            extras!!.putBoolean(Const.LOCAL_NOTIFICATION, false)
         }
         return flag
     }
 
     private fun hasPendingLanguageIntent(extras: Bundle?): Boolean {
         return extras != null && extras.containsKey(LocaleUtils.LANGUAGES_PENDING_INTENT_KEY)
-            && extras.getInt(LocaleUtils.LANGUAGES_PENDING_INTENT_KEY, 0) != LocaleUtils.LANGUAGES_PENDING_INTENT_ID
+                && extras.getInt(
+            LocaleUtils.LANGUAGES_PENDING_INTENT_KEY,
+            0
+        ) != LocaleUtils.LANGUAGES_PENDING_INTENT_ID
     }
 
     //endregion
@@ -1188,6 +1421,7 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
     override fun gotLaunchDefinitions(launchDefinitions: List<LaunchDefinition>?) {
         val studioLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.STUDIO_DOMAIN }
         val gaugeLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.GAUGE_DOMAIN }
+        val masteryLaunchDefinition = launchDefinitions?.firstOrNull { it.domain == LaunchDefinition.MASTERY_DOMAIN }
 
         val studio = findViewById<View>(R.id.navigationDrawerItem_studio)
         studio.visibility = if (studioLaunchDefinition != null) View.VISIBLE else View.GONE
@@ -1196,6 +1430,10 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         val gauge = findViewById<View>(R.id.navigationDrawerItem_gauge)
         gauge.visibility = if (gaugeLaunchDefinition != null) View.VISIBLE else View.GONE
         gauge.tag = gaugeLaunchDefinition
+
+        val mastery = findViewById<View>(R.id.navigationDrawerItem_mastery)
+        mastery.visibility = if (masteryLaunchDefinition != null) View.VISIBLE else View.GONE
+        mastery.tag = masteryLaunchDefinition
     }
 
     override fun addBookmark() {
@@ -1203,23 +1441,41 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         dialog?.show(supportFragmentManager, BookmarkCreationDialog::class.java.simpleName)
     }
 
-    override fun canBookmark(): Boolean = navigationBehavior.visibleNavigationMenuItems.contains(NavigationMenuItem.BOOKMARKS)
+    override fun canBookmark(): Boolean =
+        navigationBehavior.visibleNavigationMenuItems.contains(NavigationMenuItem.BOOKMARKS)
 
     override fun updateUnreadCount(unreadCount: Int) {
-        updateBottomBarBadge(R.id.bottomNavigationInbox, unreadCount, R.plurals.a11y_inboxUnreadCount)
+        updateBottomBarBadge(
+            R.id.bottomNavigationInbox,
+            unreadCount,
+            R.plurals.a11y_inboxUnreadCount
+        )
+    }
+
+    override fun increaseUnreadCount(increaseBy: Int) {
+        updateUnreadCount(binding.bottomBar.getOrCreateBadge(R.id.bottomNavigationInbox).number + increaseBy)
     }
 
     override fun updateNotificationCount(notificationCount: Int) {
-        updateBottomBarBadge(R.id.bottomNavigationNotifications, notificationCount, R.plurals.a11y_notificationsUnreadCount)
+        updateBottomBarBadge(
+            R.id.bottomNavigationNotifications,
+            notificationCount,
+            R.plurals.a11y_notificationsUnreadCount
+        )
     }
 
-    private fun updateBottomBarBadge(@IdRes menuItemId: Int, count: Int, @PluralsRes quantityContentDescription: Int? = null) = with(binding) {
+    private fun updateBottomBarBadge(
+        @IdRes menuItemId: Int,
+        count: Int,
+        @PluralsRes quantityContentDescription: Int? = null
+    ) = with(binding) {
         if (count > 0) {
             bottomBar.getOrCreateBadge(menuItemId).number = count
             bottomBar.getOrCreateBadge(menuItemId).backgroundColor = getColor(R.color.backgroundInfo)
             bottomBar.getOrCreateBadge(menuItemId).badgeTextColor = getColor(R.color.textLightest)
             if (quantityContentDescription != null) {
-                bottomBar.getOrCreateBadge(menuItemId).setContentDescriptionQuantityStringsResource(quantityContentDescription)
+                bottomBar.getOrCreateBadge(menuItemId)
+                    .setContentDescriptionQuantityStringsResource(quantityContentDescription)
             }
         } else {
             // Don't set the badge or display it, remove any badge
@@ -1239,7 +1495,11 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
             animation.addAnimatorUpdateListener {
                 if (it.animatedFraction >= 1.0) root.removeView(animation)
             }
-            root.addView(animation, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            root.addView(
+                animation,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             animation.playAnimation()
         }
     }
@@ -1250,22 +1510,27 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
                 val route = navigationBehavior.createHomeFragmentRoute(ApiPrefs.user)
                 navigationBehavior.createHomeFragment(route)
             }
+
             CalendarFragment::class.java.name -> {
                 val route = CalendarFragment.makeRoute()
                 CalendarFragment.newInstance(route)
             }
+
             ToDoListFragment::class.java.name -> {
                 val route = ToDoListFragment.makeRoute(ApiPrefs.user!!)
                 ToDoListFragment.newInstance(route)
             }
+
             NotificationListFragment::class.java.name -> {
                 val route = NotificationListFragment.makeRoute(ApiPrefs.user!!)
                 NotificationListFragment.newInstance(route)
             }
+
             InboxFragment::class.java.name -> {
                 val route = InboxFragment.makeRoute()
                 InboxFragment.newInstance(route)
             }
+
             NothingToSeeHereFragment::class.java.name -> NothingToSeeHereFragment.newInstance()
             else -> null
         }
@@ -1277,9 +1542,18 @@ class NavigationActivity : BaseRouterActivity(), Navigation, MasqueradingDialog.
         }
     }
 
+    private fun setCloseDrawerVisibility() {
+        navigationDrawerBinding.navigationDrawerItemCloseDrawer.setVisible(isAccessibilityEnabled(this))
+    }
+
     companion object {
         fun createIntent(context: Context, route: Route): Intent {
-            return Intent(context, NavigationActivity::class.java).apply { putExtra(Route.ROUTE, route) }
+            return Intent(context, NavigationActivity::class.java).apply {
+                putExtra(
+                    Route.ROUTE,
+                    route
+                )
+            }
         }
 
         fun createIntent(context: Context, masqueradingUserId: Long): Intent {

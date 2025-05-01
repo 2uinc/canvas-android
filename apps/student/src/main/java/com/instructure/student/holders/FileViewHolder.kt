@@ -28,6 +28,7 @@ import com.instructure.pandautils.utils.*
 import com.instructure.student.R
 import com.instructure.student.features.files.list.FileFolderCallback
 import com.instructure.student.databinding.ViewholderFileBinding
+import com.instructure.student.offline.initWithFileData
 import com.instructure.student.features.files.list.FileListFragment
 
 class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -37,7 +38,7 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         tint: Int,
         context: Context,
         hasOptions: List<FileListFragment.FileMenuType>,
-        callback: FileFolderCallback
+        callback: FileFolderCallback, courseId: Long
     ): Unit = with(ViewholderFileBinding.bind(itemView)) {
         // Set up click listeners
         root.onClick { callback.onItemClicked(item) }
@@ -89,6 +90,9 @@ class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fileFolderLayout.isEnabled = fileUnavailable.not()
         fileIcon.alpha = if (fileUnavailable) 0.5f else 1f
         textContainer.alpha = if (fileUnavailable) 0.5f else 1f
+
+        downloadItemView.initWithFileData(item, courseId, tint)
+        downloadFreeSpaceView.visibility = if (downloadItemView.visibility == View.VISIBLE && hasOptions.isEmpty()) View.VISIBLE else View.GONE
     }
 
     companion object {

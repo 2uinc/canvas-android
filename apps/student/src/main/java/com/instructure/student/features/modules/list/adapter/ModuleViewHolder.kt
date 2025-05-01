@@ -20,12 +20,14 @@ import com.instructure.student.R
 import com.instructure.student.databinding.ViewholderModuleBinding
 import com.instructure.student.features.modules.util.ModuleUtility
 import com.instructure.student.util.BinderUtils
+import com.instructure.student.offline.initWithModuleData
 
 private const val MODULE_INDENT_IN_DP = 10
 
 class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     fun bind(
+        itemPosition: Int,
         moduleObject: ModuleObject?,
         moduleItem: ModuleItem,
         context: Context,
@@ -109,6 +111,7 @@ class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         // Icon
         val drawableResource: Int = when {
+            moduleItem.quizLti -> R.drawable.ic_quiz
             ModuleItem.Type.Assignment.toString()
                 .equals(moduleItem.type, ignoreCase = true) -> R.drawable.ic_assignment
             ModuleItem.Type.Discussion.toString()
@@ -172,6 +175,8 @@ class ModuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             points.setGone()
         }
         BinderUtils.updateShadows(isFirstItem, isLastItem, shadowTop, shadowBottom)
+
+        downloadItemView.initWithModuleData(itemPosition, moduleObject, moduleItem, courseColor)
     }
 
     companion object {

@@ -16,11 +16,11 @@
   -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
-        <color android:color="#FFF"/>
+        <color android:color="@color/licorice"/>
     </item>
-    <item>
-        <bitmap
-            android:src="@drawable/ic_splash_icon_student"
-            android:gravity="center_horizontal|center_vertical"/>
-    </item>
+    <item
+        android:gravity="center"
+        android:width="120dp"
+        android:height="65dp"
+        android:drawable="@drawable/ic_canvas_logo"/>
 </layer-list>
