@@ -23,7 +23,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.view.Window
 import android.widget.Toast
-import androidx.fragment.app.FragmentActivity
+import androidx.work.WorkManager
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.models.AccountDomain
 import com.instructure.canvasapi2.utils.Analytics
@@ -33,13 +33,15 @@ import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.weave.apiAsync
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
-import com.instructure.interactions.router.Route
 import com.instructure.interactions.router.RouteContext
 import com.instructure.interactions.router.RouterParams
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.loginapi.login.util.QRLogin
 import com.instructure.loginapi.login.util.QRLogin.verifySSOLoginUri
+import com.instructure.pandautils.base.BaseCanvasActivity
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.features.file.download.FileDownloadWorker
+import com.instructure.pandautils.features.reminder.AlarmScheduler
 import com.instructure.pandautils.utils.AppType
 import com.instructure.pandautils.utils.Const
 import com.instructure.pandautils.utils.Utils
@@ -47,15 +49,23 @@ import com.instructure.teacher.R
 import com.instructure.teacher.databinding.ActivityRouteValidatorBinding
 import com.instructure.teacher.fragments.FileListFragment
 import com.instructure.teacher.router.RouteMatcher
-import com.instructure.teacher.services.FileDownloadService
 import com.instructure.teacher.tasks.TeacherLogoutTask
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
+import javax.inject.Inject
 
-class RouteValidatorActivity : FragmentActivity() {
+@AndroidEntryPoint
+class RouteValidatorActivity : BaseCanvasActivity() {
 
     private val binding by viewBinding(ActivityRouteValidatorBinding::inflate)
 
     private var routeValidatorJob: Job? = null
+
+    @Inject
+    lateinit var alarmScheduler: AlarmScheduler
+
+    @Inject
+    lateinit var workManager: WorkManager
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -81,7 +91,11 @@ class RouteValidatorActivity : FragmentActivity() {
                 // This is an App Link from a QR code, let's try to login the user and launch navigationActivity
                 try {
                     if (isSignedIn) { // If the user is already signed in, use the QR Switch
-                        TeacherLogoutTask(type = LogoutTask.Type.QR_CODE_SWITCH, uri = data).execute()
+                        TeacherLogoutTask(
+                            type = LogoutTask.Type.QR_CODE_SWITCH,
+                            uri = data,
+                            alarmScheduler = alarmScheduler
+                        ).execute()
                         finish()
                         return@tryWeave
                     }
@@ -154,12 +168,7 @@ class RouteValidatorActivity : FragmentActivity() {
                     // If we've already downloaded the file we just want to route to it
                     val fileDownloaded = intent.extras?.getBoolean(Const.FILE_DOWNLOADED, false) ?: false
                     if (!fileDownloaded && (route?.routeContext == RouteContext.FILE || route?.primaryClass == FileListFragment::class.java && route.queryParamsHash.containsKey(RouterParams.PREVIEW))) {
-                        val intent = Intent(this@RouteValidatorActivity, FileDownloadService::class.java)
-                        val bundle = Bundle()
-                        bundle.putParcelable(Route.ROUTE, route)
-                        bundle.putString(Const.URL, url)
-                        intent.putExtras(bundle)
-                        this@RouteValidatorActivity.startService(intent)
+                        workManager.enqueue(FileDownloadWorker.createOneTimeWorkRequest(null, url))
                     }
                     RouteMatcher.routeUrl(this@RouteValidatorActivity, url, domain)
 

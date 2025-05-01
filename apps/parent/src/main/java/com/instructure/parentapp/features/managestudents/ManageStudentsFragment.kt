@@ -24,24 +24,34 @@ import android.view.ViewGroup
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.instructure.pandautils.analytics.SCREEN_VIEW_MANAGE_STUDENTS
+import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.base.BaseCanvasFragment
 import com.instructure.pandautils.utils.ThemePrefs
 import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.announceAccessibilityText
 import com.instructure.pandautils.utils.collectOneOffEvents
+import com.instructure.parentapp.R
 import com.instructure.parentapp.features.addstudent.AddStudentBottomSheetDialogFragment
 import com.instructure.parentapp.features.addstudent.AddStudentViewModel
 import com.instructure.parentapp.features.addstudent.AddStudentViewModelAction
+import com.instructure.parentapp.util.navigation.Navigation
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
+@ScreenView(SCREEN_VIEW_MANAGE_STUDENTS)
 @AndroidEntryPoint
-class ManageStudentsFragment : Fragment() {
+class ManageStudentsFragment : BaseCanvasFragment() {
+
+    @Inject
+    lateinit var navigation: Navigation
 
     private val viewModel: ManageStudentViewModel by viewModels()
     private val addStudentViewModel: AddStudentViewModel by activityViewModels()
@@ -76,6 +86,12 @@ class ManageStudentsFragment : Fragment() {
         when (action) {
             is AddStudentViewModelAction.PairStudentSuccess -> {
                 viewModel.handleAction(ManageStudentsAction.Refresh)
+                context?.let { announceAccessibilityText(it, getString(R.string.addStudentSuccessfull)) }
+            }
+
+            is AddStudentViewModelAction.UnpairStudentSuccess -> {
+                viewModel.handleAction(ManageStudentsAction.Refresh)
+                context?.let { announceAccessibilityText(it, getString(R.string.unpairStudentSuccessfull)) }
             }
         }
     }
@@ -83,7 +99,7 @@ class ManageStudentsFragment : Fragment() {
     private fun handleAction(action: ManageStudentsViewModelAction) {
         when (action) {
             is ManageStudentsViewModelAction.NavigateToAlertSettings -> {
-                //TODO: Navigate to alert settings
+                navigation.navigate(requireActivity(), navigation.alertSettingsRoute(action.student))
             }
 
             is ManageStudentsViewModelAction.AddStudent -> {
@@ -91,6 +107,10 @@ class ManageStudentsFragment : Fragment() {
                     childFragmentManager,
                     AddStudentBottomSheetDialogFragment::class.java.simpleName
                 )
+            }
+
+            is ManageStudentsViewModelAction.AccessibilityAnnouncement -> {
+                context?.let { announceAccessibilityText(it, action.announcement) }
             }
         }
     }

@@ -19,6 +19,7 @@ package com.instructure.parentapp.features.managestudents
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.instructure.canvasapi2.models.User
 import com.instructure.pandautils.utils.ThemedColor
 
 
@@ -62,6 +63,7 @@ sealed class ManageStudentsAction {
 }
 
 sealed class ManageStudentsViewModelAction {
-    data class NavigateToAlertSettings(val studentId: Long) : ManageStudentsViewModelAction()
-    data object AddStudent: ManageStudentsViewModelAction()
+    data class NavigateToAlertSettings(val student: User) : ManageStudentsViewModelAction()
+    data object AddStudent : ManageStudentsViewModelAction()
+    data class AccessibilityAnnouncement(val announcement: String) : ManageStudentsViewModelAction()
 }

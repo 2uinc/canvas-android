@@ -32,7 +32,6 @@ import android.view.accessibility.AccessibilityManager
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.ColorInt
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -50,6 +49,7 @@ import com.instructure.loginapi.login.adapter.DomainAdapter
 import com.instructure.loginapi.login.databinding.ActivityFindSchoolBinding
 import com.instructure.loginapi.login.dialog.NoInternetConnectionDialog
 import com.instructure.loginapi.login.util.Const
+import com.instructure.pandautils.base.BaseCanvasActivity
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.utils.ColorUtils
 import com.instructure.pandautils.utils.ViewStyler
@@ -58,7 +58,7 @@ import retrofit2.Response
 import java.util.Locale
 import java.util.regex.Pattern
 
-abstract class BaseLoginFindSchoolActivity : AppCompatActivity() {
+abstract class BaseLoginFindSchoolActivity : BaseCanvasActivity() {
 
     private val binding by viewBinding(ActivityFindSchoolBinding::inflate)
 

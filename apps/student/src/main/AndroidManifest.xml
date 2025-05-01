@@ -17,8 +17,7 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.instructure.student">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission
@@ -79,6 +78,15 @@
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="false" />
+
+        <activity android:name="sdk.pendo.io.activities.PendoGateActivity" android:launchMode="singleInstance" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="pendo-889d43f7"/>
+            </intent-filter>
+        </activity>
 
         <!--Fun fact. LoginActivity is called that because activity-alias are not supported by pspdfkit, should be InitLoginActivity-->
         <activity
@@ -151,10 +159,6 @@
             android:name=".activity.CandroidPSPDFActivity"
             android:theme="@style/PSPDFKitTheme"
             android:windowSoftInputMode="adjustNothing" />
-
-        <activity
-            android:name=".activity.SettingsActivity"
-            android:theme="@style/CanvasMaterialTheme_Default"/>
 
         <activity android:name=".activity.PandaAvatarActivity"
             android:label="@string/pandaAvatar"
@@ -263,11 +267,6 @@
         </activity>
 
         <service
-            android:name=".mobius.common.ui.SubmissionService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-
-        <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
@@ -342,7 +341,7 @@
 
         <!--Reminder-->
         <receiver
-            android:name=".receivers.AlarmReceiver"
+            android:name="com.instructure.pandautils.receivers.alarm.AlarmReceiver"
             android:exported="false" />
 
         <!-- To do widget -->
@@ -407,11 +406,6 @@
         <service
             android:name=".widget.NotificationViewWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"/>
-
-        <service
-            android:name=".service.StudentPageViewService"
-            android:exported="true"
-            android:permission="android.permission.BIND_JOB_SERVICE"/>
 
         <!-- End of Widget Items -->
 

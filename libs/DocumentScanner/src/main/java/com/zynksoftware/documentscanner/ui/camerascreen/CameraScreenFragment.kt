@@ -20,12 +20,12 @@
 package com.zynksoftware.documentscanner.ui.camerascreen
 
 import android.Manifest
-import android.app.Activity
-import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import com.tbruyelle.rxpermissions3.RxPermissions
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.zynksoftware.documentscanner.R
 import com.zynksoftware.documentscanner.common.extensions.hide
 import com.zynksoftware.documentscanner.common.extensions.show
@@ -40,6 +40,18 @@ import java.io.FileNotFoundException
 
 
 internal class CameraScreenFragment: BaseFragment<FragmentCameraScreenBinding>(FragmentCameraScreenBinding::inflate), ScanSurfaceListener  {
+
+    private val requestCameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            startCamera()
+        } else {
+            onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.CAMERA_PERMISSION_REFUSED_GO_TO_SETTINGS))
+        }
+    }
+
+    private val filePickerContract = registerForActivityResult(ActivityResultContracts.GetContent()) {
+        handleSelectedFile(it)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) = with(binding) {
         super.onViewCreated(view, savedInstanceState)
@@ -76,7 +88,7 @@ internal class CameraScreenFragment: BaseFragment<FragmentCameraScreenBinding>(F
             switchFlashState()
         }
         galleryButton.setOnClickListener {
-            checkForStoragePermissions()
+            selectImageFromGallery()
         }
         autoButton.setOnClickListener {
             toggleAutoManualButton()
@@ -93,39 +105,13 @@ internal class CameraScreenFragment: BaseFragment<FragmentCameraScreenBinding>(F
     }
 
     private fun checkForCameraPermissions() {
-        RxPermissions(this)
-            .requestEach(Manifest.permission.CAMERA)
-            .subscribe { permission ->
-                when {
-                    permission.granted -> {
-                        startCamera()
-                    }
-                    permission.shouldShowRequestPermissionRationale -> {
-                        onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.CAMERA_PERMISSION_REFUSED_WITHOUT_NEVER_ASK_AGAIN))
-                    }
-                    else -> {
-                        onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.CAMERA_PERMISSION_REFUSED_GO_TO_SETTINGS))
-                    }
-                }
+        ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.CAMERA).let {
+            if (it == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                startCamera()
+            } else {
+                requestCameraPermission.launch(Manifest.permission.CAMERA)
             }
-    }
-
-    private fun checkForStoragePermissions() {
-        RxPermissions(this)
-            .requestEach(Manifest.permission.READ_MEDIA_IMAGES)
-            .subscribe { permission ->
-                when {
-                    permission.granted -> {
-                        selectImageFromGallery()
-                    }
-                    permission.shouldShowRequestPermissionRationale -> {
-                        onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.STORAGE_PERMISSION_REFUSED_WITHOUT_NEVER_ASK_AGAIN))
-                    }
-                    else -> {
-                        onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.STORAGE_PERMISSION_REFUSED_GO_TO_SETTINGS))
-                    }
-                }
-            }
+        }
     }
 
     private fun startCamera() {
@@ -157,38 +143,31 @@ internal class CameraScreenFragment: BaseFragment<FragmentCameraScreenBinding>(F
     }
 
     private fun selectImageFromGallery() {
-        val photoPickerIntent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        photoPickerIntent.addCategory(Intent.CATEGORY_OPENABLE)
-        photoPickerIntent.type = "image/*"
-        startActivityForResult(photoPickerIntent, GALLERY_REQUEST_CODE)
+        filePickerContract.launch("image/*")
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK && requestCode == GALLERY_REQUEST_CODE) {
-            try {
-                val imageUri = data?.data
-                if (imageUri != null) {
-                    val realPath = FileUriUtils.getRealPath(getScanActivity(), imageUri)
-                    if (realPath != null) {
-                        getScanActivity().reInitOriginalImageFile()
-                        getScanActivity().originalImageFile = File(realPath)
-                        startCroppingProcess()
-                    } else {
-                        Log.e(TAG, DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR.error)
-                        onError(DocumentScannerErrorModel(
-                            DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR, null))
-                    }
+    private fun handleSelectedFile(imageUri: Uri?) {
+        try {
+            if (imageUri != null) {
+                val realPath = FileUriUtils.getRealPath(getScanActivity(), imageUri)
+                if (realPath != null) {
+                    getScanActivity().reInitOriginalImageFile()
+                    getScanActivity().originalImageFile = File(realPath)
+                    startCroppingProcess()
                 } else {
                     Log.e(TAG, DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR.error)
                     onError(DocumentScannerErrorModel(
                         DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR, null))
                 }
-            } catch (e: FileNotFoundException) {
-                Log.e(TAG, "FileNotFoundException", e)
+            } else {
+                Log.e(TAG, DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR.error)
                 onError(DocumentScannerErrorModel(
-                    DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR, e))
+                    DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR, null))
             }
+        } catch (e: FileNotFoundException) {
+            Log.e(TAG, "FileNotFoundException", e)
+            onError(DocumentScannerErrorModel(
+                DocumentScannerErrorModel.ErrorMessage.TAKE_IMAGE_FROM_GALLERY_ERROR, e))
         }
     }
 
@@ -225,7 +204,6 @@ internal class CameraScreenFragment: BaseFragment<FragmentCameraScreenBinding>(F
     }
 
     companion object {
-        private const val GALLERY_REQUEST_CODE = 878
         private val TAG = CameraScreenFragment::class.simpleName
 
         fun newInstance(): CameraScreenFragment {

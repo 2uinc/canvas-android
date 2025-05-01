@@ -41,7 +41,12 @@ import androidx.work.WorkQuery
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.CourseNicknameManager
 import com.instructure.canvasapi2.managers.UserManager
-import com.instructure.canvasapi2.models.*
+import com.instructure.canvasapi2.models.CanvasColor
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.Course
+import com.instructure.canvasapi2.models.CourseNickname
+import com.instructure.canvasapi2.models.DashboardPositions
+import com.instructure.canvasapi2.models.Group
 import com.instructure.canvasapi2.utils.APIHelper
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageView
@@ -49,23 +54,38 @@ import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
 import com.instructure.interactions.router.Route
+import com.instructure.pandautils.analytics.OfflineAnalyticsManager
 import com.instructure.pandautils.analytics.SCREEN_VIEW_DASHBOARD
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.dialogs.ColorPickerDialog
+import com.instructure.pandautils.dialogs.EditCourseNicknameDialog
 import com.instructure.pandautils.features.dashboard.DashboardCourseItem
 import com.instructure.pandautils.features.dashboard.edit.EditDashboardFragment
 import com.instructure.pandautils.features.dashboard.notifications.DashboardNotificationsFragment
 import com.instructure.pandautils.features.offline.offlinecontent.OfflineContentFragment
 import com.instructure.pandautils.features.offline.sync.AggregateProgressObserver
 import com.instructure.pandautils.features.offline.sync.OfflineSyncWorker
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.FeatureFlagProvider
+import com.instructure.pandautils.utils.NetworkStateProvider
+import com.instructure.pandautils.utils.NullableParcelableArg
+import com.instructure.pandautils.utils.Utils
+import com.instructure.pandautils.utils.fadeAnimationWithAction
+import com.instructure.pandautils.utils.isTablet
+import com.instructure.pandautils.utils.makeBundle
+import com.instructure.pandautils.utils.removeAllItemDecorations
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setMenu
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.toast
+import com.instructure.pandautils.utils.withRequireNetwork
 import com.instructure.student.R
 import com.instructure.student.adapter.DashboardRecyclerAdapter
 import com.instructure.student.databinding.CourseGridRecyclerRefreshLayoutBinding
 import com.instructure.student.databinding.FragmentCourseGridBinding
 import com.instructure.student.decorations.VerticalGridSpacingDecoration
-import com.instructure.student.dialog.ColorPickerDialog
-import com.instructure.pandautils.dialogs.EditCourseNicknameDialog
 import com.instructure.student.events.CoreDataFinishedLoading
 import com.instructure.student.events.CourseColorOverlayToggledEvent
 import com.instructure.student.events.ShowGradesToggledEvent
@@ -81,9 +101,6 @@ import com.instructure.student.util.StudentPrefs
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import com.twou.offline.Offline
-import io.intercom.android.sdk.Intercom
-import io.intercom.android.sdk.UserAttributes
-import io.intercom.android.sdk.identity.Registration
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
@@ -112,6 +129,9 @@ class DashboardFragment : ParentFragment() {
 
     @Inject
     lateinit var firebaseCrashlytics: FirebaseCrashlytics
+
+    @Inject
+    lateinit var offlineAnalyticsManager: OfflineAnalyticsManager
 
     private val binding by viewBinding(FragmentCourseGridBinding::bind)
     private lateinit var recyclerBinding: CourseGridRecyclerRefreshLayoutBinding
@@ -202,8 +222,13 @@ class DashboardFragment : ParentFragment() {
                 }
 
                 override fun onCourseSelected(course: Course) {
-                    canvasContext = course
-                    RouteMatcher.route(requireActivity(), CourseBrowserFragment.makeRoute(course))
+                    lifecycleScope.launch {
+                        if (!repository.isOnline()) {
+                            offlineAnalyticsManager.reportCourseOpenedInOfflineMode()
+                        }
+                        canvasContext = course
+                        RouteMatcher.route(requireActivity(), CourseBrowserFragment.makeRoute(course))
+                    }
                 }
 
                 @Suppress("EXPERIMENTAL_FEATURE_WARNING")
@@ -538,21 +563,6 @@ class DashboardFragment : ParentFragment() {
     override fun onDestroy() {
         recyclerAdapter?.cancel()
         super.onDestroy()
-    }
-
-    private fun initIntercom() {
-        val user = ApiPrefs.user ?: return
-        val userAttributes = UserAttributes.Builder()
-            .withName(user.shortName)
-            .build()
-
-        val registration = Registration.create()
-            .withUserId("${user.id}")
-            .withEmail("${user.email}")
-            .withUserAttributes(userAttributes)
-
-        Intercom.client().loginIdentifiedUser(registration)
-        Intercom.client().handlePushMessage()
     }
 
     private fun initFirebase() {

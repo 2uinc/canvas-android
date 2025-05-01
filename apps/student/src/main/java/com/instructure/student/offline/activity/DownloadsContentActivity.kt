@@ -7,8 +7,9 @@ import android.graphics.Color
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
-import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.setupAsBackButton
 import com.instructure.student.R
 import com.instructure.student.databinding.ActivityDownloadsContentBinding
@@ -74,12 +75,10 @@ class DownloadsContentActivity : AppCompatActivity() {
         binding.downloadItemView.setKeyItem(KeyOfflineItem(mKey, ""))
 
         val courseId = OfflineUtils.getCourseId(mKey)
-
-        ColorKeeper.cachedThemedColors["course_$courseId"]?.let { themedColor ->
-            ViewStyler.themeToolbarColored(
-                this, binding.toolbar, themedColor.backgroundColor(), Color.WHITE
-            )
-        }
+        val themedColor = CanvasContext.fromContextCode("course_$courseId").color
+        ViewStyler.themeToolbarColored(
+            this, binding.toolbar, themedColor, Color.WHITE
+        )
 
         when (OfflineUtils.getModuleType(mKey)) {
             OfflineConst.MODULE_TYPE_MODULES -> {

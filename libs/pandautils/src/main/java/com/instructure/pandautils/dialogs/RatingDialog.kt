@@ -27,14 +27,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.DialogFragment
+import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentActivity
-import com.instructure.canvasapi2.utils.*
+import com.instructure.canvasapi2.utils.Analytics
+import com.instructure.canvasapi2.utils.AnalyticsEventConstants
+import com.instructure.canvasapi2.utils.AnalyticsParamConstants
+import com.instructure.canvasapi2.utils.ApiPrefs
+import com.instructure.canvasapi2.utils.BooleanPref
+import com.instructure.canvasapi2.utils.IntPref
+import com.instructure.canvasapi2.utils.Logger
+import com.instructure.canvasapi2.utils.LongPref
+import com.instructure.canvasapi2.utils.PrefManager
 import com.instructure.pandautils.BuildConfig
 import com.instructure.pandautils.R
 import com.instructure.pandautils.analytics.SCREEN_VIEW_RATING
 import com.instructure.pandautils.analytics.ScreenView
-import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.base.BaseCanvasDialogFragment
 import com.instructure.pandautils.databinding.DialogRatingBinding
 import com.instructure.pandautils.utils.AppType
 import com.instructure.pandautils.utils.Utils
@@ -42,7 +50,7 @@ import com.instructure.pandautils.utils.setVisible
 import com.instructure.pandautils.utils.withArgs
 
 @ScreenView(SCREEN_VIEW_RATING)
-class RatingDialog : DialogFragment() {
+class RatingDialog : BaseCanvasDialogFragment() {
 
     object Prefs : PrefManager("rating_dialog") {
         var dateShowAgain by IntPref(FOUR_WEEKS, keyName = "date_show_again")
@@ -51,9 +59,11 @@ class RatingDialog : DialogFragment() {
         var hasShown by BooleanPref(keyName = "has_shown")
     }
 
-    lateinit private var stars: List<ImageView>
+    private lateinit var stars: List<ImageView>
 
     private lateinit var binding: DialogRatingBinding
+
+    private var selectedStars = 0
 
     /**
      * Called when the user hits the back button, this will delay the dialog from showing for 4 weeks
@@ -66,8 +76,23 @@ class RatingDialog : DialogFragment() {
         Prefs.dateFirstLaunched = System.currentTimeMillis() // Reset the date_first_launched to be right now
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) {
+            selectedStars = savedInstanceState.getInt(KEY_STARS, 0)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_STARS, selectedStars)
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         Prefs.hasShown = true
+
+        Analytics.logEvent(AnalyticsEventConstants.RATING_DIALOG_SHOW)
+
         val appType = arguments?.getSerializable(APP_TYPE) as AppType
         val buttonText = if (Prefs.hasShown) getString(R.string.utils_dontShowAgain) else getString(R.string.done)
 
@@ -77,7 +102,10 @@ class RatingDialog : DialogFragment() {
         val dialog = AlertDialog.Builder(requireContext())
                 .setTitle(R.string.utils_howAreWeDoing)
                 .setView(binding.root)
-                .setPositiveButton(buttonText) { _, _ -> Prefs.dontShowAgain = true }
+                .setPositiveButton(buttonText) { _, _ ->
+                    Prefs.dontShowAgain = true
+                    Analytics.logEvent(AnalyticsEventConstants.RATING_DIALOG_DONT_SHOW_AGAIN)
+                }
                 .create()
         dialog.setCanceledOnTouchOutside(true)
         dialog.setCancelable(true)
@@ -108,6 +136,10 @@ class RatingDialog : DialogFragment() {
             }
             // Reset dateFirstLaunched to be right now
             Prefs.dateFirstLaunched = System.currentTimeMillis()
+            Analytics.logEvent(
+                AnalyticsEventConstants.RATING_DIALOG,
+                bundleOf(AnalyticsParamConstants.STAR_RATING to selectedStars)
+            )
             dismiss()
         }
 
@@ -116,7 +148,8 @@ class RatingDialog : DialogFragment() {
                 it.setImageResource(R.drawable.ic_rating_star_outline)
             }
             val selectionIndex = stars.indexOf(v)
-            stars.take(selectionIndex + 1).forEach {
+            selectedStars = selectionIndex + 1
+            stars.take(selectedStars).forEach {
                 it.setImageResource(R.drawable.ic_rating_star)
             }
             val isFiveStars = selectionIndex >= 4
@@ -125,12 +158,19 @@ class RatingDialog : DialogFragment() {
             if (isFiveStars) {
                 Utils.goToAppStore(appType, activity)
                 Prefs.dontShowAgain = true
+                Analytics.logEvent(
+                    AnalyticsEventConstants.RATING_DIALOG,
+                    bundleOf(AnalyticsParamConstants.STAR_RATING to selectedStars)
+                )
                 dismiss()
             }
         }
 
         stars.forEach {
             it.setOnClickListener(starClickListener)
+        }
+        if (selectedStars > 0) {
+            stars[selectedStars - 1].callOnClick()
         }
     }
 
@@ -178,6 +218,7 @@ class RatingDialog : DialogFragment() {
         private const val APP_TYPE = "app_type"
         private const val FOUR_WEEKS = 28
         private const val SIX_WEEKS = 42
+        private const val KEY_STARS = "key_stars"
 
         fun newInstance(appType: AppType): RatingDialog {
             return RatingDialog().withArgs {

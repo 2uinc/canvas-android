@@ -17,8 +17,6 @@
 package com.instructure.teacher.features.legal
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import com.instructure.pandautils.features.legal.LegalRouter
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.InternalWebViewActivity
@@ -27,7 +25,7 @@ class TeacherLegalRouter(private val context: Context) : LegalRouter {
 
     override fun routeToTermsOfService(html: String) {
         val intent = InternalWebViewActivity.createIntent(
-            context, "http://www.canvaslms.com/policies/terms-of-use", html, context.getString(
+            context, "https://www.canvaslms.com/policies/terms-of-use", html, context.getString(
                 R.string.termsOfUse
             ), false
         )
@@ -41,12 +39,6 @@ class TeacherLegalRouter(private val context: Context) : LegalRouter {
             context.getString(R.string.privacyPolicy),
             false
         )
-        context.startActivity(intent)
-    }
-
-    override fun routeToOpenSource() {
-        val intent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/instructure/canvas-android"))
         context.startActivity(intent)
     }
 }

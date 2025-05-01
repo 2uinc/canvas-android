@@ -14,15 +14,12 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-import com.instructure.android.buildtools.transform.*
-
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'dagger.hilt.android.plugin'
-apply plugin: 'com.heapanalytics.android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 def updatePriority = 2
 def coverageEnabled = project.hasProperty('coverage')
@@ -33,6 +30,7 @@ configurations {
 }
 
 android {
+    namespace 'com.instructure.student'
     compileSdkVersion Versions.COMPILE_SDK
     buildToolsVersion Versions.BUILD_TOOLS
 
@@ -40,11 +38,10 @@ android {
         applicationId "com.instructure.candroid"
         minSdkVersion Versions.MIN_SDK
         targetSdkVersion Versions.TARGET_SDK
-        versionCode = 266
-        versionName = '7.5.3'
+        versionCode = 275
+        versionName = '7.11.0'
 
         vectorDrawables.useSupportLibrary = true
-        multiDexEnabled = true
         testInstrumentationRunner 'com.instructure.student.espresso.StudentHiltTestRunner'
         testInstrumentationRunnerArguments disableAnalytics: 'true'
         buildConfigField "boolean", "IS_TESTING", "false"
@@ -53,6 +50,7 @@ android {
 
         /* Add private data */
         PrivateData.merge(project, "student")
+        buildConfigField "String", "TRANSLATION_TAGS", "\"${LocaleScanner.getAvailableLanguageTags(project)}\""
         buildConfigField "String", "PSPDFKIT_LICENSE_KEY", "\"$pspdfkitLicenseKey\""
 
         testBuildType = "debug"
@@ -114,14 +112,7 @@ android {
                 mappingFileUploadEnabled false
             }
 
-            buildConfigField "String", "HEAP_APP_ID", "\"$heapStagingId\""
-
-            //buildConfigField "String", "PRONOUN_STUDENT_TEST_USER", "\"$pronounTestStudent\""
-            //buildConfigField "String", "PRONOUN_STUDENT_TEST_PASSWORD", "\"$pronounTestStudentPassword\""
-
-            ext {
-                heapEnabled = false
-            }
+            buildConfigField "String", "PENDO_TOKEN", "\"" + Keys.pendoAccessToken + "\""
 
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
@@ -149,11 +140,7 @@ android {
                 unstrippedNativeLibsDir 'build/intermediates/merged_native_libs/release/out/lib'
             }
 
-            buildConfigField "String", "HEAP_APP_ID", "\"$heapProductionId\""
-
-            ext {
-                heapEnabled = false
-            }
+            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
 
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_RELEASE + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_RELEASE + "\""
@@ -169,6 +156,11 @@ android {
 
         qa {
             buildConfigField "boolean", "IS_TESTING", "true"
+            //buildConfigField "String", "PRONOUN_STUDENT_TEST_USER", "\"$pronounTestStudent\""
+            //buildConfigField "String", "PRONOUN_STUDENT_TEST_PASSWORD", "\"$pronounTestStudentPassword\""
+
+            //buildConfigField "String", "PUSH_NOTIFICATIONS_STUDENT_TEST_USER", "\"$pushNotificationsTestStudent\""
+            //buildConfigField "String", "PUSH_NOTIFICATIONS_STUDENT_TEST_PASSWORD", "\"$pushNotificationsTestStudentPassword\""
             dimension 'default'
         }
 
@@ -225,23 +217,15 @@ android {
         javaMaxHeapSize '4g'
     }
 
-    registerTransform(
-            new ProjectTransformer(
-                    android,
-                    new MasqueradeUITransformer('com.instructure.student.activity.NavigationActivity.class'),
-                    new PageViewTransformer(),
-                    new ScreenViewTransformer("student"),
-                    new LocaleTransformer(project)
-            )
-    )
+
 
     compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17
     }
 
     buildFeatures {
@@ -324,7 +308,7 @@ dependencies {
     implementation Libs.ANDROIDX_BROWSER
     implementation Libs.ANDROIDX_CARDVIEW
     implementation Libs.ANDROIDX_CONSTRAINT_LAYOUT
-    implementation Libs.ANDROIDX_DESIGN
+    implementation Libs.MATERIAL_DESIGN
     implementation Libs.ANDROIDX_RECYCLERVIEW
     implementation Libs.ANDROIDX_PALETTE
     implementation Libs.PLAY_IN_APP_UPDATES
@@ -337,7 +321,7 @@ dependencies {
     implementation Libs.VIEW_MODEL
     implementation Libs.LIVE_DATA
     implementation Libs.VIEW_MODE_SAVED_STATE
-    implementation Libs.FRAGMENT_KTX
+    implementation Libs.ANDROIDX_FRAGMENT_KTX
     kapt Libs.LIFECYCLE_COMPILER
 
     /* DI */
@@ -354,7 +338,7 @@ dependencies {
     implementation Libs.ANDROIDX_WORK_MANAGER
     implementation Libs.ANDROIDX_WORK_MANAGER_KTX
 
-    implementation Libs.HEAP
+    implementation Libs.PENDO
 
     /* ROOM */
     implementation Libs.ROOM
@@ -365,6 +349,9 @@ dependencies {
 
     androidTestImplementation Libs.COMPOSE_UI_TEST
 
+    implementation Libs.NAVIGATION_FRAGMENT
+    implementation Libs.NAVIGATION_KTX
+
     implementation project(path: ':mobile-offline-downloader-android')
     implementation "org.jsoup:jsoup:1.13.1"
     implementation(Libs.EXOPLAYER)
@@ -372,7 +359,6 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-core:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"
-    implementation("io.intercom.android:intercom-sdk:14.0.1")
     implementation("com.bugfender.sdk:android:3.0.17")
 }
 

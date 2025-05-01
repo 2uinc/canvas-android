@@ -26,8 +26,6 @@ import com.google.android.apps.common.testing.accessibility.framework.Accessibil
 import com.google.android.apps.common.testing.accessibility.framework.checks.SpeakableTextPresentCheck
 import com.instructure.canvas.espresso.mockCanvas.MockCanvas
 import com.instructure.canvas.espresso.mockCanvas.init
-import com.instructure.parentapp.ui.pages.AddStudentPage
-import com.instructure.parentapp.ui.pages.ManageStudentsPage
 import com.instructure.parentapp.utils.ParentComposeTest
 import com.instructure.parentapp.utils.tokenLogin
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -38,9 +36,6 @@ import org.junit.Test
 @HiltAndroidTest
 class ManageStudentsInteractionTest : ParentComposeTest() {
 
-    private val manageStudentsPage = ManageStudentsPage(composeTestRule)
-    private val addStudentPage = AddStudentPage(composeTestRule)
-
     @Test
     fun testStudentsDisplayed() {
         val data = initData()
@@ -49,7 +44,7 @@ class ManageStudentsInteractionTest : ParentComposeTest() {
 
         composeTestRule.waitForIdle()
         data.students.forEach {
-            manageStudentsPage.assertStudentItemDisplayed(it)
+            manageStudentsPage.assertStudentItemDisplayed(it.shortName!!)
         }
     }
 
@@ -60,8 +55,8 @@ class ManageStudentsInteractionTest : ParentComposeTest() {
         goToManageStudents(data)
 
         composeTestRule.waitForIdle()
-        manageStudentsPage.tapStudent(data.students.first().shortName!!)
-        // TODO Assert alert settings when implemented
+        manageStudentsPage.clickStudent(data.students.first().shortName!!)
+        composeTestRule.onNodeWithText("Alert Settings").assertIsDisplayed()
     }
 
     @Test
@@ -84,7 +79,7 @@ class ManageStudentsInteractionTest : ParentComposeTest() {
         composeTestRule.waitForIdle()
 
         manageStudentsPage.tapAddStudent()
-        addStudentPage.tapPairingCode()
+        addStudentBottomPage.clickOnPairingCode()
 
         composeTestRule.onNodeWithTag("pairingCodeTextField").assertIsDisplayed()
     }
@@ -98,7 +93,7 @@ class ManageStudentsInteractionTest : ParentComposeTest() {
         composeTestRule.waitForIdle()
 
         manageStudentsPage.tapAddStudent()
-        addStudentPage.tapQrCode()
+        addStudentBottomPage.clickOnQRCode()
 
         composeTestRule.onNodeWithText("Open Canvas Student").assertIsDisplayed()
     }
@@ -115,8 +110,8 @@ class ManageStudentsInteractionTest : ParentComposeTest() {
         val parent = data.parents.first()
         val token = data.tokenFor(parent)!!
         tokenLogin(data.domain, token, parent)
-        dashboardPage.openNavigationDrawer()
-        dashboardPage.tapManageStudents()
+        dashboardPage.openLeftSideMenu()
+        leftSideNavigationDrawerPage.clickManageStudents()
     }
 
     override fun enableAndConfigureAccessibilityChecks() {

@@ -24,12 +24,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.instructure.canvasapi2.models.User
+import com.instructure.canvasapi2.utils.Analytics
+import com.instructure.canvasapi2.utils.AnalyticsEventConstants
 import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.pandautils.utils.ColorUtils
 import com.instructure.pandautils.utils.ThemedColor
-import com.instructure.pandautils.utils.createThemedColor
 import com.instructure.parentapp.R
+import com.instructure.parentapp.features.dashboard.SelectedStudentHolder
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -37,6 +39,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -65,6 +68,8 @@ class ManageStudentsViewModelTest {
     private val context: Context = mockk(relaxed = true)
     private val repository: ManageStudentsRepository = mockk(relaxed = true)
     private val colorKeeper: ColorKeeper = spyk()
+    private val analytics: Analytics = mockk(relaxed = true)
+    private val selectedStudentHolder: SelectedStudentHolder = mockk(relaxed = true)
 
     private lateinit var viewModel: ManageStudentViewModel
 
@@ -77,7 +82,7 @@ class ManageStudentsViewModelTest {
         every { ColorUtils.correctContrastForText(any(), any()) } answers { firstArg() }
         every { ColorUtils.correctContrastForButtonBackground(any(), any(), any()) } answers { firstArg() }
         every { context.getColor(any()) } answers { firstArg() }
-        every { createThemedColor(any()) } answers { ThemedColor(firstArg()) }
+        every { colorKeeper.createThemedColor(any()) } answers { ThemedColor(firstArg()) }
     }
 
     @After
@@ -124,6 +129,7 @@ class ManageStudentsViewModelTest {
 
     @Test
     fun `Navigate to alert settings screen`() = runTest {
+        coEvery { repository.getStudents(any()) } returns listOf(User(id = 1))
         createViewModel()
 
         val events = mutableListOf<ManageStudentsViewModelAction>()
@@ -133,7 +139,7 @@ class ManageStudentsViewModelTest {
 
         viewModel.handleAction(ManageStudentsAction.StudentTapped(1L))
 
-        val expected = ManageStudentsViewModelAction.NavigateToAlertSettings(1L)
+        val expected = ManageStudentsViewModelAction.NavigateToAlertSettings(User(id = 1))
         Assert.assertEquals(expected, events.last())
     }
 
@@ -212,7 +218,7 @@ class ManageStudentsViewModelTest {
     }
 
     @Test
-    fun `Save student color`() {
+    fun `Save student color`() = runTest {
         val expectedUiState = ManageStudentsUiState(
             colorPickerDialogUiState = ColorPickerDialogUiState(),
             studentListItems = listOf(
@@ -229,16 +235,23 @@ class ManageStudentsViewModelTest {
         coEvery { repository.getStudents(any()) } returns listOf(User(id = 1, shortName = "Student 1"))
         coEvery { repository.saveStudentColor(any(), any()) } returns "#000000"
         every { ContextCompat.getColor(context, any()) } answers { firstArg() }
+        every { context.getString(R.string.manageStudentsColorSavedSuccessfully) } returns "Color saved successfully"
 
         createViewModel()
+
+        val events = mutableListOf<ManageStudentsViewModelAction>()
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList(events)
+        }
 
         viewModel.handleAction(ManageStudentsAction.StudentColorChanged(1L, selectedUserColor))
 
         Assert.assertEquals(expectedUiState, viewModel.uiState.value)
+        Assert.assertEquals(ManageStudentsViewModelAction.AccessibilityAnnouncement("Color saved successfully"), events.last())
     }
 
     @Test
-    fun `Save student color error`() {
+    fun `Save student color error`() = runTest {
         val expectedUiState = ManageStudentsUiState(
             colorPickerDialogUiState = ColorPickerDialogUiState(isSavingColorError = true),
             studentListItems = listOf(
@@ -255,15 +268,39 @@ class ManageStudentsViewModelTest {
         coEvery { repository.getStudents(any()) } returns listOf(User(id = 1, shortName = "Student 1"))
         every { ContextCompat.getColor(context, any()) } answers { firstArg() }
         coEvery { repository.saveStudentColor(any(), any()) } throws Exception()
+        every { context.getString(R.string.errorSavingColor) } returns "Error saving color"
 
         createViewModel()
+
+        val events = mutableListOf<ManageStudentsViewModelAction>()
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList(events)
+        }
 
         viewModel.handleAction(ManageStudentsAction.StudentColorChanged(1L, selectedUserColor))
 
         Assert.assertEquals(expectedUiState, viewModel.uiState.value)
+        Assert.assertEquals(ManageStudentsViewModelAction.AccessibilityAnnouncement("Error saving color"), events.last())
+    }
+
+    @Test
+    fun `Add student`() = runTest {
+        coEvery { repository.getStudents(any()) } returns listOf(User(id = 1))
+
+        createViewModel()
+
+        val events = mutableListOf<ManageStudentsViewModelAction>()
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList(events)
+        }
+
+        viewModel.handleAction(ManageStudentsAction.AddStudent)
+
+        Assert.assertEquals(ManageStudentsViewModelAction.AddStudent, events.last())
+        verify { analytics.logEvent(AnalyticsEventConstants.ADD_STUDENT_MANAGE_STUDENTS) }
     }
 
     private fun createViewModel() {
-        viewModel = ManageStudentViewModel(context, colorKeeper, repository)
+        viewModel = ManageStudentViewModel(context, colorKeeper, repository, selectedStudentHolder, analytics)
     }
 }

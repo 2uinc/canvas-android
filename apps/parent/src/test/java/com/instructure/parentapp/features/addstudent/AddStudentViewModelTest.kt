@@ -16,12 +16,16 @@
  */
 package com.instructure.parentapp.features.addstudent
 
+import android.content.Context
 import android.graphics.Color
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.instructure.canvasapi2.utils.Analytics
+import com.instructure.canvasapi2.utils.AnalyticsEventConstants
+import com.instructure.canvasapi2.utils.ContextKeeper
 import com.instructure.canvasapi2.utils.DataResult
 import com.instructure.pandautils.utils.ColorKeeper
 import com.instructure.pandautils.utils.ThemedColor
@@ -29,6 +33,9 @@ import com.instructure.parentapp.features.dashboard.SelectedStudentHolder
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -55,23 +62,27 @@ class AddStudentViewModelTest {
     private lateinit var viewModel: AddStudentViewModel
 
     private val selectedStudentHolder: SelectedStudentHolder = mockk(relaxed = true)
-    private val colorKeeper: ColorKeeper = mockk(relaxed = true)
     private val repository: AddStudentRepository = mockk(relaxed = true)
     private val crashlytics: FirebaseCrashlytics = mockk(relaxed = true)
+    private val analytics: Analytics = mockk(relaxed = true)
+    private val context: Context = mockk(relaxed = true)
 
     @Before
     fun setup() {
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         Dispatchers.setMain(testDispatcher)
+        ContextKeeper.appContext = context
 
-        every { colorKeeper.getOrGenerateUserColor(any()) } returns ThemedColor(Color.BLACK)
+        mockkObject(ColorKeeper)
+        every { ColorKeeper.getOrGenerateUserColor(any()) } returns ThemedColor(Color.BLACK)
         every { selectedStudentHolder.selectedStudentState.value } returns mockk(relaxed = true)
-        viewModel = AddStudentViewModel(selectedStudentHolder, colorKeeper, repository, crashlytics)
+        viewModel = AddStudentViewModel(selectedStudentHolder, repository, crashlytics, analytics)
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
@@ -88,6 +99,8 @@ class AddStudentViewModelTest {
         events.addAll(viewModel.events.replayCache)
 
         assert(events.last() is AddStudentViewModelAction.PairStudentSuccess)
+
+        verify { analytics.logEvent(AnalyticsEventConstants.ADD_STUDENT_SUCCESS) }
     }
 
     @Test
@@ -104,6 +117,8 @@ class AddStudentViewModelTest {
         assert(events.size == 0)
 
         assert(viewModel.uiState.value.isError)
+
+        verify { analytics.logEvent(AnalyticsEventConstants.ADD_STUDENT_FAILURE) }
     }
 
     @Test
@@ -112,5 +127,21 @@ class AddStudentViewModelTest {
         viewModel.uiState.value.actionHandler(AddStudentAction.ResetError)
 
         assert(viewModel.uiState.value.isError.not())
+    }
+
+    @Test
+    fun `unpairStudent should emit UnpairStudentSuccess`() = runTest {
+        coEvery { repository.unpairStudent(any()) } returns DataResult.Success(Unit)
+
+        val events = mutableListOf<AddStudentViewModelAction>()
+        backgroundScope.launch(testDispatcher) {
+            viewModel.events.toList(events)
+        }
+
+        viewModel.uiState.value.actionHandler(AddStudentAction.UnpairStudent(1))
+
+        events.addAll(viewModel.events.replayCache)
+
+        assert(events.last() is AddStudentViewModelAction.UnpairStudentSuccess)
     }
 }

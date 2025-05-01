@@ -26,13 +26,28 @@ import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.FileFolder
 import com.instructure.canvasapi2.models.ModuleObject
 import com.instructure.canvasapi2.utils.ApiPrefs
-import com.instructure.canvasapi2.utils.pageview.PageViewUtils
 import com.instructure.interactions.MasterDetailInteractions
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_FILE_SEARCH
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.analytics.pageview.PageViewUtils
 import com.instructure.pandautils.binding.viewBinding
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Const
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.isUser
+import com.instructure.pandautils.utils.makeBundle
+import com.instructure.pandautils.utils.onChangeDebounce
+import com.instructure.pandautils.utils.onClick
+import com.instructure.pandautils.utils.onTextChanged
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setInvisible
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.showKeyboard
+import com.instructure.pandautils.utils.toast
+import com.instructure.pandautils.utils.withArgs
 import com.instructure.student.R
 import com.instructure.student.databinding.FragmentFileSearchBinding
 import com.instructure.student.features.files.details.FileDetailsFragment
@@ -53,6 +68,9 @@ class FileSearchFragment : ParentFragment(), FileSearchView {
 
     @Inject
     lateinit var fileSearchRepository: FileSearchRepository
+
+    @Inject
+    lateinit var pageViewUtils: PageViewUtils
 
     private fun makePageViewUrl() =
         if (canvasContext.type == CanvasContext.Type.USER) "${ApiPrefs.fullDomain}/files"
@@ -114,8 +132,8 @@ class FileSearchFragment : ParentFragment(), FileSearchView {
     }
 
     private fun themeSearchBar() = with(binding) {
-        val primaryColor = canvasContext.backgroundColor
-        val primaryTextColor = if (canvasContext.isUser) ThemePrefs.primaryTextColor else requireContext().getColor(R.color.white)
+        val primaryColor = canvasContext.color
+        val primaryTextColor = if (canvasContext.isUser) ThemePrefs.primaryTextColor else requireContext().getColor(R.color.textLightest)
         ViewStyler.setStatusBarDark(requireActivity(), primaryColor)
         searchHeader.setBackgroundColor(primaryColor)
         queryInput.setTextColor(primaryTextColor)
@@ -152,8 +170,8 @@ class FileSearchFragment : ParentFragment(), FileSearchView {
             return
         }
 
-        PageViewUtils.saveSingleEvent("FilePreview", "${makePageViewUrl()}?preview=${file.id}")
-        openMedia(file.contentType, file.url, file.displayName, canvasContext, file.isLocalFile)
+        pageViewUtils.saveSingleEvent("FilePreview", "${makePageViewUrl()}?preview=${file.id}")
+        openMedia(file.contentType, file.url, file.displayName, file.id.toString(), canvasContext, file.isLocalFile)
     }
 
     override fun onMediaLoadingStarted() {

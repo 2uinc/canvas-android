@@ -82,6 +82,7 @@ import com.instructure.canvasapi2.models.SubmissionComment
 import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.models.Term
 import com.instructure.canvasapi2.models.TermsOfService
+import com.instructure.canvasapi2.models.ThresholdWorkflowState
 import com.instructure.canvasapi2.models.User
 import com.instructure.canvasapi2.models.UserSettings
 import com.instructure.canvasapi2.models.canvadocs.CanvaDocAnnotation
@@ -304,9 +305,12 @@ class MockCanvas {
 
     /** Map of userId to alerts */
     var observerAlerts = mutableMapOf<Long, List<Alert>>()
-    val observerAlertThresholds = mutableMapOf<Long, List<AlertThreshold>>()
+    val observerAlertThresholds = mutableMapOf<Long, MutableList<AlertThreshold>>()
 
     val pairingCodes = mutableMapOf<String, User>()
+
+    var inboxSignature = ""
+    var signatureEnabled = true
 
     //region Convenience functionality
 
@@ -389,6 +393,8 @@ class MockCanvas {
     }
 
     var offlineModeEnabled = false
+
+    var assignmentEnhancementsEnabled = true
 
     companion object {
         /** Whether the mock Canvas data has been initialized for the current test run */
@@ -694,7 +700,8 @@ fun MockCanvas.addCourseCalendarEvent(
 
 fun MockCanvas.addUserCalendarEvent(
     userId: Long,
-    date: String,
+    startDate: String,
+    endDate: String?,
     title: String,
     description: String,
     isImportantDate: Boolean = false,
@@ -707,10 +714,10 @@ fun MockCanvas.addUserCalendarEvent(
         title = title,
         description = description,
         itemType = ScheduleItem.Type.TYPE_CALENDAR,
-        isAllDay = true,
-        allDayAt = date,
-        startAt = date,
-        endAt = date,
+        isAllDay = endDate == null,
+        allDayAt = startDate,
+        startAt = startDate,
+        endAt = endDate,
         contextCode = "user_$userId",
         contextName = "User $userId",
         importantDates = isImportantDate,
@@ -765,7 +772,7 @@ fun MockCanvas.addRecipientsToCourse(course: Course, students: List<User>, teach
                 stringId = it.id.toString(),
                 name = it.shortName,
                 avatarURL = it.avatarUrl,
-                commonCourses = hashMapOf(Pair(course.id.toString(), arrayOf(EnrollmentType.STUDENTENROLLMENT.rawValue())))
+                commonCourses = hashMapOf(Pair(course.id.toString(), arrayOf(EnrollmentType.StudentEnrollment.rawValue)))
         )
     }
 
@@ -774,7 +781,7 @@ fun MockCanvas.addRecipientsToCourse(course: Course, students: List<User>, teach
                 stringId = it.id.toString(),
                 name = it.shortName,
                 avatarURL = it.avatarUrl,
-                commonCourses = hashMapOf(Pair(course.id.toString(), arrayOf(EnrollmentType.TEACHERENROLLMENT.rawValue())))
+                commonCourses = hashMapOf(Pair(course.id.toString(), arrayOf(EnrollmentType.TeacherEnrollment.rawValue)))
         )
     }
 
@@ -866,12 +873,12 @@ fun MockCanvas.addSentConversation(subject: String, userId: Long, messageBody : 
  *  for all other conversations.
  *  */
 
-fun MockCanvas.addConversations(conversationCount: Int = 1, userId: Long, messageBody : String = Randomizer.randomConversationBody()) {
+fun MockCanvas.addConversations(conversationCount: Int = 1, userId: Long, messageBody : String = Randomizer.randomConversationBody(), contextName: String? = null, contextCode: String? = null) {
     for (i in 0 until conversationCount) {
-        val sentConversation = createBasicConversation(userId = userId, isUserAuthor = true, messageBody = messageBody)
-        val archivedConversation = createBasicConversation(userId, workflowState = Conversation.WorkflowState.ARCHIVED, messageBody = messageBody)
-        val starredConversation = createBasicConversation(userId, isStarred = true, messageBody = messageBody)
-        val unreadConversation = createBasicConversation(userId, workflowState = Conversation.WorkflowState.UNREAD, messageBody = messageBody)
+        val sentConversation = createBasicConversation(userId = userId, isUserAuthor = true, messageBody = messageBody, contextCode = contextCode, contextName = contextName)
+        val archivedConversation = createBasicConversation(userId, workflowState = Conversation.WorkflowState.ARCHIVED, messageBody = messageBody, contextCode = contextCode, contextName = contextName)
+        val starredConversation = createBasicConversation(userId, isStarred = true, messageBody = messageBody, contextCode = contextCode, contextName = contextName)
+        val unreadConversation = createBasicConversation(userId, workflowState = Conversation.WorkflowState.UNREAD, messageBody = messageBody, contextCode = contextCode, contextName = contextName)
         conversations[sentConversation.id] = sentConversation
         conversations[archivedConversation.id] = archivedConversation
         conversations[starredConversation.id] = starredConversation
@@ -883,11 +890,71 @@ fun MockCanvas.addConversations(conversationCount: Int = 1, userId: Long, messag
  * Adds a single conversation, with sender [senderId] and receivers [receiverIds].  It will not
  * be associated with any course.
  */
+fun MockCanvas.addConversationWithMultipleMessages(
+    senderId: Long,
+    receiverIds: List<Long>,
+    messageCount: Int = 1,
+) : Conversation {
+    val messageSubject = Randomizer.randomConversationSubject()
+    val sender = this.users[senderId]!!
+    val senderBasic = BasicUser(
+        id = sender.id,
+        name = sender.shortName,
+        pronouns = sender.pronouns,
+        avatarUrl = sender.avatarUrl
+    )
+
+    val participants = mutableListOf(senderBasic)
+    receiverIds.forEach {id ->
+        val receiver = this.users[id]!!
+        participants.add(
+            BasicUser(
+                id = receiver.id,
+                name = receiver.shortName,
+                pronouns = receiver.pronouns,
+                avatarUrl = receiver.avatarUrl
+            )
+        )
+    }
+
+    val basicMessages = MutableList(messageCount) {
+        Message(
+            id = newItemId(),
+            createdAt = APIHelper.dateToString(GregorianCalendar()),
+            body = Randomizer.randomConversationBody(),
+            authorId = sender.id,
+            participatingUserIds = receiverIds.toMutableList().plus(senderId)
+        )
+    }
+
+    val result = Conversation(
+        id = newItemId(),
+        subject = messageSubject,
+        workflowState = Conversation.WorkflowState.UNREAD,
+        lastMessage = basicMessages.last().body,
+        lastAuthoredMessageAt = APIHelper.dateToString(GregorianCalendar()),
+        messageCount = basicMessages.size,
+        messages = basicMessages,
+        avatarUrl = Randomizer.randomAvatarUrl(),
+        participants = participants,
+        audience = null // Prevents "Monologue"
+    )
+
+    this.conversations[result.id] = result
+
+    return result
+}
+
+/**
+ * Adds a single conversation, with sender [senderId] and receivers [receiverIds].  It will not
+ * be associated with any course.
+ */
 fun MockCanvas.addConversation(
         senderId: Long,
         receiverIds: List<Long>,
         messageBody : String = Randomizer.randomConversationBody(),
-        messageSubject : String = Randomizer.randomConversationSubject()) : Conversation {
+        messageSubject : String = Randomizer.randomConversationSubject(),
+        cannotReply: Boolean = false) : Conversation {
 
     val sender = this.users[senderId]!!
     val senderBasic = BasicUser(
@@ -928,7 +995,8 @@ fun MockCanvas.addConversation(
             messages = listOf(basicMessage),
             avatarUrl = Randomizer.randomAvatarUrl(),
             participants = participants,
-            audience = null // Prevents "Monologue"
+            audience = null, // Prevents "Monologue"
+            cannotReply = cannotReply
     )
 
     this.conversations[result.id] = result
@@ -1035,7 +1103,8 @@ fun MockCanvas.addAssignment(
     unlockAt: String? = null,
     withDescription: Boolean = false,
     gradingType: String = "percent",
-    discussionTopicHeader: DiscussionTopicHeader? = null
+    discussionTopicHeader: DiscussionTopicHeader? = null,
+    htmlUrl: String? = ""
 ) : Assignment {
     val assignmentId = newItemId()
     val submissionTypeListRawStrings = submissionTypeList.map { it.apiString }
@@ -1056,7 +1125,8 @@ fun MockCanvas.addAssignment(
             published = true,
             allDates = listOf(AssignmentDueDate(id = newItemId(), dueAt = dueAt, lockAt = lockAt, unlockAt = unlockAt)),
             gradingType = gradingType,
-            discussionTopicHeader = discussionTopicHeader
+            discussionTopicHeader = discussionTopicHeader,
+            htmlUrl = htmlUrl
     )
 
     if (isQuizzesNext) {
@@ -2328,6 +2398,7 @@ fun MockCanvas.addObserverAlertThreshold(id: Long, alertType: AlertType, observe
             userId = student.id,
             threshold = threshold,
             alertType = alertType,
+            workflowState = ThresholdWorkflowState.ACTIVE
         )
     )
 

@@ -60,10 +60,11 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/speedGraderToolbar"
         android:layout_width="match_parent"
-        android:layout_height="?android:actionBarSize"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
         android:background="@color/backgroundLightest"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:theme="@style/ToolBarStyle"
         app:popupTheme="@style/ToolBarPopupStyle">
 
@@ -71,19 +72,21 @@
             android:id="@+id/assigneeWrapperView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <ImageView
                 android:id="@+id/userImageView"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:padding="4dp"
-                android:importantForAccessibility="no" />
+                android:importantForAccessibility="no"
+                android:paddingTop="8dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="4dp"/>
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="vertical">
 
@@ -113,6 +116,21 @@
                     tools:ignore="Deprecated,RtlSymmetry"
                     tools:text="This is a Subtitle" />
 
+                <TextView
+                    android:id="@+id/dueDateTextView"
+                    style="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:paddingStart="8dp"
+                    android:singleLine="true"
+                    android:textColor="@color/textDark"
+                    android:visibility="gone"
+                    tools:ignore="Deprecated,RtlSymmetry"
+                    tools:text="Due: March 8, 2025, 11:59 PM"
+                    tools:visibility="visible" />
+
             </LinearLayout>
         </LinearLayout>
 
@@ -120,7 +138,7 @@
 
     <LinearLayout
         android:id="@+id/panelContent"
-        android:layout_width="360dp"
+        android:layout_width="@dimen/speedgraderPanelWidth"
         android:layout_height="match_parent"
         android:layout_alignParentEnd="true"
         android:layout_below="@id/speedGraderToolbar"
@@ -132,7 +150,8 @@
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/bottomTabLayout"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:layout_marginEnd="12dp"
             android:layout_marginStart="12dp"
             app:tabIndicatorHeight="2dp"
@@ -159,19 +178,38 @@
         android:layout_toStartOf="@+id/panelContent"
         android:orientation="vertical">
 
-        <androidx.appcompat.widget.AppCompatSpinner
-            android:id="@+id/submissionVersionsSpinner"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="14dp"
-            android:background="@drawable/bg_spinner"
-            android:backgroundTint="@color/textDark"
-            android:dropDownWidth="10000dp"
-            android:foreground="?attr/selectableItemBackground"
-            android:prompt="@string/submissionVersions"
-            android:spinnerMode="dropdown"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/toggleImageView"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                app:srcCompat="@drawable/ic_collapse_horizontal"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:importantForAccessibility="no"
+                app:tint="@color/textDark" />
+
+            <androidx.appcompat.widget.AppCompatSpinner
+                android:id="@+id/submissionVersionsSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@+id/toggleImageView"
+                android:layout_marginEnd="14dp"
+                android:background="@drawable/bg_spinner"
+                android:backgroundTint="@color/textDark"
+                android:dropDownWidth="10000dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:prompt="@string/submissionVersions"
+                android:spinnerMode="dropdown"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </RelativeLayout>
 
         <View
             android:layout_width="match_parent"

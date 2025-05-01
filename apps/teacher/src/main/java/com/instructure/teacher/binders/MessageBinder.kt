@@ -38,7 +38,7 @@ import com.instructure.teacher.holders.MessageHolder
 import com.instructure.teacher.interfaces.MessageAdapterCallback
 import com.instructure.teacher.utils.linkifyTextView
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 object MessageBinder {
     fun bind(
@@ -86,11 +86,15 @@ object MessageBinder {
         // Set up message options
         messageOptions.setOnClickListener { v ->
             // Set up popup menu
-            val actions = MessageAdapterCallback.MessageClickAction.values()
+            val actions = MessageAdapterCallback.MessageClickAction.values().toMutableList()
+            if (conversation.cannotReply) {
+                actions.remove(MessageAdapterCallback.MessageClickAction.REPLY)
+                actions.remove(MessageAdapterCallback.MessageClickAction.REPLY_ALL)
+            }
             val popup = PopupMenu(v.context, v, Gravity.START)
             val menu = popup.menu
-            for (action in actions) {
-                menu.add(0, action.ordinal, action.ordinal, action.labelResId)
+            actions.forEachIndexed { index, action ->
+                menu.add(0, index, index, action.labelResId)
             }
 
             // Add click listener
@@ -104,9 +108,18 @@ object MessageBinder {
         }
 
         with(reply) {
-            setTextColor(ThemePrefs.textButtonColor)
-            setVisible(position == 0)
-            setOnClickListener { callback.onMessageAction(MessageAdapterCallback.MessageClickAction.REPLY, message) }
+            if (!conversation.cannotReply) {
+                setTextColor(ThemePrefs.textButtonColor)
+                setVisible(position == 0)
+                setOnClickListener {
+                    callback.onMessageAction(
+                        MessageAdapterCallback.MessageClickAction.REPLY,
+                        message
+                    )
+                }
+            } else {
+                setVisible(false)
+            }
         }
     }
 

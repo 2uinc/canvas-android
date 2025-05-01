@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -67,7 +68,9 @@ import com.instructure.pandautils.features.calendar.CalendarStateMapper
 import com.instructure.pandautils.features.calendar.CalendarUiState
 import com.instructure.pandautils.features.calendar.EventUiState
 import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.tryRequestFocus
 import com.jakewharton.threetenabp.AndroidThreeTen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.threeten.bp.Clock
 import org.threeten.bp.LocalDate
@@ -83,6 +86,8 @@ fun CalendarScreen(
     navigationActionClick: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
+    val todayFocusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     CanvasTheme {
         val snackbarHostState = remember { SnackbarHostState() }
@@ -113,7 +118,11 @@ fun CalendarScreen(
                                     }) {
                                     Icon(
                                         painterResource(id = R.drawable.ic_calendar_day),
-                                        contentDescription = stringResource(id = R.string.a11y_contentDescriptionCalendarJumpToToday),
+                                        contentDescription = stringResource(
+                                            id = R.string.a11y_contentDescriptionCalendarJumpToTodayWithDates,
+                                            calendarScreenUiState.calendarUiState.selectedDay,
+                                            LocalDate.now()
+                                        ),
                                         tint = Color(ThemePrefs.primaryTextColor)
                                     )
                                     Text(
@@ -136,7 +145,7 @@ fun CalendarScreen(
                     )
                     // This is needed to trigger accessibility focus on the calendar screen when the tab is selected
                     LaunchedEffect(key1 = triggerAccessibilityFocus, block = {
-                        focusRequester.requestFocus()
+                        focusRequester.tryRequestFocus()
                     })
                 }
             },
@@ -150,8 +159,17 @@ fun CalendarScreen(
                     color = colorResource(id = R.color.backgroundLightest),
                 ) {
                     Column {
-                        Calendar(calendarScreenUiState.calendarUiState, actionHandler, Modifier.fillMaxWidth())
+                        Calendar(calendarScreenUiState.calendarUiState, actionHandler, Modifier.fillMaxWidth(), todayFocusRequester)
                         CalendarEvents(calendarScreenUiState.calendarEventsUiState, actionHandler, Modifier.testTag("calendarEvents"))
+                    }
+                    val todayTapped = calendarScreenUiState.calendarUiState.todayTapped
+                    LaunchedEffect(todayTapped) {
+                        if (todayTapped) {
+                            focusManager.clearFocus(true)
+                            delay(200)
+                            todayFocusRequester.tryRequestFocus()
+                            actionHandler(CalendarAction.TodayTapHandled)
+                        }
                     }
                 }
             },
@@ -161,7 +179,7 @@ fun CalendarScreen(
                     icon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_add),
-                            tint = Color.White,
+                            tint = colorResource(id = R.color.textLightest),
                             contentDescription = stringResource(id = R.string.calendarAddNewCalendarItemContentDescription)
                         )
                     },

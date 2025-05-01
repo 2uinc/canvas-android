@@ -23,12 +23,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.instructure.pandautils.base.BaseCanvasFragment
 import androidx.fragment.app.viewModels
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.utils.tryOrNull
 import com.instructure.pandautils.binding.viewBinding
 import com.instructure.pandautils.utils.Const
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.makeBundle
 import com.instructure.pandautils.utils.withArgs
 import com.instructure.teacher.R
@@ -41,7 +42,7 @@ import com.instructure.teacher.fragments.ViewUnsupportedFileFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class FileDetailsFragment : Fragment() {
+class FileDetailsFragment : BaseCanvasFragment() {
 
     private val viewModel: FileDetailsViewModel by viewModels()
     private val binding by viewBinding(FragmentFileDetailsBinding::bind)
@@ -68,7 +69,7 @@ class FileDetailsFragment : Fragment() {
     }
 
     private fun getFragment(fileData: FileViewData): Fragment {
-        val toolbarColor = viewModel.canvasContext.backgroundColor
+        val toolbarColor = viewModel.canvasContext.color
         return when (fileData) {
             is FileViewData.Pdf -> ViewPdfFragment.newInstance(
                 fileData.url,

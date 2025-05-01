@@ -15,8 +15,8 @@ import com.instructure.canvasapi2.models.Recipient
 import com.instructure.canvasapi2.type.EnrollmentType
 import com.instructure.pandautils.features.inbox.compose.RecipientPickerScreenOption
 import com.instructure.pandautils.features.inbox.compose.RecipientPickerUiState
-import com.instructure.pandautils.features.inbox.compose.ScreenState
 import com.instructure.pandautils.features.inbox.compose.composables.RecipientPickerScreen
+import com.instructure.pandautils.utils.ScreenState
 import com.instructure.pandautils.utils.orDefault
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +55,7 @@ class RecipientPickerScreenTest {
 
     @Test
     fun testRecipientsRecipientScreenTopBar() {
-        setTestScreen(getUiState(screenOption = RecipientPickerScreenOption.Recipients, selectedRole = EnrollmentType.STUDENTENROLLMENT))
+        setTestScreen(getUiState(screenOption = RecipientPickerScreenOption.Recipients, selectedRole = EnrollmentType.StudentEnrollment))
 
         val toolbar = composeTestRule.onNodeWithTag("toolbar")
         toolbar.assertExists()
@@ -91,7 +91,7 @@ class RecipientPickerScreenTest {
             .assertIsDisplayed()
             .assertHasClickAction()
 
-        composeTestRule.onNode(hasText("Search"))
+        composeTestRule.onNode(hasText("Search in All Recipients"))
             .assertIsDisplayed()
             .assertHasClickAction()
 
@@ -103,7 +103,7 @@ class RecipientPickerScreenTest {
     fun testRecipientsRecipientScreen() {
         setTestScreen(getUiState(
             screenOption = RecipientPickerScreenOption.Recipients,
-            selectedRole = EnrollmentType.STUDENTENROLLMENT
+            selectedRole = EnrollmentType.StudentEnrollment
         ))
 
         composeTestRule.onNode(hasText("Student 1"))
@@ -114,7 +114,7 @@ class RecipientPickerScreenTest {
             .assertIsDisplayed()
             .assertHasClickAction()
 
-        composeTestRule.onNode(hasText("Search"))
+        composeTestRule.onNode(hasText("Search in Students"))
             .assertIsDisplayed()
             .assertHasClickAction()
 
@@ -137,9 +137,9 @@ class RecipientPickerScreenTest {
     @Test
     fun testRecipientsRecipientScreenAllOption() {
         setTestScreen(getUiState(
-            screenState = ScreenState.Data,
+            screenState = ScreenState.Content,
             screenOption = RecipientPickerScreenOption.Recipients,
-            selectedRole = EnrollmentType.STUDENTENROLLMENT,
+            selectedRole = EnrollmentType.StudentEnrollment,
             canSendToAll = true
         ))
 
@@ -151,7 +151,7 @@ class RecipientPickerScreenTest {
     @Test
     fun testRecipientsRoleScreenSearch() {
         setTestScreen(getUiState(
-            screenState = ScreenState.Data,
+            screenState = ScreenState.Content,
             screenOption = RecipientPickerScreenOption.Roles,
             searchValue = TextFieldValue("Student")
         ))
@@ -183,9 +183,9 @@ class RecipientPickerScreenTest {
     @Test
     fun testRecipientsRecipientScreenSearch() {
         setTestScreen(getUiState(
-            screenState = ScreenState.Data,
+            screenState = ScreenState.Content,
             screenOption = RecipientPickerScreenOption.Recipients,
-            selectedRole = EnrollmentType.STUDENTENROLLMENT,
+            selectedRole = EnrollmentType.StudentEnrollment,
             searchValue = TextFieldValue("Teacher")
         ))
 
@@ -211,9 +211,9 @@ class RecipientPickerScreenTest {
     fun testSelectedRecipients() {
         setTestScreen(
             getUiState(
-                screenState = ScreenState.Data,
+                screenState = ScreenState.Content,
                 screenOption = RecipientPickerScreenOption.Recipients,
-                selectedRole = EnrollmentType.STUDENTENROLLMENT,
+                selectedRole = EnrollmentType.StudentEnrollment,
                 selectedRecipients = listOf(Recipient(stringId = "1", name = "Student 1"))
             )
         )
@@ -247,7 +247,7 @@ class RecipientPickerScreenTest {
 
     private fun getUiState(
         screenOption: RecipientPickerScreenOption = RecipientPickerScreenOption.Roles,
-        screenState: ScreenState = ScreenState.Data,
+        screenState: ScreenState = ScreenState.Content,
         canSendToAll: Boolean = false,
         selectedRole: EnrollmentType? = null,
         selectedRecipients: List<Recipient> = emptyList(),
@@ -255,9 +255,9 @@ class RecipientPickerScreenTest {
     ): RecipientPickerUiState {
         val recipientsByRoles: EnumMap<EnrollmentType, List<Recipient>> = EnumMap(EnrollmentType::class.java)
         recipientsByRoles.putAll(mapOf(
-            EnrollmentType.STUDENTENROLLMENT to listOf(Recipient(stringId = "1", name = "Student 1"), Recipient(stringId = "2", name = "Student 2")),
-            EnrollmentType.TEACHERENROLLMENT to listOf(Recipient(stringId = "3", name = "Teacher 1"), Recipient(stringId = "4", name = "Teacher 2")),
-            EnrollmentType.TAENROLLMENT to listOf(Recipient(stringId = "5", name = "Ta 1")),
+            EnrollmentType.StudentEnrollment to listOf(Recipient(stringId = "1", name = "Student 1"), Recipient(stringId = "2", name = "Student 2")),
+            EnrollmentType.TeacherEnrollment to listOf(Recipient(stringId = "3", name = "Teacher 1"), Recipient(stringId = "4", name = "Teacher 2")),
+            EnrollmentType.TaEnrollment to listOf(Recipient(stringId = "5", name = "Ta 1")),
         ))
         val allRecipientsToShow = if (canSendToAll) {
             if (selectedRole != null) {

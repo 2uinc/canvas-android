@@ -32,7 +32,7 @@ import com.instructure.dataseeding.util.iso8601
 import com.instructure.espresso.ViewUtils
 import com.instructure.teacher.ui.pages.PeopleListPage
 import com.instructure.teacher.ui.pages.PersonContextPage
-import com.instructure.teacher.ui.utils.TeacherTest
+import com.instructure.teacher.ui.utils.TeacherComposeTest
 import com.instructure.teacher.ui.utils.seedAssignmentSubmission
 import com.instructure.teacher.ui.utils.seedAssignments
 import com.instructure.teacher.ui.utils.seedData
@@ -42,7 +42,7 @@ import org.junit.Test
 import java.lang.Thread.sleep
 
 @HiltAndroidTest
-class PeopleE2ETest: TeacherTest() {
+class PeopleE2ETest: TeacherComposeTest() {
 
     override fun displaysPageObjects() = Unit
 
@@ -120,7 +120,7 @@ class PeopleE2ETest: TeacherTest() {
         Espresso.pressBack()
         peopleListPage.assertPersonRole(notGradedStudent.name, PeopleListPage.UserRole.STUDENT)
         peopleListPage.clickPerson(notGradedStudent)
-        studentContextPage.assertDisplaysStudentInfo(notGradedStudent)
+        studentContextPage.assertDisplaysStudentInfo(notGradedStudent.shortName, notGradedStudent.loginId)
         studentContextPage.assertSectionNameView(PersonContextPage.UserRole.STUDENT)
         studentContextPage.assertDisplaysCourseInfo(course)
         studentContextPage.assertStudentGrade("--")
@@ -132,7 +132,7 @@ class PeopleE2ETest: TeacherTest() {
         Espresso.pressBack()
         peopleListPage.assertPersonRole(gradedStudent.name, PeopleListPage.UserRole.STUDENT)
         peopleListPage.clickPerson(gradedStudent)
-        studentContextPage.assertDisplaysStudentInfo(gradedStudent)
+        studentContextPage.assertDisplaysStudentInfo(gradedStudent.shortName, gradedStudent.loginId)
         studentContextPage.assertDisplaysCourseInfo(course)
         studentContextPage.assertSectionNameView(PersonContextPage.UserRole.STUDENT)
         studentContextPage.assertStudentGrade("100.0")
@@ -143,9 +143,12 @@ class PeopleE2ETest: TeacherTest() {
         studentContextPage.clickOnNewMessageButton()
 
         val subject = "Test Subject"
+        val body = "This a test message from student context page."
         Log.d(STEP_TAG,"Fill in the 'Subject' field with the value: '$subject'. Add some message text and click on 'Send' (aka. 'Arrow') button.")
-        addMessagePage.composeMessageWithSubject(subject, "This a test message from student context page.")
-        addMessagePage.clickSendButton()
+
+        inboxComposePage.typeSubject(subject)
+        inboxComposePage.typeBody(body)
+        inboxComposePage.pressSendButton()
 
         Log.d(STEP_TAG, "Navigate back to People List Page.")
         Espresso.pressBack()

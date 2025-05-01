@@ -24,19 +24,28 @@ import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Quiz
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_QUIZ_LIST
 import com.instructure.pandautils.analytics.ScreenView
 import com.instructure.pandautils.binding.viewBinding
+import com.instructure.pandautils.features.assignments.list.AssignmentListFragment
 import com.instructure.pandautils.fragments.BaseExpandableSyncFragment
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.addSearch
+import com.instructure.pandautils.utils.closeSearch
+import com.instructure.pandautils.utils.getDrawableCompat
+import com.instructure.pandautils.utils.closeSearch
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.getDrawableCompat
+import com.instructure.pandautils.utils.toast
 import com.instructure.teacher.R
 import com.instructure.teacher.adapters.QuizListAdapter
 import com.instructure.teacher.databinding.FragmentQuizListBinding
 import com.instructure.teacher.events.QuizUpdatedEvent
 import com.instructure.teacher.factory.QuizListPresenterFactory
 import com.instructure.teacher.features.assignment.details.AssignmentDetailsFragment
-import com.instructure.teacher.features.assignment.list.AssignmentListFragment
 import com.instructure.teacher.presenters.QuizListPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.RecyclerViewUtils
@@ -58,7 +67,8 @@ class QuizListFragment : BaseExpandableSyncFragment<
 
     private val binding by viewBinding(FragmentQuizListBinding::bind)
 
-    private var canvasContext: CanvasContext by ParcelableArg(default = CanvasContext.getGenericContext(CanvasContext.Type.COURSE, -1L, ""))
+    @get:PageViewUrlParam("canvasContext")
+    var canvasContext: CanvasContext by ParcelableArg(default = CanvasContext.getGenericContext(CanvasContext.Type.COURSE, -1L, ""))
 
     private val linearLayoutManager by lazy { LinearLayoutManager(requireContext()) }
     private lateinit var mRecyclerView: RecyclerView
@@ -117,7 +127,7 @@ class QuizListFragment : BaseExpandableSyncFragment<
     }
 
     override fun createAdapter(): QuizListAdapter {
-        return QuizListAdapter(requireContext(), presenter, canvasContext.textAndIconColor) { quiz ->
+        return QuizListAdapter(requireContext(), presenter, canvasContext.color) { quiz ->
             if (RouteMatcher.canRouteInternally(requireActivity(), quiz.htmlUrl, ApiPrefs.domain, false)) {
                 val route = RouteMatcher.getInternalRoute(quiz.htmlUrl!!, ApiPrefs.domain)
                 val secondaryClass = when (route?.primaryClass) {
@@ -125,7 +135,7 @@ class QuizListFragment : BaseExpandableSyncFragment<
                     AssignmentListFragment::class.java -> AssignmentDetailsFragment::class.java
                     else -> null
                 }
-                RouteMatcher.route(requireActivity(), route?.copy(secondaryClass = secondaryClass))
+                RouteMatcher.route(requireActivity(), route?.copy(canvasContext = canvasContext,  primaryClass = null, secondaryClass = secondaryClass))
             } else {
                 val args = QuizDetailsFragment.makeBundle(quiz)
                 RouteMatcher.route(requireActivity(), Route(null, QuizDetailsFragment::class.java, canvasContext, args))
@@ -166,7 +176,7 @@ class QuizListFragment : BaseExpandableSyncFragment<
             }
             presenter.searchQuery = query
         }
-        ViewStyler.themeToolbarColored(requireActivity(), quizListToolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), quizListToolbar, canvasContext.color, requireContext().getColor(R.color.textLightest))
     }
 
     override fun displayLoadingError() = toast(R.string.errorOccurred)

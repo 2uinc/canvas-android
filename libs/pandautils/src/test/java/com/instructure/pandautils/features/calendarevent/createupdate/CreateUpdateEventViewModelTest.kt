@@ -192,6 +192,7 @@ class CreateUpdateEventViewModelTest {
 
         val expectedEvent = CreateUpdateEventViewModelAction.RefreshCalendar
         Assert.assertEquals(expectedEvent, events.last())
+        Assert.assertEquals(CreateUpdateEventViewModelAction.AnnounceEventCreation("Title"), events[events.size - 2])
     }
 
     @Test
@@ -206,7 +207,7 @@ class CreateUpdateEventViewModelTest {
 
         every { savedStateHandle.get<ScheduleItem>(CreateUpdateEventFragment.SCHEDULE_ITEM) } returns event
         coEvery { repository.updateEvent(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns listOf(
-            event.copy(startAt = LocalDateTime.now(clock).plusDays(1).toApiString())
+            event.copy(title = "Updated", startAt = LocalDateTime.now(clock).plusDays(1).toApiString())
         )
 
         createViewModel()
@@ -241,6 +242,7 @@ class CreateUpdateEventViewModelTest {
             )
         )
         Assert.assertEquals(expectedEvent, events.last())
+        Assert.assertEquals(CreateUpdateEventViewModelAction.AnnounceEventUpdate("Updated"), events[events.size - 2])
     }
 
     @Test
@@ -528,6 +530,33 @@ class CreateUpdateEventViewModelTest {
                 any(),
                 any(),
                 "FREQ=WEEKLY;COUNT=15;INTERVAL=2;BYDAY=MO,TU",
+                any(),
+                any(),
+                any(),
+                any()
+            )
+        }
+    }
+
+    @Test
+    fun `Frequency updates correctly - Custom with date until`() = runTest {
+        every { savedStateHandle.get<String>(CreateUpdateEventFragment.INITIAL_DATE) } returns "2024-04-10"
+
+        createViewModel()
+
+        viewModel.handleAction(CreateUpdateEventAction.UpdateCustomFrequencyQuantity(2))
+        viewModel.handleAction(CreateUpdateEventAction.UpdateCustomFrequencySelectedTimeUnitIndex(1))
+        viewModel.handleAction(CreateUpdateEventAction.UpdateCustomFrequencySelectedDays(setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)))
+        viewModel.handleAction(CreateUpdateEventAction.UpdateCustomFrequencyEndDate(LocalDate.of(2024, 10, 7)))
+        viewModel.handleAction(CreateUpdateEventAction.SaveCustomFrequency)
+        viewModel.handleAction(CreateUpdateEventAction.Save(CalendarEventAPI.ModifyEventScope.ONE))
+
+        coVerify(exactly = 1) {
+            repository.createEvent(
+                any(),
+                any(),
+                any(),
+                "FREQ=WEEKLY;UNTIL=20241007T000000Z;INTERVAL=2;BYDAY=MO,TU",
                 any(),
                 any(),
                 any(),

@@ -23,12 +23,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.appbar.AppBarLayout
-import com.instructure.canvasapi2.models.*
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.Course
+import com.instructure.canvasapi2.models.Group
+import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.utils.isValid
 import com.instructure.canvasapi2.utils.pageview.PageView
+import com.instructure.canvasapi2.utils.pageview.PageViewUrlParam
 import com.instructure.canvasapi2.utils.weave.StatusCallbackError
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
@@ -37,8 +44,22 @@ import com.instructure.interactions.Navigation
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_COURSE_BROWSER
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.base.BaseCanvasFragment
 import com.instructure.pandautils.binding.viewBinding
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.compose.CanvasTheme
+import com.instructure.pandautils.compose.composables.SearchBar
+import com.instructure.pandautils.features.smartsearch.SmartSearchFragment
+import com.instructure.pandautils.utils.NetworkStateProvider
+import com.instructure.pandautils.utils.ParcelableArg
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.a11yManager
+import com.instructure.pandautils.utils.color
+import com.instructure.pandautils.utils.isSwitchAccessEnabled
+import com.instructure.pandautils.utils.makeBundle
+import com.instructure.pandautils.utils.setCourseImage
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.setupAsBackButton
+import com.instructure.pandautils.utils.toast
 import com.instructure.student.R
 import com.instructure.student.adapter.CourseBrowserAdapter
 import com.instructure.student.databinding.FragmentCourseBrowserBinding
@@ -58,26 +79,73 @@ import javax.inject.Inject
 @ScreenView(SCREEN_VIEW_COURSE_BROWSER)
 @PageView(url = "{canvasContext}")
 @AndroidEntryPoint
-class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnOffsetChangedListener {
+class CourseBrowserFragment : BaseCanvasFragment(), FragmentInteractions,
+    AppBarLayout.OnOffsetChangedListener {
 
     @Inject
     lateinit var repository: CourseBrowserRepository
+
+    @Inject
+    lateinit var networkStateProvider: NetworkStateProvider
 
     private val binding by viewBinding(FragmentCourseBrowserBinding::bind)
 
     private var apiCalls: Job? = null
 
-    private var canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
+    @get:PageViewUrlParam("canvasContext")
+    var canvasContext: CanvasContext by ParcelableArg(key = Const.CANVAS_CONTEXT)
 
     override val navigation: Navigation?
         get() = if (activity is Navigation) activity as Navigation else null
 
     //region Fragment Lifecycle Overrides
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? =
         inflater.inflate(R.layout.fragment_course_browser, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) = with(binding) {
         super.onViewCreated(view, savedInstanceState)
+
+        networkStateProvider.isOnlineLiveData.observe(viewLifecycleOwner) { isOnline ->
+            searchBar.setVisible(isOnline)
+        }
+
+        searchBar.apply {
+            setContent {
+                CanvasTheme {
+                    SearchBar(
+                        icon = R.drawable.ic_smart_search,
+                        tintColor = colorResource(R.color.textLightest),
+                        placeholder = stringResource(R.string.smartSearchPlaceholder),
+                        onExpand = { expanded ->
+                            overlayToolbar.background =
+                                if (expanded) ColorDrawable(canvasContext.color) else null
+                            overlayToolbar.navigationIcon =
+                                if (expanded) {
+                                    null
+                                } else {
+                                    ContextCompat.getDrawable(
+                                        requireContext(),
+                                        R.drawable.ic_back_arrow
+                                    )
+                                }
+                            ViewStyler.colorToolbarIconsAndText(
+                                requireActivity(),
+                                overlayToolbar,
+                                requireContext().getColor(R.color.textLightest)
+                            )
+                        },
+                        onSearch = { query ->
+                            RouteMatcher.route(requireActivity(), SmartSearchFragment.makeRoute(canvasContext, query))
+                        },
+                        collapseOnSearch = true
+                    )
+                }
+            }
+        }
 
         appBarLayout.addOnOffsetChangedListener(this@CourseBrowserFragment)
         collapsingToolbarLayout.isTitleEnabled = false
@@ -85,23 +153,26 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
         courseBrowserTitle.text = canvasContext.name
 
         (canvasContext as? Course)?.let {
-            courseImage.setCourseImage(it, it.backgroundColor, !StudentPrefs.hideCourseColorOverlay)
+            courseImage.setCourseImage(it, it.color, !StudentPrefs.hideCourseColorOverlay)
             courseBrowserSubtitle.text = it.term?.name ?: ""
-            binding.courseBrowserHeader.courseBrowserHeader.setTitleAndSubtitle(it.name, it.term?.name ?: "")
+            binding.courseBrowserHeader.courseBrowserHeader.setTitleAndSubtitle(
+                it.name,
+                it.term?.name ?: ""
+            )
         }
 
         (canvasContext as? Group)?.let {
-            courseImage.setImageDrawable(ColorDrawable(it.backgroundColor))
+            courseImage.setImageDrawable(ColorDrawable(it.color))
         }
 
-        collapsingToolbarLayout.setContentScrimColor(canvasContext.backgroundColor)
+        collapsingToolbarLayout.setContentScrimColor(canvasContext.color)
 
         // If course color overlay is disabled we show a static toolbar and hide the text overlay
         overlayToolbar.setupAsBackButton(this@CourseBrowserFragment)
         noOverlayToolbar.setupAsBackButton(this@CourseBrowserFragment)
         noOverlayToolbar.title = canvasContext.name
         (canvasContext as? Course)?.term?.name?.let { noOverlayToolbar.subtitle = it }
-        noOverlayToolbar.setBackgroundColor(canvasContext.backgroundColor)
+        noOverlayToolbar.setBackgroundColor(canvasContext.color)
         updateToolbarVisibility()
 
         // Hide image placeholder if color overlay is disabled and there is no valid image
@@ -136,13 +207,22 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
     @Subscribe(sticky = true)
     fun onColorOverlayToggled(event: CourseColorOverlayToggledEvent) {
         (canvasContext as? Course)?.let {
-            binding.courseImage.setCourseImage(it, it.backgroundColor, !StudentPrefs.hideCourseColorOverlay)
+            binding.courseImage.setCourseImage(it, it.color, !StudentPrefs.hideCourseColorOverlay)
         }
         updateToolbarVisibility()
     }
 
     private fun updateToolbarVisibility() = with(binding) {
         val useOverlay = !StudentPrefs.hideCourseColorOverlay
+        if (!useOverlay) {
+            overlayToolbar.removeView(searchBar)
+            noOverlayToolbar.addView(searchBar)
+        } else {
+            if (searchBar.parent == noOverlayToolbar) {
+                noOverlayToolbar.removeView(searchBar)
+                overlayToolbar.addView(searchBar)
+            }
+        }
         noOverlayToolbar.setVisible(!useOverlay)
         overlayToolbar.setVisible(useOverlay)
         courseHeader.setVisible(useOverlay)
@@ -154,7 +234,7 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
         (canvasContext as? Course)?.let {
             binding.courseImage.setCourseImage(
                 it,
-                it.backgroundColor,
+                it.color,
                 !StudentPrefs.hideCourseColorOverlay
             )
         }
@@ -172,17 +252,17 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
         ViewStyler.colorToolbarIconsAndText(
             requireActivity(),
             binding.noOverlayToolbar,
-            requireContext().getColor(R.color.white)
+            requireContext().getColor(R.color.textLightest)
         )
         ViewStyler.colorToolbarIconsAndText(
             requireActivity(),
             binding.overlayToolbar,
-            requireContext().getColor(R.color.white)
+            requireContext().getColor(R.color.textLightest)
         )
-        ViewStyler.setStatusBarDark(requireActivity(), canvasContext.backgroundColor)
+        ViewStyler.setStatusBarDark(requireActivity(), canvasContext.color)
     }
 
-    override fun getFragment(): Fragment? = this
+    override fun getFragment(): Fragment = this
 
     override fun title(): String = canvasContext.name ?: ""
     //endregion
@@ -204,34 +284,38 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
 
             val tabs = repository.getTabs(canvasContext, isRefresh)
 
+            binding.searchBar.setVisible(networkStateProvider.isOnline() && tabs.find { it.tabId == Tab.SEARCH_ID } != null)
+
             // Finds the home tab so we can reorder them if necessary
-            val sortedTabs = tabs.toMutableList()
+            val sortedTabs = tabs.filter { it.tabId != Tab.SEARCH_ID }.toMutableList()
             sortedTabs.sortBy { if (TabHelper.isHomeTab(it)) -1 else 1 }
 
-            courseBrowserRecyclerView.adapter = CourseBrowserAdapter(sortedTabs, canvasContext, homePageTitle) { tab ->
-                if (isHomeAPage && TabHelper.isHomeTab(tab, canvasContext as Course)) {
-                    // Load Pages List
-                    if (tabs.any { it.tabId == Tab.PAGES_ID }) {
-                        // Do not load the pages list if the tab is hidden or locked.
-                        val route = TabHelper.getRouteByTabId(tab, canvasContext)
-                        route?.arguments = route?.arguments?.apply {
+            courseBrowserRecyclerView.adapter =
+                CourseBrowserAdapter(sortedTabs, canvasContext, homePageTitle) { tab ->
+                    if (isHomeAPage && TabHelper.isHomeTab(tab, canvasContext as Course)) {
+                        // Load Pages List
+                        if (tabs.any { it.tabId == Tab.PAGES_ID }) {
+                            // Do not load the pages list if the tab is hidden or locked.
+                            val route = TabHelper.getRouteByTabId(tab, canvasContext)
+                            route?.arguments = route?.arguments?.apply {
+                                putString(PageDetailsFragment.PAGE_NAME, homePageTitle)
+                            } ?: Bundle()
+                            RouteMatcher.route(requireActivity(), route)
+                        }
+
+                        // If the home tab is a Page and we clicked it lets route directly there.
+                        val route = PageDetailsFragment.makeFrontPageRoute(canvasContext)
+                            .apply { ignoreDebounce = true }
+                        route.arguments = route.arguments.apply {
                             putString(PageDetailsFragment.PAGE_NAME, homePageTitle)
-                        } ?: Bundle()
+                        }
+                        RouteMatcher.route(requireActivity(), route)
+                    } else {
+                        val route = TabHelper.getRouteByTabId(tab, canvasContext)
+                            ?.apply { ignoreDebounce = true }
                         RouteMatcher.route(requireActivity(), route)
                     }
-
-                    // If the home tab is a Page and we clicked it lets route directly there.
-                    val route = PageDetailsFragment.makeFrontPageRoute(canvasContext)
-                        .apply { ignoreDebounce = true }
-                    route.arguments = route.arguments.apply {
-                        putString(PageDetailsFragment.PAGE_NAME, homePageTitle)
-                    }
-                    RouteMatcher.route(requireActivity(), route)
-                } else {
-                    val route = TabHelper.getRouteByTabId(tab, canvasContext)?.apply { ignoreDebounce = true }
-                    RouteMatcher.route(requireActivity(), route)
                 }
-            }
 
             swipeRefreshLayout.isRefreshing = false
         } catch {
@@ -252,18 +336,24 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
     override fun onOffsetChanged(appBarLayout: AppBarLayout?, verticalOffset: Int) {
         if (view == null) return
 
-        val percentage = Math.abs(verticalOffset).div(appBarLayout?.totalScrollRange?.toFloat() ?: 1F)
+        val percentage =
+            Math.abs(verticalOffset).div(appBarLayout?.totalScrollRange?.toFloat() ?: 1F)
 
         if (percentage <= 0.3F) {
             val toolbarAnimation =
-                if (binding.courseBrowserHeader.courseBrowserHeader == null) null else ObjectAnimator.ofFloat(
+                ObjectAnimator.ofFloat(
                     binding.courseBrowserHeader.courseBrowserHeader,
                     View.ALPHA,
                     binding.courseBrowserHeader.courseBrowserHeader.alpha,
                     0F
                 )
             val titleAnimation =
-                ObjectAnimator.ofFloat(binding.courseBrowserTitle, View.ALPHA, binding.courseBrowserTitle.alpha, 1F)
+                ObjectAnimator.ofFloat(
+                    binding.courseBrowserTitle,
+                    View.ALPHA,
+                    binding.courseBrowserTitle.alpha,
+                    1F
+                )
             val subtitleAnimation = ObjectAnimator.ofFloat(
                 binding.courseBrowserSubtitle,
                 View.ALPHA,
@@ -289,14 +379,19 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
 
         } else if (percentage > 0.7F) {
             val toolbarAnimation =
-                if (binding.courseBrowserHeader.courseBrowserHeader == null) null else ObjectAnimator.ofFloat(
+                ObjectAnimator.ofFloat(
                     binding.courseBrowserHeader.courseBrowserHeader,
                     View.ALPHA,
                     binding.courseBrowserHeader.courseBrowserHeader.alpha,
                     1F
                 )
             val titleAnimation =
-                ObjectAnimator.ofFloat(binding.courseBrowserTitle, View.ALPHA, binding.courseBrowserTitle.alpha, 0F)
+                ObjectAnimator.ofFloat(
+                    binding.courseBrowserTitle,
+                    View.ALPHA,
+                    binding.courseBrowserTitle.alpha,
+                    0F
+                )
             val subtitleAnimation = ObjectAnimator.ofFloat(
                 binding.courseBrowserSubtitle,
                 View.ALPHA,
@@ -330,6 +425,7 @@ class CourseBrowserFragment : Fragment(), FragmentInteractions, AppBarLayout.OnO
 
         private fun validateRoute(route: Route) = route.canvasContext != null
 
-        fun makeRoute(canvasContext: CanvasContext?) = Route(CourseBrowserFragment::class.java, canvasContext)
+        fun makeRoute(canvasContext: CanvasContext?) =
+            Route(CourseBrowserFragment::class.java, canvasContext)
     }
 }

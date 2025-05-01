@@ -32,11 +32,12 @@ import com.instructure.canvasapi2.utils.weave.tryLaunch
 import com.instructure.pandarecycler.interfaces.ViewHolderHeaderClicked
 import com.instructure.pandarecycler.util.GroupSortedList
 import com.instructure.pandarecycler.util.Types
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.orDefault
-import com.instructure.pandautils.utils.textAndIconColor
 import com.instructure.pandautils.utils.toast
 import com.instructure.student.R
 import com.instructure.student.adapter.ExpandableRecyclerAdapter
+import com.instructure.student.databinding.ViewholderQuizBinding
 import com.instructure.student.holders.ExpandableViewHolder
 import com.instructure.student.holders.QuizViewHolder
 import com.instructure.student.interfaces.AdapterToFragmentCallback
@@ -108,7 +109,7 @@ class QuizListRecyclerAdapter(
 
     override fun createViewHolder(v: View, viewType: Int) = when (viewType) {
         Types.TYPE_HEADER -> ExpandableViewHolder(v)
-        else -> QuizViewHolder(v)
+        else -> QuizViewHolder(ViewholderQuizBinding.bind(v))
     }
 
     override fun itemLayoutResId(viewType: Int) = when (viewType) {
@@ -118,7 +119,7 @@ class QuizListRecyclerAdapter(
 
     override fun onBindChildHolder(holder: RecyclerView.ViewHolder, s: String, quiz: Quiz) {
         val restrictQuantitativeData = settings?.restrictQuantitativeData.orDefault()
-        (holder as? QuizViewHolder)?.bind(quiz, adapterToFragmentCallback, context, canvasContext.textAndIconColor, restrictQuantitativeData)
+        (holder as? QuizViewHolder)?.bind(quiz, adapterToFragmentCallback, context, canvasContext.color, restrictQuantitativeData)
     }
 
     override fun onBindHeaderHolder(holder: RecyclerView.ViewHolder, s: String, isExpanded: Boolean) {

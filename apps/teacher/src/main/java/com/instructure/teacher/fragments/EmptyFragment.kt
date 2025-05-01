@@ -19,14 +19,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
+import com.instructure.pandautils.base.BaseCanvasFragment
 import com.instructure.canvasapi2.models.Course
 import com.instructure.pandautils.binding.viewBinding
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.NullableParcelableArg
+import com.instructure.pandautils.utils.StringArg
+import com.instructure.pandautils.utils.ThemePrefs
+import com.instructure.pandautils.utils.ViewStyler
+import com.instructure.pandautils.utils.color
 import com.instructure.teacher.R
 import com.instructure.teacher.databinding.FragmentEmptyBinding
 
-class EmptyFragment: Fragment() {
+class EmptyFragment: BaseCanvasFragment() {
 
     private val binding by viewBinding(FragmentEmptyBinding::bind)
 
@@ -46,8 +50,8 @@ class EmptyFragment: Fragment() {
         toolbar.title = ""
         emptyTitle.text = mTitle
         emptyMessage.text = getString(R.string.emptyDetailsMessage)
-        val toolbarBackgroundColor = mCourse?.backgroundColor ?: ThemePrefs.primaryColor
-        val toolbarTextColor = if (mCourse?.backgroundColor != null) requireContext().getColor(R.color.white) else ThemePrefs.primaryTextColor
+        val toolbarBackgroundColor = mCourse?.color ?: ThemePrefs.primaryColor
+        val toolbarTextColor = if (mCourse?.color != null) requireContext().getColor(R.color.textLightest) else ThemePrefs.primaryTextColor
         ViewStyler.themeToolbarColored(requireActivity(), toolbar, toolbarBackgroundColor, toolbarTextColor)
     }
 

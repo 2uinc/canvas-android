@@ -18,6 +18,8 @@ package com.instructure.teacher.fragments
 
 import android.graphics.Typeface
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,6 +63,7 @@ import com.instructure.teacher.adapters.LongNameArrayAdapter
 import com.instructure.teacher.databinding.FragmentEditFilefolderBinding
 import com.instructure.teacher.dialog.ConfirmDeleteFileFolderDialog
 import com.instructure.teacher.factory.EditFilePresenterFactory
+import com.instructure.teacher.interfaces.ConfirmDeleteFileCallback
 import com.instructure.teacher.presenters.EditFileFolderPresenter
 import com.instructure.teacher.utils.formatOrDoubleDash
 import com.instructure.teacher.utils.setupCloseButton
@@ -74,7 +77,7 @@ import java.util.Locale
 class EditFileFolderFragment : BasePresenterFragment<
         EditFileFolderPresenter,
         EditFileView,
-        FragmentEditFilefolderBinding>(), EditFileView {
+        FragmentEditFilefolderBinding>(), EditFileView, ConfirmDeleteFileCallback {
 
     private var currentFileOrFolder: FileFolder by ParcelableArg()
     private var usageRightsEnabled: Boolean by BooleanArg()
@@ -117,6 +120,17 @@ class EditFileFolderFragment : BasePresenterFragment<
             binding.unlockDateTextInput.error = null
             binding.unlockDateTextInput.isErrorEnabled = false
         }.show(requireActivity().supportFragmentManager, TimePickerDialogFragment::class.java.simpleName)
+    }
+
+    private val titleTextWatcher = object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+        override fun afterTextChanged(s: Editable?) {
+            if (s?.isBlank() == false) {
+                binding.titleLabel.error = null
+            }
+        }
     }
 
     override val bindingInflater: (layoutInflater: LayoutInflater) -> FragmentEditFilefolderBinding = FragmentEditFilefolderBinding::inflate
@@ -170,9 +184,7 @@ class EditFileFolderFragment : BasePresenterFragment<
         setupUsageRights()
 
         deleteWrapper.setOnClickListener {
-            ConfirmDeleteFileFolderDialog.show(requireActivity().supportFragmentManager, presenter.isFile) {
-                presenter.deleteFileFolder()
-            }
+            ConfirmDeleteFileFolderDialog.show(childFragmentManager, currentFileOrFolder)
         }
 
         if (!presenter.isFile) {
@@ -189,6 +201,8 @@ class EditFileFolderFragment : BasePresenterFragment<
         lockTimeEditText.setOnClickListener { timeClickListener(it, true) }
         unlockDateEditText.setOnClickListener { dateClickListener(it, false) }
         unlockTimeEditText.setOnClickListener { timeClickListener(it, false) }
+
+        titleEditText.addTextChangedListener(titleTextWatcher)
 
         // Apply theming
         ViewStyler.themeEditText(requireActivity(), titleEditText, ThemePrefs.brandColor)
@@ -412,6 +426,10 @@ class EditFileFolderFragment : BasePresenterFragment<
     }
 
     private fun saveFileFolder() = with(binding) {
+        if (binding.titleEditText.text?.isBlank() == true) {
+            binding.titleLabel.error = getString(R.string.errorEmptyTitle)
+            return
+        }
 
         // Check unlock/lock dates
         if (unlockDate != null && lockDate != null)
@@ -444,6 +462,9 @@ class EditFileFolderFragment : BasePresenterFragment<
      */
     private fun setupTimeCalendar(hour: Int, min: Int, date: Date? = null): Date =
             Calendar.getInstance().apply { time = date ?: Date(); set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, min) }.time
+
+    override val onConfirmDeleteFile: (fileFolder: FileFolder) -> Unit
+        get() = { presenter.deleteFileFolder() }
 
     companion object {
         private const val CURRENT_FILE_OR_FOLDER = "currentFileOrFolder"

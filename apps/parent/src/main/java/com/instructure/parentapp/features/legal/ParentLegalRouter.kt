@@ -16,55 +16,32 @@
  */
 package com.instructure.parentapp.features.legal
 
-import android.content.Context
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabColorSchemeParams
-import androidx.browser.customtabs.CustomTabsIntent
 import com.instructure.pandautils.features.legal.LegalRouter
 import com.instructure.pandautils.utils.ThemePrefs
-import com.instructure.pandautils.utils.asChooserExcludingInstructure
+import com.instructure.pandautils.utils.launchCustomTab
+import com.instructure.parentapp.R
+import com.instructure.parentapp.features.webview.HtmlContentActivity
 
-class ParentLegalRouter(private val context: Context) : LegalRouter {
+class ParentLegalRouter(private val activity: Activity) : LegalRouter {
 
     override fun routeToTermsOfService(html: String) {
-        launchCustomTab("http://www.canvaslms.com/policies/terms-of-use")
+        if (html.isNotBlank()) {
+            val intent = HtmlContentActivity.createIntent(
+                activity,
+                activity.getString(R.string.termsOfUse),
+                html,
+                true
+            )
+            activity.startActivity(intent)
+        } else {
+            activity.launchCustomTab("http://www.canvaslms.com/policies/terms-of-use", ThemePrefs.primaryColor)
+        }
     }
 
     override fun routeToPrivacyPolicy() {
-        launchCustomTab("https://www.instructure.com/policies/product-privacy-policy")
-    }
-
-    override fun routeToOpenSource() {
-        val intent = Intent(
-            Intent.ACTION_VIEW,
-            Uri.parse("https://github.com/instructure/canvas-android")
-        )
-        context.startActivity(intent)
-    }
-
-    private fun launchCustomTab(url: String) {
-        val uri = Uri.parse(url)
-            .buildUpon()
-            .appendQueryParameter("display", "borderless")
-            .appendQueryParameter("platform", "android")
-            .build()
-
-        val colorSchemeParams = CustomTabColorSchemeParams.Builder()
-            .setToolbarColor(ThemePrefs.primaryColor)
-            .build()
-
-        var intent = CustomTabsIntent.Builder()
-            .setDefaultColorSchemeParams(colorSchemeParams)
-            .setShowTitle(true)
-            .build()
-            .intent
-
-        intent.data = uri
-
-        // Exclude Instructure apps from chooser options
-        intent = intent.asChooserExcludingInstructure()
-
-        context.startActivity(intent)
+        activity.launchCustomTab("https://www.instructure.com/policies/product-privacy-policy", ThemePrefs.primaryColor)
     }
 }

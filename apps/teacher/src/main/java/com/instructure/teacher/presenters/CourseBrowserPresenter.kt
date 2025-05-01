@@ -20,15 +20,17 @@ import com.instructure.canvasapi2.apis.AttendanceAPI
 import com.instructure.canvasapi2.managers.CourseManager
 import com.instructure.canvasapi2.managers.LaunchDefinitionsManager
 import com.instructure.canvasapi2.managers.TabManager
-import com.instructure.canvasapi2.models.*
-import com.instructure.canvasapi2.utils.RemoteConfigParam
-import com.instructure.canvasapi2.utils.RemoteConfigUtils
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.canvasapi2.models.CanvasContextPermission
+import com.instructure.canvasapi2.models.Group
+import com.instructure.canvasapi2.models.LaunchDefinition
+import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.awaitApiResponse
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
+import com.instructure.pandautils.blueprint.SyncPresenter
 import com.instructure.teacher.viewinterface.CourseBrowserView
-import instructure.androidblueprint.SyncPresenter
 import kotlinx.coroutines.Job
 
 class CourseBrowserPresenter(val canvasContext: CanvasContext, val filter: (Tab, Long) -> Boolean) : SyncPresenter<Tab, CourseBrowserView>(Tab::class.java) {
@@ -65,7 +67,7 @@ class CourseBrowserPresenter(val canvasContext: CanvasContext, val filter: (Tab,
             var attendanceId: Long = 0
 
             launchDefinitions.forEach {
-                val ltiDefinitionUrl = it.placements.courseNavigation?.url
+                val ltiDefinitionUrl = it.placements?.courseNavigation?.url
                 if (ltiDefinitionUrl != null && (
                         ltiDefinitionUrl.contains(AttendanceAPI.BASE_DOMAIN) ||
                                 ltiDefinitionUrl.contains(AttendanceAPI.BASE_TEST_DOMAIN))) {

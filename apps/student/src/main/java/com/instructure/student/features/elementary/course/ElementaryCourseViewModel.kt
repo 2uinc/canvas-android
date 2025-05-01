@@ -22,17 +22,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.CourseManager
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.managers.TabManager
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Tab
 import com.instructure.canvasapi2.utils.ApiPrefs
-import com.instructure.canvasapi2.utils.Logger
 import com.instructure.pandautils.R
 import com.instructure.pandautils.mvvm.Event
 import com.instructure.pandautils.mvvm.ViewState
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.isCourse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -44,7 +44,8 @@ class ElementaryCourseViewModel @Inject constructor(
     private val resources: Resources,
     private val apiPrefs: ApiPrefs,
     private val oauthManager: OAuthManager,
-    private val courseManager: CourseManager
+    private val courseManager: CourseManager,
+    private val firebaseCrashlytics: FirebaseCrashlytics
 ) : ViewModel() {
 
     val state: LiveData<ViewState>
@@ -77,14 +78,14 @@ class ElementaryCourseViewModel @Inject constructor(
 
                     val tabViewData = createTabs(canvasContext, tabs).toMutableList()
 
-                    _data.postValue(ElementaryCourseViewData(tabViewData, canvasContext.backgroundColor))
+                    _data.postValue(ElementaryCourseViewData(tabViewData, canvasContext.color))
                     _state.postValue(ViewState.Success)
                 } else {
                     handleNonElementaryCourse(tabId)
                 }
             } catch (e: Exception) {
                 _state.postValue(ViewState.Error(resources.getString(R.string.error_loading_course_details)))
-                Logger.e("Failed to load tabs")
+                firebaseCrashlytics.recordException(e)
             }
         }
     }
@@ -146,26 +147,19 @@ class ElementaryCourseViewModel @Inject constructor(
     private suspend fun createTabs(canvasContext: CanvasContext, tabs: List<Tab>): List<ElementaryCourseTab> {
         val prefix =
             if (canvasContext.isCourse) "${apiPrefs.fullDomain}/courses/${canvasContext.id}?embed=true" else "${apiPrefs.fullDomain}/groups/${canvasContext.id}?embed=true"
-        return tabs.map {
-            val drawable = getIconDrawable(it.tabId)
-            val url = when (it.tabId) {
+        return tabs.map { tab ->
+            val drawable = getIconDrawable(tab.tabId)
+            val url = when (tab.tabId) {
                 Tab.HOME_ID -> "$prefix#home"
                 Tab.SCHEDULE_ID -> "$prefix#schedule"
                 Tab.MODULES_ID -> "$prefix#modules"
                 Tab.GRADES_ID -> "$prefix#grades"
                 Tab.RESOURCES_ID -> "$prefix#resources"
-                else -> it.htmlUrl ?: ""
+                else -> tab.htmlUrl?.let { "${apiPrefs.fullDomain}${it}?embedded=true" } ?: ""
             }
 
-            val authenticatedUrl = if (apiPrefs.isStudentView) {
-                apiPrefs.user?.let {
-                    oauthManager.getAuthenticatedSessionMasqueradingAsync(url, apiPrefs.user!!.id)
-                        .await().dataOrNull?.sessionUrl
-                } ?: url
-            } else {
-                oauthManager.getAuthenticatedSessionAsync(url).await().dataOrNull?.sessionUrl
-            }
-            ElementaryCourseTab(it.tabId, drawable, it.label, authenticatedUrl ?: url)
+            val authenticatedUrl = oauthManager.getAuthenticatedSessionAsync(url).await().dataOrNull?.sessionUrl
+            ElementaryCourseTab(tab.tabId, drawable, tab.label, authenticatedUrl ?: url)
 
         }
     }

@@ -18,12 +18,12 @@
 
 package com.instructure.student.test.assignment.details.submissionDetails.commentTab
 
-import android.app.Activity
 import androidx.fragment.app.FragmentActivity
 import com.instructure.canvasapi2.models.Assignment
 import com.instructure.canvasapi2.models.Attachment
 import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.models.Submission
+import com.instructure.canvasapi2.utils.Analytics
 import com.instructure.pandautils.utils.PermissionUtils
 import com.instructure.pandautils.utils.requestPermissions
 import com.instructure.student.mobius.assignmentDetails.submissionDetails.SubmissionDetailsSharedEvent
@@ -31,21 +31,33 @@ import com.instructure.student.mobius.assignmentDetails.submissionDetails.drawer
 import com.instructure.student.mobius.assignmentDetails.submissionDetails.drawer.comments.SubmissionCommentsEffectHandler
 import com.instructure.student.mobius.assignmentDetails.submissionDetails.drawer.comments.SubmissionCommentsEvent
 import com.instructure.student.mobius.assignmentDetails.submissionDetails.drawer.comments.ui.SubmissionCommentsView
-import com.instructure.student.mobius.common.ChannelSource
+import com.instructure.student.mobius.common.FlowSource
 import com.instructure.student.mobius.common.ui.SubmissionHelper
-import com.instructure.student.mobius.common.ui.SubmissionService
-import com.instructure.student.test.util.receiveOnce
 import com.spotify.mobius.functions.Consumer
-import io.mockk.*
+import io.mockk.confirmVerified
+import io.mockk.every
+import io.mockk.invoke
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.runs
+import io.mockk.slot
+import io.mockk.unmockkAll
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.io.File
-import java.util.concurrent.Executors
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SubmissionCommentsEffectHandlerTest : Assert(){
@@ -56,10 +68,20 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
     private val effectHandler = SubmissionCommentsEffectHandler(context, submissionHelper).apply { view = mockView }
     private val eventConsumer: Consumer<SubmissionCommentsEvent> = mockk(relaxed = true)
     private val connection = effectHandler.connect(eventConsumer)
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setup() {
-        Dispatchers.setMain(Executors.newSingleThreadExecutor().asCoroutineDispatcher())
+        Dispatchers.setMain(testDispatcher)
+
+        mockkObject(Analytics)
+        every { Analytics.logEvent(any()) } just runs
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        unmockkAll()
     }
 
     @Test
@@ -74,7 +96,7 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
     }
 
     @Test
-    fun `UploadMediaComment effect results in calling SubmissionService startMediaCommentUpload`() {
+    fun `UploadMediaComment effect results in calling SubmissionHelper startMediaCommentUpload`() {
         val effect = SubmissionCommentsEffect.UploadMediaComment(
             file = File("test"),
             assignmentId = 123L,
@@ -83,7 +105,6 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
             isGroupMessage = false,
             attemptId = 1
         )
-        mockkObject(SubmissionService.Companion)
         every {
             submissionHelper.startMediaCommentUpload(any(), any(), any(), any(), any(), any())
         } returns Unit
@@ -127,80 +148,86 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
     }
 
     @Test
-    fun `ShowAudioRecordingView effect with permission results in AudioRecordingViewLaunched shared event`() {
+    fun `ShowAudioRecordingView effect with permission results in AudioRecordingViewLaunched shared event`() = runTest(testDispatcher) {
         mockPermissions(true)
 
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val expectedEvent = SubmissionDetailsSharedEvent.AudioRecordingViewLaunched
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.ShowAudioRecordingView)
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.ShowAudioRecordingView)
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test
-    fun `ShowVideoRecordingView effect with permission results in VideoRecordingViewLaunched shared event`() {
+    fun `ShowVideoRecordingView effect with permission results in VideoRecordingViewLaunched shared event`() = runTest(testDispatcher) {
         mockPermissions(true)
 
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val expectedEvent = SubmissionDetailsSharedEvent.VideoRecordingViewLaunched
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.ShowVideoRecordingView)
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.ShowVideoRecordingView)
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test
-    fun `ShowAudioRecordingView effect without permissions results in AudioRecordingViewLaunched shared event`() {
+    fun `ShowAudioRecordingView effect without permissions results in AudioRecordingViewLaunched shared event`() = runTest(testDispatcher) {
         mockPermissions(hasPermission = true, permissionGranted = true)
 
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val expectedEvent = SubmissionDetailsSharedEvent.AudioRecordingViewLaunched
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.ShowAudioRecordingView)
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.ShowAudioRecordingView)
+        assertEquals(expectedEvent, deferred.await())
     }
 
 
     @Test
-    fun `ShowVideoRecordingView effect without permission results in VideoRecordingViewLaunched shared event`() {
+    fun `ShowVideoRecordingView effect without permission results in VideoRecordingViewLaunched shared event`() = runTest(testDispatcher) {
         mockPermissions(hasPermission = true, permissionGranted = true)
 
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val expectedEvent = SubmissionDetailsSharedEvent.VideoRecordingViewLaunched
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.ShowVideoRecordingView)
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.ShowVideoRecordingView)
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test
-    fun `ShowAudioRecordingView effect with permission check results in AudioRecordingViewLaunched shared event`() {
+    fun `ShowAudioRecordingView effect with permission check results in AudioRecordingViewLaunched shared event`() = runTest(testDispatcher) {
         mockPermissions(hasPermission = false, permissionGranted = true)
 
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val expectedEvent = SubmissionDetailsSharedEvent.AudioRecordingViewLaunched
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.ShowAudioRecordingView)
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.ShowAudioRecordingView)
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test
-    fun `ShowVideoRecordingView effect with permission check results in VideoRecordingViewLaunched shared event`() {
+    fun `ShowVideoRecordingView effect with permission check results in VideoRecordingViewLaunched shared event`() = runTest(testDispatcher) {
         mockPermissions(hasPermission = false, permissionGranted = true)
 
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val expectedEvent = SubmissionDetailsSharedEvent.VideoRecordingViewLaunched
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.ShowVideoRecordingView)
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.ShowVideoRecordingView)
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test
-    fun `SendTextComment effect results in calling SubmissionService startCommentUpload`() {
+    fun `SendTextComment effect results in calling SubmissionHelper startCommentUpload`() {
         val effect = SubmissionCommentsEffect.SendTextComment(
             message = "Test message",
             assignmentId = 123L,
@@ -209,11 +236,6 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
             isGroupMessage = false,
             attemptId = 1
         )
-
-        mockkObject(SubmissionService.Companion)
-        every {
-            submissionHelper.startCommentUpload(any(), any(), any(), any(), any(), any(), any())
-        } returns Unit
 
         connection.accept(effect)
 
@@ -269,37 +291,23 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
     }
 
     @Test
-    fun `RetryCommentUpload effect results in calling SubmissionService retryCommentUpload`() {
+    fun `RetryCommentUpload effect results in calling SubmissionHelper retryCommentUpload`() {
         val effect = SubmissionCommentsEffect.RetryCommentUpload(123L)
-        mockkObject(SubmissionService.Companion)
-        every {
-            submissionHelper.retryCommentUpload(any())
-        } returns Unit
-
         connection.accept(effect)
 
         verify(timeout = 100) {
             submissionHelper.retryCommentUpload(123L)
         }
-
-        confirmVerified(SubmissionService)
     }
 
     @Test
-    fun ` DeleteCommentEffect effect results in calling SubmissionService deletePendingComment`() {
+    fun ` DeleteCommentEffect effect results in calling SubmissionHelper deletePendingComment`() {
         val effect = SubmissionCommentsEffect.DeletePendingComment(123L)
-        mockkObject(SubmissionService.Companion)
-        every {
-            submissionHelper.deletePendingComment(any())
-        } returns Unit
-
         connection.accept(effect)
 
         verify(timeout = 100) {
             submissionHelper.deletePendingComment(123L)
         }
-
-        confirmVerified(SubmissionService)
     }
 
     private fun mockPermissions(hasPermission: Boolean, permissionGranted: Boolean = false) {
@@ -316,26 +324,28 @@ class SubmissionCommentsEffectHandlerTest : Assert(){
     }
 
     @Test
-    fun `BroadcastSubmissionSelected effect sends SubmissionClicked shared event`() {
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+    fun `BroadcastSubmissionSelected effect sends SubmissionClicked shared event`() = runTest(testDispatcher) {
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val submission = Submission(123L)
         val expectedEvent = SubmissionDetailsSharedEvent.SubmissionClicked(submission)
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.BroadcastSubmissionSelected(submission))
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.BroadcastSubmissionSelected(submission))
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test
-    fun `BroadcastSubmissionAttachmentSelected effect sends SubmissionAttachmentClicked shared event`() {
-        val channel = ChannelSource.getChannel<SubmissionDetailsSharedEvent>()
+    fun `BroadcastSubmissionAttachmentSelected effect sends SubmissionAttachmentClicked shared event`() = runTest(testDispatcher) {
+        val flow = FlowSource.getFlow<SubmissionDetailsSharedEvent>()
         val submission = Submission(123L)
         val attachment = Attachment(id = 456L, contentType = "test/data")
         val expectedEvent = SubmissionDetailsSharedEvent.SubmissionAttachmentClicked(submission, attachment)
-        val actualEvent = channel.receiveOnce {
-            connection.accept(SubmissionCommentsEffect.BroadcastSubmissionAttachmentSelected(submission, attachment))
+        val deferred = async {
+            flow.first()
         }
-        assertEquals(expectedEvent, actualEvent)
+        connection.accept(SubmissionCommentsEffect.BroadcastSubmissionAttachmentSelected(submission, attachment))
+        assertEquals(expectedEvent, deferred.await())
     }
 
     @Test

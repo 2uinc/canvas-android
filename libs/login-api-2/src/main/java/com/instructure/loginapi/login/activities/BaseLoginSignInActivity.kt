@@ -25,24 +25,35 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
-import android.webkit.*
+import android.webkit.CookieManager
+import android.webkit.HttpAuthHandler
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import com.instructure.canvasapi2.RequestInterceptor.Companion.acceptedLanguageString
 import com.instructure.canvasapi2.StatusCallback
+import com.instructure.canvasapi2.TokenRefreshState
+import com.instructure.canvasapi2.TokenRefresher
 import com.instructure.canvasapi2.managers.OAuthManager.getToken
 import com.instructure.canvasapi2.managers.UserManager.getSelf
 import com.instructure.canvasapi2.models.AccountDomain
 import com.instructure.canvasapi2.models.OAuthTokenResponse
 import com.instructure.canvasapi2.models.User
-import com.instructure.canvasapi2.utils.*
 import com.instructure.canvasapi2.utils.Analytics.logEvent
+import com.instructure.canvasapi2.utils.AnalyticsEventConstants
+import com.instructure.canvasapi2.utils.AnalyticsParamConstants
+import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.ApiPrefs.accessToken
 import com.instructure.canvasapi2.utils.ApiPrefs.clientId
 import com.instructure.canvasapi2.utils.ApiPrefs.clientSecret
@@ -50,7 +61,10 @@ import com.instructure.canvasapi2.utils.ApiPrefs.domain
 import com.instructure.canvasapi2.utils.ApiPrefs.protocol
 import com.instructure.canvasapi2.utils.ApiPrefs.refreshToken
 import com.instructure.canvasapi2.utils.ApiPrefs.user
+import com.instructure.canvasapi2.utils.ApiType
+import com.instructure.canvasapi2.utils.LinkHeaders
 import com.instructure.canvasapi2.utils.Logger.d
+import com.instructure.canvasapi2.utils.isValid
 import com.instructure.loginapi.login.LoginNavigation
 import com.instructure.loginapi.login.R
 import com.instructure.loginapi.login.api.MobileVerifyAPI.mobileVerify
@@ -70,15 +84,21 @@ import com.instructure.loginapi.login.util.LoginPrefs
 import com.instructure.loginapi.login.util.PreviousUsersUtils.add
 import com.instructure.loginapi.login.util.SavedLoginInfo
 import com.instructure.loginapi.login.viewmodel.LoginViewModel
+import com.instructure.pandautils.base.BaseCanvasActivity
 import com.instructure.pandautils.binding.viewBinding
-import com.instructure.pandautils.utils.*
+import com.instructure.pandautils.utils.Utils
 import com.instructure.pandautils.utils.ViewStyler.themeStatusBar
+import com.instructure.pandautils.utils.setGone
+import com.instructure.pandautils.utils.setVisible
+import com.instructure.pandautils.utils.setupAsBackButton
+import com.instructure.pandautils.utils.toast
 import retrofit2.Call
 import retrofit2.Response
-import java.util.*
+import java.util.Locale
 import javax.inject.Inject
 
-abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSet {
+abstract class BaseLoginSignInActivity : BaseCanvasActivity(), OnAuthenticationSet {
+
     companion object {
         const val ACCOUNT_DOMAIN = "accountDomain"
         const val SUCCESS_URL = "/login/oauth2/auth?code="
@@ -109,6 +129,9 @@ abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSe
     @Inject
     lateinit var navigation: LoginNavigation
 
+    @Inject
+    lateinit var tokenRefresher: TokenRefresher
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -116,6 +139,27 @@ abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSe
         setupViews()
         applyTheme()
         beginSignIn(accountDomain)
+
+        onBackPressedDispatcher.addCallback(this) {
+            tokenRefresher.refreshState = TokenRefreshState.Failed
+            finish()
+        }
+
+        if (intent.hasExtra(TokenRefresher.TOKEN_REFRESH)) {
+            AlertDialog.Builder(this, R.style.AccessibleAlertDialog)
+                .setTitle(R.string.loginRequired)
+                .setMessage(R.string.loginRequiredMessage)
+                .setPositiveButton(R.string.login) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.logout) { dialog, _ ->
+                    tokenRefresher.refreshState = TokenRefreshState.Failed
+                    dialog.dismiss()
+                }
+                .setCancelable(false)
+                .create()
+                .show()
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -123,7 +167,10 @@ abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSe
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.title = accountDomain.domain
         toolbar.navigationIcon?.isAutoMirrored = true
-        toolbar.setupAsBackButton { finish() }
+        toolbar.setupAsBackButton {
+            tokenRefresher.refreshState = TokenRefreshState.Failed
+            finish()
+        }
         webView = findViewById(R.id.webView)
         clearCookies()
         CookieManager.getInstance().setAcceptCookie(true)
@@ -169,19 +216,22 @@ abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSe
 
         private fun handleShouldOverrideUrlLoading(view: WebView, url: String): Boolean {
             if (overrideUrlLoading(view, url)) return true
-            when {
+            return when {
                 url.contains(SUCCESS_URL) -> {
                     domain = accountDomain.domain!!
                     val oAuthRequest = url.substring(url.indexOf(SUCCESS_URL) + SUCCESS_URL.length)
                     getToken(clientId, clientSecret, oAuthRequest, mGetTokenCallback)
+                    true
                 }
                 url.contains(ERROR_URL) -> {
                     clearCookies()
                     loadUrl(view, authenticationURL, headers)
+                    true
                 }
-                else -> loadUrl(view, url, headers)
+                else -> {
+                    false
+                }
             }
-            return true // then it is not handled by default action
         }
 
         @Suppress("DEPRECATION")
@@ -424,17 +474,27 @@ abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSe
         object : StatusCallback<OAuthTokenResponse>() {
             override fun onResponse(response: Response<OAuthTokenResponse>, linkHeaders: LinkHeaders, type: ApiType) {
                 if (type.isCache) return
+                val token = response.body()
+                if (intent.hasExtra(TokenRefresher.TOKEN_REFRESH) && user?.id != null && token?.user?.id != null && user?.id != token.user?.id) {
+                    toast(R.string.loginRefreshSameUserError)
+                    tokenRefresher.refreshState = TokenRefreshState.Restart
+                    finish()
+                    return
+                }
                 val bundle = Bundle()
                 bundle.putString(AnalyticsParamConstants.DOMAIN_PARAM, domain)
                 logEvent(AnalyticsEventConstants.LOGIN_SUCCESS, bundle)
-                val token = response.body()
                 refreshToken = token!!.refreshToken!!
                 accessToken = token.accessToken!!
                 @Suppress("DEPRECATION")
                 ApiPrefs.token = "" // TODO: Remove when we're 100% using refresh tokens
 
+                if (intent.hasExtra(TokenRefresher.TOKEN_REFRESH)) {
+                    tokenRefresher.refreshState = TokenRefreshState.Success(accessToken)
+                }
+
                 // We now need to get the cache user
-                getSelf(object : StatusCallback<User>() {
+                getSelf(true, object : StatusCallback<User>() {
                     override fun onResponse(response: Response<User>, linkHeaders: LinkHeaders, type: ApiType) {
                         if (type.isAPI) {
                             user = response.body()
@@ -455,8 +515,14 @@ abstract class BaseLoginSignInActivity : AppCompatActivity(), OnAuthenticationSe
                             )
                             add(this@BaseLoginSignInActivity, user)
                             refreshWidgets()
+
+                            if (intent.hasExtra(TokenRefresher.TOKEN_REFRESH)) {
+                                finish()
+                                return
+                            }
                             LoginPrefs.lastSavedLogin = SavedLoginInfo(accountDomain, canvasLogin)
                             navigation.startLogin(viewModel, false)
+                            tokenRefresher.loggedOut = false
                         }
                     }
                 })

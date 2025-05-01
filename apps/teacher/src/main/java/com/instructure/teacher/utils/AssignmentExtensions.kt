@@ -47,16 +47,10 @@ import com.instructure.teacher.models.DueDateGroup
 import java.util.ArrayList
 import java.util.Calendar
 
-fun Assignment.getAssignmentIcon() = when {
-    Assignment.SubmissionType.ONLINE_QUIZ.apiString in submissionTypesRaw -> R.drawable.ic_quiz
-    Assignment.SubmissionType.DISCUSSION_TOPIC.apiString in submissionTypesRaw -> R.drawable.ic_discussion
-    else -> R.drawable.ic_assignment
-}
-
 fun List<SubmissionType>?.getAssignmentIcon() = when {
     this == null -> R.drawable.ic_assignment
-    SubmissionType.ONLINE_QUIZ in this -> R.drawable.ic_quiz
-    SubmissionType.DISCUSSION_TOPIC in this -> R.drawable.ic_discussion
+    SubmissionType.online_quiz in this -> R.drawable.ic_quiz
+    SubmissionType.discussion_topic in this -> R.drawable.ic_discussion
     else -> R.drawable.ic_assignment
 }
 //region Grouped due dates
@@ -229,7 +223,7 @@ fun getDisplayGrade(
     if (gradingStatus == null) return DisplayGrade()
 
     // Cover the first edge case: excused assignment
-    if (gradingStatus == SubmissionGradingStatus.EXCUSED) return DisplayGrade(context.getString(R.string.excused))
+    if (gradingStatus == SubmissionGradingStatus.excused) return DisplayGrade(context.getString(R.string.excused))
 
 
     // Cover the second edge case: NOT_GRADED type and no grade
@@ -238,7 +232,7 @@ fun getDisplayGrade(
     }
 
     // First let's see if the assignment is graded
-    if (gradingStatus == SubmissionGradingStatus.GRADED && score != null && enteredScore != null) {
+    if (gradingStatus == SubmissionGradingStatus.graded && score != null && enteredScore != null) {
         return when (Assignment.getGradingTypeFromAPIString(gradingType)) {
             Assignment.GradingType.POINTS ->
                 if (includeLatePenalty) {

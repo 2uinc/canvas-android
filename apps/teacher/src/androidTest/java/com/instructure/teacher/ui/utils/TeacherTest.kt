@@ -24,22 +24,25 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.instructure.canvas.espresso.CanvasTest
+import com.instructure.canvas.espresso.common.pages.AboutPage
+import com.instructure.canvas.espresso.common.pages.CanvasNetworkSignInPage
+import com.instructure.canvas.espresso.common.pages.EmailNotificationsPage
 import com.instructure.canvas.espresso.common.pages.InboxPage
+import com.instructure.canvas.espresso.common.pages.LegalPage
+import com.instructure.canvas.espresso.common.pages.LoginFindSchoolPage
+import com.instructure.canvas.espresso.common.pages.LoginLandingPage
+import com.instructure.canvas.espresso.common.pages.LoginSignInPage
 import com.instructure.espresso.InstructureActivityTestRule
 import com.instructure.espresso.ModuleItemInteractions
 import com.instructure.espresso.Searchable
 import com.instructure.teacher.BuildConfig
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.LoginActivity
-import com.instructure.teacher.ui.pages.AboutPage
-import com.instructure.teacher.ui.pages.AddMessagePage
+import com.instructure.teacher.ui.espresso.TestAppManager
 import com.instructure.teacher.ui.pages.AnnouncementsListPage
 import com.instructure.teacher.ui.pages.AssigneeListPage
 import com.instructure.teacher.ui.pages.AssignmentDetailsPage
 import com.instructure.teacher.ui.pages.AssignmentDueDatesPage
-import com.instructure.teacher.ui.pages.AssignmentListPage
-import com.instructure.teacher.ui.pages.AssignmentSubmissionListPage
-import com.instructure.teacher.ui.pages.ChooseRecipientsPage
 import com.instructure.teacher.ui.pages.CommentLibraryPage
 import com.instructure.teacher.ui.pages.CourseBrowserPage
 import com.instructure.teacher.ui.pages.CourseSettingsPage
@@ -56,12 +59,7 @@ import com.instructure.teacher.ui.pages.EditQuizDetailsPage
 import com.instructure.teacher.ui.pages.EditSyllabusPage
 import com.instructure.teacher.ui.pages.FileListPage
 import com.instructure.teacher.ui.pages.HelpPage
-import com.instructure.teacher.ui.pages.InboxMessagePage
 import com.instructure.teacher.ui.pages.LeftSideNavigationDrawerPage
-import com.instructure.teacher.ui.pages.LegalPage
-import com.instructure.teacher.ui.pages.LoginFindSchoolPage
-import com.instructure.teacher.ui.pages.LoginLandingPage
-import com.instructure.teacher.ui.pages.LoginSignInPage
 import com.instructure.teacher.ui.pages.ModulesPage
 import com.instructure.teacher.ui.pages.NavDrawerPage
 import com.instructure.teacher.ui.pages.NotATeacherPage
@@ -70,11 +68,10 @@ import com.instructure.teacher.ui.pages.PeopleListPage
 import com.instructure.teacher.ui.pages.PersonContextPage
 import com.instructure.teacher.ui.pages.PostSettingsPage
 import com.instructure.teacher.ui.pages.ProfileSettingsPage
+import com.instructure.teacher.ui.pages.PushNotificationsPage
 import com.instructure.teacher.ui.pages.QuizDetailsPage
 import com.instructure.teacher.ui.pages.QuizListPage
-import com.instructure.teacher.ui.pages.QuizSubmissionListPage
 import com.instructure.teacher.ui.pages.RemoteConfigSettingsPage
-import com.instructure.teacher.ui.pages.SettingsPage
 import com.instructure.teacher.ui.pages.SpeedGraderCommentsPage
 import com.instructure.teacher.ui.pages.SpeedGraderFilesPage
 import com.instructure.teacher.ui.pages.SpeedGraderGradePage
@@ -87,6 +84,7 @@ import com.instructure.teacher.ui.pages.UpdateFilePermissionsPage
 import com.instructure.teacher.ui.pages.WebViewLoginPage
 import instructure.rceditor.RCETextEditor
 import org.hamcrest.Matcher
+import org.junit.Before
 
 abstract class TeacherTest : CanvasTest() {
 
@@ -100,22 +98,19 @@ abstract class TeacherTest : CanvasTest() {
     /**
      * Required for auto complete of page objects within tests
      */
-    val addMessagePage = AddMessagePage()
     val announcementsListPage = AnnouncementsListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
     val assigneeListPage = AssigneeListPage()
     val assignmentDetailsPage = AssignmentDetailsPage(ModuleItemInteractions(R.id.moduleName, R.id.next, R.id.previous))
     val assignmentDueDatesPage = AssignmentDueDatesPage()
-    val assignmentListPage = AssignmentListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
-    val assignmentSubmissionListPage = AssignmentSubmissionListPage()
     val postSettingsPage = PostSettingsPage()
-    val chooseRecipientsPage = ChooseRecipientsPage()
     val commentLibraryPage = CommentLibraryPage()
     val courseBrowserPage = CourseBrowserPage()
     val courseSettingsPage = CourseSettingsPage()
     val dashboardPage = DashboardPage()
     val leftSideNavigationDrawerPage = LeftSideNavigationDrawerPage()
     val editDashboardPage = EditDashboardPage()
-    val settingsPage = SettingsPage()
+    val pushNotificationsPage = PushNotificationsPage()
+    val emailNotificationsPage = EmailNotificationsPage()
     val legalPage = LegalPage()
     val helpPage = HelpPage()
     val aboutPage = AboutPage()
@@ -130,19 +125,18 @@ abstract class TeacherTest : CanvasTest() {
     val editPageDetailsPage = EditPageDetailsPage(ModuleItemInteractions(R.id.moduleName, R.id.next, R.id.previous))
     val editQuizDetailsPage = EditQuizDetailsPage()
     val editSyllabusPage = EditSyllabusPage()
-    val inboxMessagePage = InboxMessagePage()
     val inboxPage = InboxPage()
     val loginFindSchoolPage = LoginFindSchoolPage()
     val loginLandingPage = LoginLandingPage()
     val loginSignInPage = LoginSignInPage()
+    val canvasNetworkSignInPage = CanvasNetworkSignInPage()
     val moduleListPage = ModulesPage()
     val navDrawerPage = NavDrawerPage()
     val notATeacherPage = NotATeacherPage()
     val pageListPage = PageListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
     val peopleListPage = PeopleListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn))
     val quizDetailsPage = QuizDetailsPage(ModuleItemInteractions(R.id.moduleName, R.id.next, R.id.previous))
-    val quizListPage = QuizListPage(Searchable(R.id.search, R.id.search_src_text, R.id.clearButton, R.id.backButton))
-    val quizSubmissionListPage = QuizSubmissionListPage()
+    val quizListPage = QuizListPage(Searchable(R.id.search, R.id.search_src_text, R.id.search_close_btn, R.id.backButton))
     val speedGraderCommentsPage = SpeedGraderCommentsPage()
     val speedGraderFilesPage = SpeedGraderFilesPage()
     val speedGraderGradePage = SpeedGraderGradePage()
@@ -156,6 +150,11 @@ abstract class TeacherTest : CanvasTest() {
     val fileListPage = FileListPage(Searchable(R.id.search, R.id.queryInput, R.id.clearButton, R.id.backButton))
     val updateFilePermissionsPage = UpdateFilePermissionsPage()
 
+    @Before
+    fun setupWorkerFactory() {
+        val application = activityRule.activity.application as? TestAppManager
+        application?.workerFactory = workerFactory
+    }
 }
 
 /*

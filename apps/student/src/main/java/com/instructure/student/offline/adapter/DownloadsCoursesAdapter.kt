@@ -5,7 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.instructure.pandautils.utils.ColorKeeper
+import com.instructure.canvasapi2.models.CanvasContext
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.setCourseImage
 import com.instructure.pandautils.utils.setGone
 import com.instructure.student.R
@@ -59,15 +60,14 @@ class DownloadsCoursesAdapter(
                 titleTextView.text = item.title
                 courseCode.text = item.courseCode
 
-                ColorKeeper.cachedThemedColors["course_${item.courseId}"]?.let { themedColor ->
-                    titleTextView.setTextColor(themedColor.textAndIconColor())
+                val themedColor = CanvasContext.fromContextCode("course_${item.courseId}").color
+                titleTextView.setTextColor(themedColor)
 
-                    courseImageView.setCourseImage(
-                        imageUrl = item.logoPath,
-                        courseColor = themedColor.backgroundColor(),
-                        applyColor = !StudentPrefs.hideCourseColorOverlay
-                    )
-                }
+                courseImageView.setCourseImage(
+                    imageUrl = item.logoPath,
+                    courseColor = themedColor,
+                    applyColor = !StudentPrefs.hideCourseColorOverlay
+                )
             }
         }
     }

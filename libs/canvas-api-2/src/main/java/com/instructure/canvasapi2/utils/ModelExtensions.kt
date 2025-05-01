@@ -25,6 +25,7 @@ import com.instructure.canvasapi2.models.Assignment
 import com.instructure.canvasapi2.models.Attachment
 import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.models.Enrollment
+import com.instructure.canvasapi2.models.GradingPeriod
 import com.instructure.canvasapi2.models.GradingSchemeRow
 import com.instructure.canvasapi2.models.MediaComment
 import com.instructure.canvasapi2.models.ModuleItem
@@ -101,11 +102,11 @@ fun RemoteFile.mapToAttachment(): Attachment = Attachment(
 val EnrollmentType?.displayText: String
     get() = ContextKeeper.appContext.getText(
         when (this) {
-            EnrollmentType.STUDENTENROLLMENT -> R.string.enrollmentTypeStudents
-            EnrollmentType.TEACHERENROLLMENT -> R.string.enrollmentTypeTeachers
-            EnrollmentType.OBSERVERENROLLMENT -> R.string.enrollmentTypeObservers
-            EnrollmentType.TAENROLLMENT -> R.string.enrollmentTypeTeachingAssistants
-            EnrollmentType.DESIGNERENROLLMENT -> R.string.enrollmentTypeDesigners
+            EnrollmentType.StudentEnrollment -> R.string.enrollmentTypeStudents
+            EnrollmentType.TeacherEnrollment -> R.string.enrollmentTypeTeachers
+            EnrollmentType.ObserverEnrollment -> R.string.enrollmentTypeObservers
+            EnrollmentType.TaEnrollment -> R.string.enrollmentTypeTeachingAssistants
+            EnrollmentType.DesignerEnrollment -> R.string.enrollmentTypeDesigners
             else -> R.string.enrollmentTypeUnknown
         }
     ).toString()
@@ -207,4 +208,13 @@ fun convertPercentScoreToLetterGrade(percentScore: Double, gradingScheme: List<G
     if (gradingScheme.isEmpty()) return ""
     val grade = gradingScheme.firstOrNull { percentScore >= it.value } ?: gradingScheme.last()
     return grade.name
+}
+
+fun convertPercentToPointBased(percentScore: Double, scalingFactor: Double): String {
+    return String.format("%.2f / %.2f", scalingFactor * (percentScore / 100.0), scalingFactor)
+}
+
+fun List<GradingPeriod>.getCurrentGradingPeriod(): GradingPeriod? {
+    val currentDate = Date()
+    return this.firstOrNull { it.startDate?.toDate()?.before(currentDate) == true && it.endDate?.toDate()?.after(currentDate) == true }
 }

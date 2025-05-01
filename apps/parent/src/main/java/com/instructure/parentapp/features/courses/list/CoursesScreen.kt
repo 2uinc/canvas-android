@@ -24,7 +24,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -38,6 +41,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,37 +53,67 @@ import com.instructure.pandautils.compose.composables.EmptyContent
 import com.instructure.pandautils.compose.composables.ErrorContent
 
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 internal fun CoursesScreen(
     uiState: CoursesUiState,
     actionHandler: (CoursesAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lazyListState: LazyListState = LazyListState()
 ) {
     CanvasTheme {
         Scaffold(
             backgroundColor = colorResource(id = R.color.backgroundLightest),
             content = { padding ->
-                if (uiState.isError) {
-                    ErrorContent(
-                        errorMessage = stringResource(id = R.string.errorLoadingCourses),
-                        retryClick = {
-                            actionHandler(CoursesAction.Refresh)
-                        }, modifier = Modifier.fillMaxSize()
-                    )
-                } else if (uiState.isEmpty) {
-                    EmptyContent(
-                        emptyTitle = stringResource(id = R.string.parentNoCourses),
-                        emptyMessage = stringResource(id = R.string.parentNoCoursesMessage),
-                        imageRes = R.drawable.ic_panda_book,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    CourseListContent(
-                        uiState = uiState,
-                        actionHandler = actionHandler,
+                val pullRefreshState = rememberPullRefreshState(
+                    refreshing = uiState.isLoading,
+                    onRefresh = {
+                        actionHandler(CoursesAction.Refresh)
+                    }
+                )
+
+                Box(
+                    modifier = modifier.pullRefresh(pullRefreshState)
+                ) {
+                    when {
+                        uiState.isError -> {
+                            ErrorContent(
+                                errorMessage = stringResource(id = R.string.errorLoadingCourses),
+                                retryClick = {
+                                    actionHandler(CoursesAction.Refresh)
+                                }, modifier = Modifier.fillMaxSize()
+                            )
+                        }
+
+                        uiState.isEmpty -> {
+                            EmptyContent(
+                                emptyTitle = stringResource(id = R.string.parentNoCourses),
+                                emptyMessage = stringResource(id = R.string.parentNoCoursesMessage),
+                                imageRes = R.drawable.ic_panda_book,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                            )
+                        }
+
+                        else -> {
+                            CourseListContent(
+                                uiState = uiState,
+                                actionHandler = actionHandler,
+                                lazyListState = lazyListState,
+                                modifier = Modifier
+                                    .padding(padding)
+                                    .fillMaxSize()
+                            )
+                        }
+                    }
+                    PullRefreshIndicator(
+                        refreshing = uiState.isLoading,
+                        state = pullRefreshState,
                         modifier = Modifier
-                            .padding(padding)
-                            .fillMaxSize()
+                            .align(Alignment.TopCenter)
+                            .testTag("pullRefreshIndicator"),
+                        contentColor = Color(uiState.studentColor)
                     )
                 }
             },
@@ -86,39 +122,20 @@ internal fun CoursesScreen(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun CourseListContent(
     uiState: CoursesUiState,
     actionHandler: (CoursesAction) -> Unit,
+    lazyListState: LazyListState,
     modifier: Modifier = Modifier
 ) {
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = uiState.isLoading,
-        onRefresh = {
-            actionHandler(CoursesAction.Refresh)
-        }
-    )
-
-    Box(
-        modifier = modifier.pullRefresh(pullRefreshState)
+    LazyColumn(
+        state = lazyListState,
+        modifier = modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(uiState.courseListItems) {
-                CourseListItem(it, uiState.studentColor, actionHandler)
-            }
+        items(uiState.courseListItems) {
+            CourseListItem(it, uiState.studentColor, actionHandler)
         }
-
-        PullRefreshIndicator(
-            refreshing = uiState.isLoading,
-            state = pullRefreshState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .testTag("pullRefreshIndicator"),
-            contentColor = Color(uiState.studentColor)
-        )
     }
 }
 
@@ -137,6 +154,9 @@ private fun CourseListItem(
                 actionHandler(CoursesAction.CourseTapped(uiState.courseId))
             }
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics {
+                role = Role.Button
+            }
     ) {
         Text(
             text = uiState.courseName,
@@ -147,7 +167,8 @@ private fun CourseListItem(
             Text(
                 text = uiState.courseCode,
                 color = colorResource(id = R.color.textDark),
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                modifier = Modifier.testTag("courseCodeText")
             )
         }
         uiState.grade?.let {

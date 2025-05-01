@@ -19,9 +19,9 @@ package com.instructure.teacher.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.Toast
+import androidx.work.WorkManager
 import com.instructure.canvasapi2.models.CanvasContext
 import com.instructure.canvasapi2.models.Course
 import com.instructure.canvasapi2.models.Page
@@ -35,12 +35,14 @@ import com.instructure.interactions.MasterDetailInteractions
 import com.instructure.interactions.router.Route
 import com.instructure.pandautils.analytics.SCREEN_VIEW_PAGE_DETAILS
 import com.instructure.pandautils.analytics.ScreenView
+import com.instructure.pandautils.features.file.download.FileDownloadWorker
+import com.instructure.pandautils.features.lti.LtiLaunchFragment
 import com.instructure.pandautils.fragments.BasePresenterFragment
 import com.instructure.pandautils.utils.ParcelableArg
 import com.instructure.pandautils.utils.PermissionUtils
 import com.instructure.pandautils.utils.StringArg
 import com.instructure.pandautils.utils.ViewStyler
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.color
 import com.instructure.pandautils.utils.getModuleItemId
 import com.instructure.pandautils.utils.isTablet
 import com.instructure.pandautils.utils.loadHtmlWithIframes
@@ -58,7 +60,6 @@ import com.instructure.teacher.events.PageUpdatedEvent
 import com.instructure.teacher.factory.PageDetailsPresenterFactory
 import com.instructure.teacher.presenters.PageDetailsPresenter
 import com.instructure.teacher.router.RouteMatcher
-import com.instructure.teacher.services.FileDownloadService
 import com.instructure.teacher.utils.setupBackButtonWithExpandCollapseAndBack
 import com.instructure.teacher.utils.setupMenu
 import com.instructure.teacher.utils.updateToolbarExpandCollapseIcon
@@ -88,7 +89,7 @@ class PageDetailsFragment : BasePresenterFragment<
 
     @PageViewUrl
     @Suppress("unused")
-    private fun makePageViewUrl(): String {
+    fun makePageViewUrl(): String {
         val url = StringBuilder(ApiPrefs.fullDomain)
         page.let {
             url.append(canvasContext.toAPIString())
@@ -203,7 +204,7 @@ class PageDetailsFragment : BasePresenterFragment<
         loadHtmlJob = binding.canvasWebViewWraper.webView.loadHtmlWithIframes(requireContext(), page.body, {
             if (view != null) binding.canvasWebViewWraper.loadHtml(it, page.title, baseUrl = this.page.htmlUrl)
         }) {
-            LtiLaunchFragment.routeLtiLaunchFragment(requireActivity(), canvasContext, it)
+            RouteMatcher.route(requireActivity(), LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), canvasContext, it))
         }
         setupToolbar()
     }
@@ -217,7 +218,7 @@ class PageDetailsFragment : BasePresenterFragment<
 
         toolbar.setupBackButtonWithExpandCollapseAndBack(this@PageDetailsFragment) {
             toolbar.updateToolbarExpandCollapseIcon(this@PageDetailsFragment)
-            ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
+            ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext.color, requireContext().getColor(R.color.textLightest))
             (activity as MasterDetailInteractions).toggleExpandCollapse()
         }
 
@@ -225,7 +226,7 @@ class PageDetailsFragment : BasePresenterFragment<
         if (!isTablet) {
             toolbar.subtitle = canvasContext.name
         }
-        ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext.backgroundColor, requireContext().getColor(R.color.white))
+        ViewStyler.themeToolbarColored(requireActivity(), toolbar, canvasContext.color, requireContext().getColor(R.color.textLightest))
     }
 
     private fun openEditPage(page: Page) {
@@ -242,7 +243,7 @@ class PageDetailsFragment : BasePresenterFragment<
      */
     private fun downloadFile() {
         if (downloadFileName != null && downloadUrl != null) {
-            FileDownloadService.scheduleDownloadJob(requireContext(), downloadUrl!!, downloadFileName!!)
+            WorkManager.getInstance(requireContext()).enqueue(FileDownloadWorker.createOneTimeWorkRequest(downloadFileName, downloadUrl!!))
         }
     }
 

@@ -26,7 +26,7 @@ import com.instructure.canvasapi2.utils.DataResult
 import com.instructure.canvasapi2.utils.DateHelper
 import com.instructure.canvasapi2.utils.toApiString
 import com.instructure.pandautils.utils.ThemePrefs
-import com.instructure.pandautils.utils.backgroundColor
+import com.instructure.pandautils.utils.color
 import com.instructure.teacher.R
 import com.instructure.teacher.features.modules.list.ModuleListModel
 import com.instructure.teacher.features.modules.list.ModuleListPageData
@@ -84,7 +84,7 @@ class ModuleListPresenterTest : Assert() {
             iconResId = R.drawable.ic_assignment,
             isPublished = true,
             indent = 0,
-            tintColor = course.backgroundColor,
+            tintColor = course.color,
             enabled = true,
             type = ModuleItem.Type.Assignment,
             contentDetails = ModuleContentDetails(
@@ -324,6 +324,28 @@ class ModuleListPresenterTest : Assert() {
             title = item.title,
             iconResId = R.drawable.ic_lti,
             type = ModuleItem.Type.ExternalTool
+        )
+        val viewState = ModuleListPresenter.present(model, context)
+        val itemState = (viewState.items[0] as ModuleListItemData.ModuleData).moduleItems.first()
+        assertEquals(expectedState, itemState)
+    }
+
+    @Test
+    fun `Returns correct state for New Quiz module item`() {
+        val item = moduleItemTemplate.copy(
+            title = "New Quiz",
+            type = "Assignment",
+            quizLti = true
+        )
+        val model = modelTemplate.copy(
+            modules = listOf(
+                moduleTemplate.copy(items = listOf(item))
+            )
+        )
+        val expectedState = moduleItemDataTemplate.copy(
+            title = item.title,
+            iconResId = R.drawable.ic_quiz,
+            type = ModuleItem.Type.Assignment
         )
         val viewState = ModuleListPresenter.present(model, context)
         val itemState = (viewState.items[0] as ModuleListItemData.ModuleData).moduleItems.first()

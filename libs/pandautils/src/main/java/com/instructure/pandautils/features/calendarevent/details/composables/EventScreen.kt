@@ -30,6 +30,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
 import androidx.compose.material.SnackbarHost
 import androidx.compose.material.SnackbarHostState
@@ -50,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,6 +71,7 @@ import com.instructure.pandautils.compose.composables.SingleChoiceAlertDialog
 import com.instructure.pandautils.features.calendarevent.details.EventAction
 import com.instructure.pandautils.features.calendarevent.details.EventUiState
 import com.instructure.pandautils.features.calendarevent.details.ToolbarUiState
+import com.instructure.pandautils.features.reminder.composables.ReminderView
 import com.instructure.pandautils.utils.ThemePrefs
 import com.instructure.pandautils.views.CanvasWebView
 import com.jakewharton.threetenabp.AndroidThreeTen
@@ -96,6 +100,12 @@ internal fun EventScreen(
             }
         }
 
+        val toolbarTextColor = if (eventUiState.toolbarUiState.isUserContext) {
+            Color(color = ThemePrefs.primaryTextColor)
+        } else {
+            colorResource(id = R.color.textLightest)
+        }
+
         Scaffold(
             backgroundColor = colorResource(id = R.color.backgroundLightest),
             topBar = {
@@ -113,12 +123,13 @@ internal fun EventScreen(
                             OverFlowMenuSegment(
                                 eventUiState = eventUiState,
                                 actionHandler = actionHandler,
+                                toolbarTextColor = toolbarTextColor,
                                 modifier.testTag("overFlowMenuSegment")
                             )
                         }
                     },
                     backgroundColor = Color(color = eventUiState.toolbarUiState.toolbarColor),
-                    contentColor = Color.White,
+                    contentColor = toolbarTextColor,
                     navigationActionClick = {
                         navigationAction()
                     }
@@ -135,6 +146,22 @@ internal fun EventScreen(
                         .fillMaxSize(),
                 )
             },
+            floatingActionButton = {
+                if (eventUiState.isMessageFabEnabled) {
+                    FloatingActionButton(
+                        backgroundColor = Color(color = eventUiState.toolbarUiState.toolbarColor),
+                        onClick = {
+                            actionHandler(EventAction.OnMessageFabClicked)
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_chat),
+                            tint = Color(ThemePrefs.buttonTextColor),
+                            contentDescription = stringResource(id = R.string.sendMessageAboutEvent)
+                        )
+                    }
+                }
+            },
             modifier = modifier
         )
     }
@@ -144,6 +171,7 @@ internal fun EventScreen(
 private fun OverFlowMenuSegment(
     eventUiState: EventUiState,
     actionHandler: (EventAction) -> Unit,
+    toolbarTextColor: Color,
     modifier: Modifier = Modifier
 ) {
     var showDeleteConfirmationDialog by rememberSaveable {
@@ -195,6 +223,7 @@ private fun OverFlowMenuSegment(
             .background(color = colorResource(id = R.color.backgroundLightestElevated))
             .testTag("overFlowMenu"),
         showMenu = showMenu,
+        iconColor = toolbarTextColor,
         onDismissRequest = {
             showMenu = !showMenu
         }
@@ -274,6 +303,13 @@ private fun EventContent(
                     )
                 }
                 Spacer(modifier = Modifier.height(28.dp))
+                Divider(color = colorResource(id = R.color.backgroundMedium), thickness = .5.dp)
+                val context = LocalContext.current
+                ReminderView(
+                    viewState = uiState.reminderUiState,
+                    onAddClick = { actionHandler(EventAction.OnReminderAddClicked) },
+                    onRemoveClick = { actionHandler(EventAction.OnReminderDeleteClicked(context, it)) },
+                )
                 Divider(color = colorResource(id = R.color.backgroundMedium), thickness = .5.dp)
                 if (uiState.location.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))

@@ -21,7 +21,7 @@ import android.content.res.Resources
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.ical.values.DateValueImpl
+import com.google.ical.values.DateTimeValueImpl
 import com.google.ical.values.Frequency
 import com.google.ical.values.RRule
 import com.google.ical.values.Weekday
@@ -469,6 +469,7 @@ class CreateUpdateEventViewModel @Inject constructor(
             val rrule = selectFrequencyUiState.frequencies[selectFrequencyUiState.selectedFrequency]?.toApiString().orEmpty()
             val contextCode = selectContextUiState.selectedCanvasContext?.contextId.orEmpty()
 
+            val updated = scheduleItem != null
             val result = scheduleItem?.let {
                 repository.updateEvent(
                     eventId = it.id,
@@ -499,6 +500,14 @@ class CreateUpdateEventViewModel @Inject constructor(
             }
 
             _uiState.update { it.copy(saving = false, canNavigateBack = true) }
+
+            val announceEvent = if (updated) {
+                CreateUpdateEventViewModelAction.AnnounceEventUpdate(result.first().title.orEmpty())
+            } else {
+                CreateUpdateEventViewModelAction.AnnounceEventCreation(result.first().title.orEmpty())
+            }
+            _events.send(announceEvent)
+
             if (rrule.isNotEmpty() || !scheduleItem?.rrule.isNullOrEmpty()) {
                 _events.send(CreateUpdateEventViewModelAction.RefreshCalendar)
             } else {
@@ -644,7 +653,7 @@ class CreateUpdateEventViewModel @Inject constructor(
             }
             if (customFrequencyUiState.selectedDate != null) {
                 val date = customFrequencyUiState.selectedDate
-                until = DateValueImpl(date.year, date.monthValue, date.dayOfMonth)
+                until = DateTimeValueImpl(date.year, date.monthValue, date.dayOfMonth, 0, 0, 0)
             } else {
                 count = customFrequencyUiState.selectedOccurrences
             }
