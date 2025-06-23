@@ -150,7 +150,7 @@ class AssignmentBasicFragment : ParentFragment() {
             description = "<p>" + getString(R.string.noDescription) + "</p>"
         }
 
-        loadHtmlJob = assignmentWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), description, {
+        loadHtmlJob = assignmentWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), description, null, {
             assignmentWebViewWrapper.loadHtml(it, assignment.name)
         }, {
             RouteMatcher.route(requireActivity(), LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), canvasContext, it))
