@@ -234,10 +234,16 @@ class PageDetailsFragment : InternalWebviewFragment(), Bookmarkable {
                 allowFileAccessFromFileURLs = true
                 allowUniversalAccessFromFileURLs = true
             }
-            loadHtmlJob = canvasWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), body, {
-                canvasWebViewWrapper.loadHtml(it, page.title, baseUrl = page.htmlUrl)
-            }) {
-                RouteMatcher.route(requireActivity(), LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), canvasContext, it))
+            loadHtmlJob = canvasWebViewWrapper.webView.loadHtmlWithIframes(
+                context = requireContext(),
+                html = body,
+                moduleItemId = getModuleItemId()?.toString(),
+                loadHtml = { canvasWebViewWrapper.loadHtml(it, page.title, baseUrl = page.htmlUrl) }
+            ) {
+                RouteMatcher.route(
+                    requireActivity(),
+                    LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), canvasContext, it)
+                )
             }
         } else if (page.body == null || page.body?.endsWith("") == true) {
             loadHtml(resources.getString(R.string.noPageFound), "text/html", "utf-8", null)

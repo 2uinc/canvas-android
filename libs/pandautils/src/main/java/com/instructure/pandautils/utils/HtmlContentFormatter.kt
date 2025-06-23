@@ -21,6 +21,7 @@ import android.net.Uri
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.OAuthManager
 import com.instructure.canvasapi2.models.AuthenticatedSession
+import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.weave.apiAsync
 import com.instructure.pandautils.R
 import com.instructure.pandautils.discussions.DiscussionHtmlTemplates
@@ -39,7 +40,10 @@ class HtmlContentFormatter(
     private val oAuthManager: OAuthManager
 ) {
 
-    suspend fun formatHtmlWithIframes(html: String): String {
+    suspend fun formatHtmlWithIframes(
+        html: String,
+        moduleItemId: String? = null,
+    ): String {
         try {
             var newHTML = html
             val document = Jsoup.parse(newHTML)
@@ -51,7 +55,14 @@ class HtmlContentFormatter(
                     val srcUri = Uri.parse(src)
                     val iFrameIndex = srcUri.pathSegments.indexOf("iframe")
                     if (iFrameIndex != -1 && srcUri.pathSegments.size > iFrameIndex + 1) {
+                        val userId = ApiPrefs.user?.id
                         val wistiaId = srcUri.pathSegments[iFrameIndex + 1]
+                        val analyticsScript = getWistiaPlayerAnalyticsScript(
+                            wistiaIds = listOf(wistiaId),
+                            userId = userId.orDefault().toString(),
+                            moduleItemId = moduleItemId,
+                        )
+                        stringToReplace += analyticsScript
                         stringToReplace += "<script src=\"//fast.wistia.com/embed/medias/$wistiaId.jsonp\" async></script><div class=\"wistia_embed wistia_async_$wistiaId\" src=\"$src\" style=\"margin-top:10px;height:100%;width:100%\"></div>\n"
                         val wistiaTranscriptionTag =
                             "<wistia-transcript media-id=\"$wistiaId\" style=\"padding-top: 40px;height:400px;\"></wistia-transcript>"
@@ -214,4 +225,110 @@ fun String.replaceWithURLQueryParameter(ifSatisfies: Boolean = true): String {
     } else {
         this
     }
+}
+
+private fun getWistiaPlayerAnalyticsScript(
+    wistiaIds: List<String>,
+    userId: String,
+    moduleItemId: String?,
+): String {
+    if (wistiaIds.isEmpty()) return ""
+    val moduleItemParamString = moduleItemId?.let {
+        "module_item_id: \"$moduleItemId\","
+    } ?: ""
+
+    return """
+        <script type='text/javascript'>
+            const wistiaIDs = ["${wistiaIds.joinToString(", ")}"];
+            // Add listeners for video player
+            async function addListenerForWistia(player, wistiaID) {
+                const csrf_token = await loadCSRF();
+                const watchedPercents = new Set();
+
+                player.addEventListener('timeupdate', () => {
+                    const percent = Math.floor((player.currentTime / player.duration) * 100);
+
+                    // For every 5%
+                    for (let p = 5; p <= 100; p += 5) {
+                        if (percent >= p && !watchedPercents.has(p)) {
+                            watchedPercents.add(p);
+                            sendWatchedTime(
+                                {
+                                    watched_percentage: p,
+                                    course_id: window.ENV.COURSE.id,
+                                    user_id: "$userId",
+                                    wistia_media_id: wistiaID,
+                                    $moduleItemParamString
+                                },
+                                csrf_token
+                            );
+                        }
+                    }
+                });
+            }
+            function waitForWistiaVideoPlayer(wistiaID, callback, interval = 200) {
+                const checkPlayer = setInterval(() => {
+                    const videos = document.getElementsByTagName('video');
+                    var wistiaPlayer = null;
+                    for (const video of videos) {
+                        if (video.innerHTML.includes(wistiaID)) {
+                            wistiaPlayer = video;
+                            break;
+                        }
+                    }
+                    if (wistiaPlayer) {
+                        clearInterval(checkPlayer);
+                        callback(wistiaPlayer, wistiaID);
+                    }
+                }, interval);
+            }
+            !(function () {
+                setTimeout(
+                    function() {
+                        for (const id of wistiaIDs) {
+                            waitForWistiaVideoPlayer(
+                                id,
+                                function(player, wistiaID) {
+                                    addListenerForWistia(player, wistiaID);
+                                }
+                            );
+                        }
+                    },
+                    1500
+                );
+            })();
+
+            // Load Token
+            async function loadCSRF() {
+                const response = await fetch(
+                    `https://canvas-analytics-lti.prod.oc.2u.com/wistia/csrf`,
+                    {
+                        credentials: "include",
+                    }
+                );
+                const data = await response.json();
+                return data.csrfToken;
+            }
+
+            // Send Analytic Event
+            function sendWatchedTime(payload, token) {
+                const formData = new FormData();
+
+                Object.entries(payload).forEach(([key, value]) => {
+                    formData.append(key, value);
+                });
+
+                formData.append("csrfmiddlewaretoken", token);
+
+                fetch(
+                    `https://canvas-analytics-lti.prod.oc.2u.com/wistia/video/user/activity`,
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData,
+                    }
+                ).catch((error) => console.error("Error:", error));
+            }
+        </script>
+        """
 }

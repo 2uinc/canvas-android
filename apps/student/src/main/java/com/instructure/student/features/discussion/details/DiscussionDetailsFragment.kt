@@ -782,7 +782,7 @@ class DiscussionDetailsFragment : ParentFragment(), Bookmarkable {
         replyToDiscussionTopic.setVisible(discussionTopicHeader.permissions?.reply ?: false)
         replyToDiscussionTopic.onClick { showReplyView(discussionTopicHeader.id) }
 
-        discussionTopicHeaderWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), discussionTopicHeader.message, {
+        discussionTopicHeaderWebViewWrapper.webView.loadHtmlWithIframes(context = requireContext(), html = discussionTopicHeader.message, null, {
             if (view != null) loadHTMLTopic(it, discussionTopicHeader.title)
         }, onLtiButtonPressed = {
             RouteMatcher.route(requireActivity(), LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), canvasContext, it))
@@ -807,7 +807,7 @@ class DiscussionDetailsFragment : ParentFragment(), Bookmarkable {
 
         setupRepliesWebView()
 
-        discussionRepliesWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), html, { formattedHtml ->
+        discussionRepliesWebViewWrapper.webView.loadHtmlWithIframes(requireContext(), html, null, { formattedHtml ->
             discussionRepliesWebViewWrapper.loadDataWithBaseUrl(CanvasWebView.getReferrer(true), formattedHtml, "text/html", "UTF-8", null)
         }, onLtiButtonPressed = { RouteMatcher.route(requireActivity(), LtiLaunchFragment.makeSessionlessLtiUrlRoute(requireActivity(), canvasContext, it)) })
 

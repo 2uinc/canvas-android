@@ -41,6 +41,7 @@ import kotlinx.coroutines.Job
 fun WebView.loadHtmlWithIframes(
     context: Context,
     html: String?,
+    moduleItemId: String?,
     loadHtml: (newHtml: String) -> Unit,
     onLtiButtonPressed: ((ltiUrl: String) -> Unit)? = null,
 ): Job {
@@ -55,7 +56,7 @@ fun WebView.loadHtmlWithIframes(
             addJavascriptInterface(JsGoogleDocsInterface(context), Const.GOOGLE_DOCS)
         }
 
-        loadHtml(formatter.formatHtmlWithIframes(html.orEmpty()))
+        loadHtml(formatter.formatHtmlWithIframes(html = html.orEmpty(), moduleItemId = moduleItemId))
     }
 }
 
