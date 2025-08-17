@@ -112,7 +112,7 @@ android {
                 mappingFileUploadEnabled false
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"" + Keys.pendoAccessToken + "\""
+//            buildConfigField "String", "PENDO_TOKEN", "\"" + Keys.pendoAccessToken + "\""
 
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_DEBUG + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_DEBUG + "\""
@@ -140,7 +140,7 @@ android {
                 unstrippedNativeLibsDir 'build/intermediates/merged_native_libs/release/out/lib'
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
+//            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
 
             buildConfigField "String", "INTERCOM_API_KEY", "\"" + Keys.INTERCOM_API_KEY_RELEASE + "\""
             buildConfigField "String", "INTERCOM_AP_ID", "\"" + Keys.INTERCOM_AP_ID_RELEASE + "\""
