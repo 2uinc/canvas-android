@@ -108,7 +108,7 @@ jobs:
 
         cd apps
         ./gradlew :student:assembleTwouDebug
-        cp apps/student/build/outputs/apk/twou/debug/student-twou-debug.apk output/
+        cp student/build/outputs/apk/twou/debug/student-twou-debug.apk output/
         zip -r app-staging-${{ github.run_number }}.zip output/
         
     - name: Upload APK ZIP
