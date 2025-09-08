@@ -40,7 +40,10 @@ jobs:
     - name: Checkout specific submodule
       run: |
         git submodule init apps/mobile-offline-downloader-android
-        git submodule update apps/mobile-offline-downloader-android
+        git submodule update apps/mobile-offline-downloader-android        
+        cd apps/mobile-offline-downloader-android
+        git checkout surya-test
+
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
