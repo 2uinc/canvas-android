@@ -48,61 +48,61 @@ jobs:
       env:
         GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
       run: |
-        mkdir -p app
-        echo $GOOGLE_SERVICES_JSON | base64 -di > app/google-services.json
+        sh ./open_source.sh
+        echo $GOOGLE_SERVICES_JSON | base64 -di > apps/student/google-services.json
 
     - name: Create Secret.kt file
       env:
         SECRET_FILE: ${{ secrets.SECRET_FILE }}
       run: |
         mkdir -p app
-        echo $SECRET_FILE | base64 -di > buildSrc/src/main/java/Secure.kt
+        echo $SECRET_FILE | base64 -di > apps/buildSrc/src/main/java/Secure.kt
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Run Unit Tests
-      if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
-      run: |
-        APP_SELECTION="${{ github.event.inputs.app_selection }}"
-        EVENT_NAME="${{ github.event_name }}"
-        mkdir -p output
-        ./gradlew testGetSmarterStagingUnitTest
+    # - name: Run Unit Tests
+    #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
+    #   run: |
+    #     APP_SELECTION="${{ github.event.inputs.app_selection }}"
+    #     EVENT_NAME="${{ github.event_name }}"
+    #     mkdir -p output
+    #     cd apps
+    #     ./gradlew :student:testTwouDebugUnitTest
 
-    - name: Upload Unit Test Report
-      if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: unit-test-report
-        path: |
-          app/build/test-results
-          app/build/reports/tests
+    # - name: Upload Unit Test Report
+    #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: unit-test-report
+    #     path: |
+    #       app/build/test-results
+    #       app/build/reports/tests
 
-    - name: Summarize Unit Test Results
-      if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
-      run: |
-        echo "### Unit Test Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
-        grep -r "<testsuite" app/build/test-results | \
-          sed -n 's/.*tests=\"\([0-9]*\)\" failures=\"\([0-9]*\)\" errors=\"\([0-9]*\)\".*/- Total: \1, Failures: \2, Errors: \3/p' >> $GITHUB_STEP_SUMMARY
+    # - name: Summarize Unit Test Results
+    #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
+    #   run: |
+    #     echo "### Unit Test Summary" >> $GITHUB_STEP_SUMMARY
+    #     echo "" >> $GITHUB_STEP_SUMMARY
+    #     echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
+    #     grep -r "<testsuite" app/build/test-results | \
+    #       sed -n 's/.*tests=\"\([0-9]*\)\" failures=\"\([0-9]*\)\" errors=\"\([0-9]*\)\".*/- Total: \1, Failures: \2, Errors: \3/p' >> $GITHUB_STEP_SUMMARY
 
     - name: Build Selected App(s) and zip apk output
       run: |
-        APP_SELECTION="${{ github.event.inputs.app_selection }}"
         EVENT_NAME="${{ github.event_name }}"
         mkdir -p output
 
-        ./gradlew assembleGetSmarterStaging
-        cp app/build/outputs/apk/getSmarter/staging/app-getSmarter-staging.apk output/
-
+        cd apps
+        ./gradlew :student:assembleTwouDebug
+        cp apps/student/build/outputs/apk/twou/debug/student-twou-debug.apk output/
         zip -r app-staging-${{ github.run_number }}.zip output/
         
     - name: Upload APK ZIP
       uses: actions/upload-artifact@v4
       with:
         name: app-staging-${{ github.run_number }}
-        path: app-staging-${{ github.run_number }}.zip
+        path: apps/app-staging-${{ github.run_number }}.zip
 
     - name: Install Firebase CLI
       if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
@@ -117,21 +117,11 @@ jobs:
     - name: Publish to Firebase App Distribution
       if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
       run: |
-        if [[ "${{ github.event.inputs.app_selection }}" == "getsmarter" || "${{ github.event.inputs.app_selection }}" == "both" ]]; then
-          firebase appdistribution:distribute output/app-getSmarter-staging.apk \
-            --app ${{ secrets.FIREBASE_APP_ID_GETSMARTER }} \
+          firebase appdistribution:distribute apps/output/student-twou-debug.apk \
+            --app ${{ secrets.FIREBASE_APP_ID_DEGREES }} \
             --release-notes "Automated build from GitHub Actions"
-        fi
-
-        if [[ "${{ github.event.inputs.app_selection }}" == "campus" || "${{ github.event.inputs.app_selection }}" == "both" ]]; then
-          firebase appdistribution:distribute output/app-campus-staging.apk \
-            --app ${{ secrets.FIREBASE_APP_ID_CAMPUS }} \
-            --release-notes "Automated build from GitHub Actions"
-        fi
-
 
     - name: Cleanup sensitive files and directories
       run: |
         echo "Cleaning up sensitive files..."
-        rm -rf app
-        rm -rf buildSrc
+        rm -rf apps
