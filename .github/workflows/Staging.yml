@@ -35,9 +35,12 @@ jobs:
 
     - uses: actions/checkout@v4
       with:
-        submodules: true  # This initializes and updates submodules
-        fetch-depth: 0    # Optional: fetch full history if needed
         ref: ${{ github.event.inputs.branch || github.ref }}
+        
+    - name: Checkout specific submodule
+      run: |
+        git submodule init apps/mobile-offline-downloader-android
+        git submodule update apps/mobile-offline-downloader-android
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
