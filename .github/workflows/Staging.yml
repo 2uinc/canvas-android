@@ -52,15 +52,15 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Setup Code
-      run: sh ./open_source.sh
-
     - name: Create google-services.json
       env:
         GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
       run: |
         pwd
-        echo $GOOGLE_SERVICES_JSON | base64 -di > apps/student/google-services.json
+        echo $GOOGLE_SERVICES_JSON | base64 -di > open_source_data/student/google-services.json
+
+    - name: Setup Code
+      run: sh ./open_source.sh
 
     - name: Create Secret.kt file
       env:
