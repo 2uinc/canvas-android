@@ -59,7 +59,9 @@ jobs:
         echo $SECRET_FILE | base64 -di > apps/buildSrc/src/main/java/Secure.kt
 
     - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      run: |
+        cd apps
+        chmod +x gradlew
 
     # - name: Run Unit Tests
     #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
