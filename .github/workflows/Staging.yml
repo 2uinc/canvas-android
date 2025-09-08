@@ -104,10 +104,11 @@ jobs:
     - name: Build Selected App(s) and zip apk output
       run: |
         EVENT_NAME="${{ github.event_name }}"
-        mkdir -p output
 
         cd apps
         ./gradlew :student:assembleTwouDebug
+        
+        mkdir -p output
         cp student/build/outputs/apk/twou/debug/student-twou-debug.apk output/
         zip -r app-staging-${{ github.run_number }}.zip output/
         
