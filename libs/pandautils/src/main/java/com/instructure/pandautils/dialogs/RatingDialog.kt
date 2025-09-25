@@ -181,7 +181,7 @@ class RatingDialog : BaseCanvasDialogFragment() {
         intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(getString(R.string.utils_mobileSupportEmailAddress)))
         //try to get the version number and version code
         val pInfo: PackageInfo?
-        var versionName = ""
+        var versionName: String? = ""
         var versionCode = 0
         try {
             pInfo = requireActivity().packageManager.getPackageInfo(requireActivity().packageName, 0)
