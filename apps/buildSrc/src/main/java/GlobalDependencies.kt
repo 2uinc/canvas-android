@@ -24,7 +24,7 @@ object Versions {
 
     /* Others */
     const val APOLLO = "4.1.1"
-    const val PSPDFKIT = "2024.3.1"
+    const val PSPDFKIT = "2024.8.0"
     const val PHOTO_VIEW = "2.3.0"
     const val MOBIUS = "1.2.1"
     const val HILT = "2.52"
