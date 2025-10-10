@@ -26,6 +26,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+    - name: Show Action Info and Set App Selection
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "Pull Request triggered from ${{ github.head_ref }} to ${{ github.base_ref }} "
+        else
+          echo "Manual Workflow trigger from ${{ github.actor }} for ${{ github.event.inputs.branch }} branch "
+        fi
     
     - name: Print Runner Info
       run: |
@@ -43,7 +51,6 @@ jobs:
         git submodule update apps/mobile-offline-downloader-android        
         cd apps/mobile-offline-downloader-android
         git checkout surya-test
-
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -74,32 +81,30 @@ jobs:
         cd apps
         chmod +x gradlew
 
-    # - name: Run Unit Tests
-    #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
-    #   run: |
-    #     APP_SELECTION="${{ github.event.inputs.app_selection }}"
-    #     EVENT_NAME="${{ github.event_name }}"
-    #     mkdir -p output
-    #     cd apps
-    #     ./gradlew :student:testTwouDebugUnitTest
+    - name: Run Unit Tests
+      if: ${{ github.event.inputs.run_unit_tests == 'true' }}
+      run: |
+        mkdir -p output
+        cd apps
+        ./gradlew :student:testTwouDebugUnitTest
 
-    # - name: Upload Unit Test Report
-    #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: unit-test-report
-    #     path: |
-    #       app/build/test-results
-    #       app/build/reports/tests
+    - name: Upload Unit Test Report
+      if: ${{ github.event.inputs.run_unit_tests == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-report
+        path: |
+          app/build/test-results
+          app/build/reports/tests
 
-    # - name: Summarize Unit Test Results
-    #   if: ${{ github.event_name == 'pull_request' || github.event.inputs.run_unit_tests == 'true' }}
-    #   run: |
-    #     echo "### Unit Test Summary" >> $GITHUB_STEP_SUMMARY
-    #     echo "" >> $GITHUB_STEP_SUMMARY
-    #     echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
-    #     grep -r "<testsuite" app/build/test-results | \
-    #       sed -n 's/.*tests=\"\([0-9]*\)\" failures=\"\([0-9]*\)\" errors=\"\([0-9]*\)\".*/- Total: \1, Failures: \2, Errors: \3/p' >> $GITHUB_STEP_SUMMARY
+    - name: Summarize Unit Test Results
+      if: ${{ github.event.inputs.run_unit_tests == 'true' }}
+      run: |
+        echo "### Unit Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
+        grep -r "<testsuite" app/build/test-results | \
+        sed -n 's/.*tests=\"\([0-9]*\)\" failures=\"\([0-9]*\)\" errors=\"\([0-9]*\)\".*/- Total: \1, Failures: \2, Errors: \3/p' >> $GITHUB_STEP_SUMMARY
 
     - name: Build Selected App(s) and zip apk output
       run: |
@@ -139,3 +144,31 @@ jobs:
       run: |
         echo "Cleaning up sensitive files..."
         rm -rf apps
+
+    - name: Authenticate Firebase CLI
+      # if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
+      run: |
+        echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > firebase-key.json
+
+    - name: Distribute Degrees App via Firebase App Distribution
+      # if: ${{ github.event.inputs.publish_to_firebase == 'true' && (env.APP_SELECTION == 'getsmarter' || env.APP_SELECTION == 'both')}}
+      uses: gowthamraj281/firebase-app-distribution@v1
+      with:
+        # The release binary file to upload.
+        file: apps/student/build/outputs/apk/twou/debug/student-twou-debug.apk
+        # Your app's Firebase App ID. You can find the App ID in the Firebase console, on the General Settings page.
+        app: ${{ secrets.FIREBASE_APP_ID_DEGREES }}
+        # Path to the Google service account credentials file
+        credentials-file: firebase-key.json
+        # Release notes for this build.
+        release-notes: "Run link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        # The tester groups you want to invite (refer to Manage testers). Groups are specified using group aliases, which you can look up in the Firebase console.
+        groups: 'android-sonata'
+        # A flag you can include to print verbose log output.
+        debug: 'true'
+
+    - name: Cleanup sensitive files and directories
+      run: |
+        echo "Cleaning up sensitive files..."
+        rm -rf app
+        rm -rf buildSrc
