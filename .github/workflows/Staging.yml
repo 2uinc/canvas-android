@@ -122,29 +122,7 @@ jobs:
       with:
         name: app-staging-${{ github.run_number }}
         path: apps/app-staging-${{ github.run_number }}.zip
-
-    - name: Install Firebase CLI
-      if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
-      run: npm install -g firebase-tools
-
-    - name: Authenticate Firebase CLI
-      if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
-      run: |
-        echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > firebase-key.json
-        firebase login:ci --token "$(cat firebase-key.json)"
-
-    - name: Publish to Firebase App Distribution
-      if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
-      run: |
-          firebase appdistribution:distribute apps/output/student-twou-debug.apk \
-            --app ${{ secrets.FIREBASE_APP_ID_DEGREES }} \
-            --release-notes "Automated build from GitHub Actions"
-
-    - name: Cleanup sensitive files and directories
-      run: |
-        echo "Cleaning up sensitive files..."
-        rm -rf apps
-
+        
     - name: Authenticate Firebase CLI
       # if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
       run: |
@@ -155,7 +133,7 @@ jobs:
       uses: gowthamraj281/firebase-app-distribution@v1
       with:
         # The release binary file to upload.
-        file: apps/student/build/outputs/apk/twou/debug/student-twou-debug.apk
+        file: apps/output/student-twou-debug.apk
         # Your app's Firebase App ID. You can find the App ID in the Firebase console, on the General Settings page.
         app: ${{ secrets.FIREBASE_APP_ID_DEGREES }}
         # Path to the Google service account credentials file
