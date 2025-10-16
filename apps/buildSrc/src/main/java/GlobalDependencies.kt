@@ -2,13 +2,13 @@
 
 object Versions {
     /* SDK Versions */
-    const val COMPILE_SDK = 34
+    const val COMPILE_SDK = 35
     const val MIN_SDK = 26
-    const val TARGET_SDK = 34
+    const val TARGET_SDK = COMPILE_SDK
 
     /* Build/tooling */
     const val ANDROID_GRADLE_TOOLS = "8.6.1"
-    const val BUILD_TOOLS = "34.0.0"
+    const val BUILD_TOOLS = "35.0.0"
 
     /* Testing */
     const val JUNIT = "4.13.2"
@@ -24,7 +24,7 @@ object Versions {
 
     /* Others */
     const val APOLLO = "4.1.1"
-    const val PSPDFKIT = "2024.3.1"
+    const val PSPDFKIT = "2024.8.0"
     const val PHOTO_VIEW = "2.3.0"
     const val MOBIUS = "1.2.1"
     const val HILT = "2.52"

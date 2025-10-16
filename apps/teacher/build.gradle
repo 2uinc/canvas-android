@@ -106,7 +106,7 @@ android {
                 mappingFileUploadEnabled false
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
+//            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
         }
 
         debugMinify {
@@ -137,7 +137,7 @@ android {
                 unstrippedNativeLibsDir 'build/intermediates/merged_native_libs/release/out/lib'
             }
 
-            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
+//            buildConfigField "String", "PENDO_TOKEN", "\"${Keys.pendoAccessToken}\""
         }
     }
 
