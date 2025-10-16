@@ -58,7 +58,7 @@ class AppManager : BaseAppManager() {
     }
 
     private fun initPendo() {
-        val options = Pendo.PendoOptions.Builder().setJetpackComposeBeta(true).build()
-        Pendo.setup(this, BuildConfig.PENDO_TOKEN, options, null)
+//        val options = Pendo.PendoOptions.Builder().setJetpackComposeBeta(true).build()
+//        Pendo.setup(this, BuildConfig.PENDO_TOKEN, options, null)
     }
 }
