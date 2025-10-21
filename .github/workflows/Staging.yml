@@ -131,6 +131,7 @@ jobs:
         
         mkdir -p output
         cp student/build/outputs/apk/twou/debug/student-twou-debug.apk output/
+        cp student/build.gradle output/
         zip -r app-staging-${{ github.run_number }}.zip output/
         
     - name: Upload APK ZIP
