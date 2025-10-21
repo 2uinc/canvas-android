@@ -1,8 +1,8 @@
-name: Staging CI
+name: 'Staging CI Run'
 
 on:
   pull_request:
-    branches: [ "surya-test" ]
+    branches: [ "master" ]
     
   workflow_dispatch:
     inputs:
@@ -10,16 +10,16 @@ on:
         description: 'Run Unit Tests'
         required: true
         type: boolean
-        default: true
+        default: false
       branch:
         description: 'Branch to build'
         required: true
-        default: 'develop'
+        default: 'master'
       publish_to_firebase:
         description: 'Publish to Firebase App Distribution'
         required: true
         type: boolean
-        default: false
+        default: true
 
 jobs:
   build:
@@ -80,6 +80,22 @@ jobs:
       run: |
         cd apps
         chmod +x gradlew
+
+    - name: Set version info
+      run: |
+        VERSION_CODE=${{ github.run_number }}
+        echo "VERSION_CODE: $VERSION_CODE"
+    
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          VERSION_NAME="PR-${{ github.event.pull_request.number }}"
+        else
+          VERSION_NAME="${{ github.event.inputs.branch }}"
+        fi
+        echo "VERSION_NAME: $VERSION_NAME"
+        
+        sed -i "s/const val versionCode = [0-9]\+/const val versionCode = $VERSION_CODE/" buildSrc/src/main/java/Dependencies.kt
+        sed -i 's/const val versionName = "[^"]*"/const val versionName = "'"$VERSION_NAME"'"/' buildSrc/src/main/java/Dependencies.kt
+
 
     - name: Run Unit Tests
       if: ${{ github.event.inputs.run_unit_tests == 'true' }}
