@@ -93,8 +93,8 @@ jobs:
         fi
         echo "VERSION_NAME: $VERSION_NAME"
         
-        sed -i "s/const val versionCode = [0-9]\+/const val versionCode = $VERSION_CODE/" buildSrc/src/main/java/Dependencies.kt
-        sed -i 's/const val versionName = "[^"]*"/const val versionName = "'"$VERSION_NAME"'"/' buildSrc/src/main/java/Dependencies.kt
+        sed -i "s/versionCode = [0-9]\+/const val versionCode = $VERSION_CODE/" apps/student/build.gradle
+        sed -i 's/versionName = "[^"]*"/const val versionName = "'"$VERSION_NAME"'"/' apps/student/build.gradle
 
 
     - name: Run Unit Tests
