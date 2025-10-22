@@ -1,0 +1,170 @@
+name: 'Staging CI Run'
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    
+  workflow_dispatch:
+    inputs:
+      run_unit_tests:
+        description: 'Run Unit Tests'
+        required: true
+        type: boolean
+        default: false
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'master'
+      publish_to_firebase:
+        description: 'Publish to Firebase App Distribution'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Show Action Info and Set App Selection
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "Pull Request triggered from ${{ github.head_ref }} to ${{ github.base_ref }} "
+        else
+          echo "Manual Workflow trigger from ${{ github.actor }} for ${{ github.event.inputs.branch }} branch "
+        fi
+    
+    - name: Print Runner Info
+      run: |
+        echo "Runner Name: ${{ runner.name }}"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Runner Type: ${{ runner.arch }}"
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref }}
+        
+    - name: Checkout specific submodule
+      run: |
+        git submodule init apps/mobile-offline-downloader-android
+        git submodule update apps/mobile-offline-downloader-android        
+        cd apps/mobile-offline-downloader-android
+        # default mobile offline downloader branch
+        git checkout main
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Create google-services.json
+      env:
+        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      run: |
+        pwd
+        echo $GOOGLE_SERVICES_JSON | base64 -di > open_source_data/student/google-services.json
+
+    - name: Setup Code
+      run: sh ./open_source.sh
+
+    - name: Create Secret.kt file
+      env:
+        SECRET_FILE: ${{ secrets.SECRET_FILE }}
+      run: |
+        mkdir -p app
+        echo $SECRET_FILE | base64 -di > apps/buildSrc/src/main/java/Secure.kt
+
+    - name: Grant execute permission for gradlew
+      run: |
+        cd apps
+        chmod +x gradlew
+
+    - name: Set version info
+      run: |
+        VERSION_CODE=${{ github.run_number }}
+        echo "VERSION_CODE: $VERSION_CODE"
+    
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          VERSION_NAME="PR-${{ github.event.pull_request.number }}"
+        else
+          VERSION_NAME="${{ github.event.inputs.branch }}"
+        fi
+        echo "VERSION_NAME: $VERSION_NAME"
+        
+        sed -i "s/const val versionCode = [0-9]\+/const val versionCode = $VERSION_CODE/" apps/buildSrc/src/main/java/OfflineDependencies.kt
+        sed -i 's/const val versionName = "[^"]*"/const val versionName = "'"$VERSION_NAME"'"/' apps/buildSrc/src/main/java/OfflineDependencies.kt
+
+
+    - name: Run Unit Tests
+      if: ${{ github.event.inputs.run_unit_tests == 'true' }}
+      run: |
+        mkdir -p output
+        cd apps
+        ./gradlew :student:testTwouDebugUnitTest
+
+    - name: Upload Unit Test Report
+      if: ${{ github.event.inputs.run_unit_tests == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-report
+        path: |
+          app/build/test-results
+          app/build/reports/tests
+
+    - name: Summarize Unit Test Results
+      if: ${{ github.event.inputs.run_unit_tests == 'true' }}
+      run: |
+        echo "### Unit Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
+        grep -r "<testsuite" app/build/test-results | \
+        sed -n 's/.*tests=\"\([0-9]*\)\" failures=\"\([0-9]*\)\" errors=\"\([0-9]*\)\".*/- Total: \1, Failures: \2, Errors: \3/p' >> $GITHUB_STEP_SUMMARY
+
+    - name: Build Selected App(s) and zip apk output
+      run: |
+        EVENT_NAME="${{ github.event_name }}"
+
+        cd apps
+        ./gradlew :student:assembleTwouDebug
+        
+        mkdir -p output
+        cp student/build/outputs/apk/twou/debug/student-twou-debug.apk output/
+        cp student/build.gradle output/
+        zip -r app-staging-${{ github.run_number }}.zip output/
+        
+    - name: Upload APK ZIP
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-staging-${{ github.run_number }}
+        path: apps/app-staging-${{ github.run_number }}.zip
+        
+    - name: Authenticate Firebase CLI
+      # if: ${{ github.event.inputs.publish_to_firebase == 'true' }}
+      run: |
+        echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > firebase-key.json
+
+    - name: Distribute Degrees App via Firebase App Distribution
+      # if: ${{ github.event.inputs.publish_to_firebase == 'true' && (env.APP_SELECTION == 'getsmarter' || env.APP_SELECTION == 'both')}}
+      uses: gowthamraj281/firebase-app-distribution@v1
+      with:
+        # The release binary file to upload.
+        file: apps/output/student-twou-debug.apk
+        # Your app's Firebase App ID. You can find the App ID in the Firebase console, on the General Settings page.
+        app: ${{ secrets.FIREBASE_APP_ID_DEGREES }}
+        # Path to the Google service account credentials file
+        credentials-file: firebase-key.json
+        # Release notes for this build.
+        release-notes: "Run link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        # The tester groups you want to invite (refer to Manage testers). Groups are specified using group aliases, which you can look up in the Firebase console.
+        groups: 'android-sonata'
+        # A flag you can include to print verbose log output.
+        debug: 'true'
+
+    - name: Cleanup sensitive files and directories
+      run: |
+        echo "Cleaning up sensitive files..."
+        rm -rf app
+        rm -rf buildSrc
