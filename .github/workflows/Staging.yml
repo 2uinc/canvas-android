@@ -50,7 +50,8 @@ jobs:
         git submodule init apps/mobile-offline-downloader-android
         git submodule update apps/mobile-offline-downloader-android        
         cd apps/mobile-offline-downloader-android
-        git checkout surya-test
+        # default mobile offline downloader branch
+        git checkout main
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
