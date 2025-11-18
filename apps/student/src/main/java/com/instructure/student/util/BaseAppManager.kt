@@ -35,11 +35,10 @@ import com.instructure.pandautils.utils.ThemePrefs
 import com.instructure.student.BuildConfig
 import com.instructure.student.R
 import com.instructure.student.activity.NavigationActivity
-import com.pspdfkit.PSPDFKit
-import com.pspdfkit.exceptions.InvalidPSPDFKitLicenseException
-import com.pspdfkit.exceptions.PSPDFKitInitializationFailedException
-import com.pspdfkit.initialization.InitializationOptions
 import com.zynksoftware.documentscanner.ui.DocumentScanner
+import com.pspdfkit.Nutrient
+import com.pspdfkit.exceptions.InvalidNutrientLicenseException
+import com.pspdfkit.exceptions.NutrientInitializationFailedException
 
 abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), AnalyticsEventHandling {
 
@@ -62,6 +61,7 @@ abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), Analyti
         RemoteConfigUtils.initialize()
 
         //initPSPDFKit()
+        initNutrient()
 
         initDocumentScanning()
 
@@ -110,15 +110,16 @@ abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), Analyti
 
     }
 
-    private fun initPSPDFKit() {
-        try {
-            PSPDFKit.initialize(this, InitializationOptions(licenseKey = BuildConfig.PSPDFKIT_LICENSE_KEY))
-        } catch (e: PSPDFKitInitializationFailedException) {
-            Logger.e("Current device is not compatible with PSPDFKIT!")
-        } catch (e: InvalidPSPDFKitLicenseException) {
-            Logger.e("Invalid or Trial PSPDFKIT License!")
-        }
-    }
+//    private fun initNutrient() {
+//        try {
+//            Logger.e("Invalid or Trial PSPDFKIT License!")
+//            Nutrient.initialize(this, BuildConfig.PSPDFKIT_LICENSE_KEY)
+//        } catch (e: NutrientInitializationFailedException) {
+//            Logger.e("Current device is not compatible with Nutrient!")
+//        } catch (e: InvalidNutrientLicenseException) {
+//            Logger.e("Invalid or Trial Nutrient License!")
+//        }
+//    }
 
     private fun initDocumentScanning() {
         DocumentScanner.init(this)

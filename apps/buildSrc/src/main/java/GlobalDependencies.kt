@@ -24,7 +24,7 @@ object Versions {
 
     /* Others */
     const val APOLLO = "4.1.1"
-    const val PSPDFKIT = "2024.8.0"
+    const val NUTRIENT = "10.7.0"
     const val PHOTO_VIEW = "2.3.0"
     const val MOBIUS = "1.2.1"
     const val HILT = "2.52"
@@ -127,7 +127,7 @@ object Libs {
     const val COMPOSE_VIEW_MODEL = "androidx.lifecycle:lifecycle-viewmodel-compose:${Versions.LIFECYCLE}"
 
     /* Media and content handling */
-    const val PSPDFKIT = "com.pspdfkit:pspdfkit:${Versions.PSPDFKIT}"
+    const val NUTRIENT = "io.nutrient:nutrient:${Versions.NUTRIENT}"
     const val EXOPLAYER = "com.google.android.exoplayer:exoplayer:2.18.5" // This is deprecated, we should migrate to https://developer.android.com/guide/topics/media/media3/getting-started/migration-guide
     const val MEDIA3 = "androidx.media3:media3-exoplayer:${Versions.MEDIA3}"
     const val MEDIA3_UI = "androidx.media3:media3-ui:${Versions.MEDIA3}"

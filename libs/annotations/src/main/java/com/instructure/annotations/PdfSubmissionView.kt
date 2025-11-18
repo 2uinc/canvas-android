@@ -114,7 +114,7 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
             .setAnnotationInspectorEnabled(true)
             .layoutMode(PageLayoutMode.SINGLE)
             .textSelectionEnabled(false)
-            .disableCopyPaste()
+            .copyPastEnabled(false)
             .build()
 
     private val annotationCreationToolbar = AnnotationCreationToolbar(context)
@@ -173,9 +173,8 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
     protected fun unregisterPdfFragmentListeners() {
         pdfFragment?.removeOnAnnotationCreationModeChangeListener(this)
         pdfFragment?.removeOnAnnotationEditingModeChangeListener(this)
-        pdfFragment?.document?.annotationProvider?.removeOnAnnotationUpdatedListener(annotationUpdateListener)
+        pdfFragment?.removeOnAnnotationUpdatedListener(annotationUpdateListener)
         pdfFragment?.removeOnAnnotationSelectedListener(annotationSelectedListener)
-        pdfFragment?.removeOnAnnotationDeselectedListener(annotationDeselectedListener)
     }
 
     /**
@@ -197,12 +196,13 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
 
                 if (toolbar is AnnotationCreationToolbar) {
                     setUpGrabAnnotationTool(toolbar)
+                    toolbar.setMenuItemGroupingRule(AnnotationCreationGroupingRule(context))
                 }
             }
         })
 
         annotationCreationToolbar.closeButton.setGone()
-        annotationCreationToolbar.setMenuItemGroupingRule(AnnotationCreationGroupingRule(context))
+
 
         annotationEditingToolbar.setMenuItemGroupingRule(object : MenuItemGroupingRule {
             override fun groupMenuItems(items: MutableList<ContextualToolbarMenuItem>, i: Int) = configureEditMenuItemGrouping(items)
@@ -414,8 +414,6 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
         annotationsJob = tryWeave {
             // Snag them annotations with the session id
             val annotations = awaitApi { CanvaDocsManager.getAnnotations(apiValues.sessionId, apiValues.canvaDocsDomain, it) }
-            // We don't want to trigger the annotation events here, so unregister and re-register after
-            pdfFragment?.document?.annotationProvider?.removeOnAnnotationUpdatedListener(annotationUpdateListener)
 
             // Grab all the annotations and sort them by type (descending).
             // This will result in all of the comments being iterated over first as the COMMENT_REPLY type is last in the AnnotationType enum.
@@ -455,9 +453,8 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
             }
 
             noteHinter?.notifyDrawablesChanged()
-            pdfFragment?.document?.annotationProvider?.addOnAnnotationUpdatedListener(annotationUpdateListener)
+            pdfFragment?.addOnAnnotationUpdatedListener(annotationUpdateListener)
             pdfFragment?.addOnAnnotationSelectedListener(annotationSelectedListener)
-            pdfFragment?.addOnAnnotationDeselectedListener(annotationDeselectedListener)
         } catch {
             // Show error
             toast(R.string.annotationErrorOccurred)
@@ -617,10 +614,6 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
             && commentRepliesHashMap[currentAnnotation.annotationId]?.isNotEmpty() == true
     }
 
-    private val annotationDeselectedListener = AnnotationManager.OnAnnotationDeselectedListener { _, _ ->
-        commentsButton.setGone()
-    }
-
     //region Annotation Manipulation
     fun createNewAnnotation(annotation: Annotation) {
         if (annotation.type == AnnotationType.FREETEXT) {
@@ -641,9 +634,7 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
 
                 // Edit the annotation with the appropriate id
                 annotation.name = newAnnotation.annotationId
-                pdfFragment?.document?.annotationProvider?.removeOnAnnotationUpdatedListener(annotationUpdateListener)
                 pdfFragment?.notifyAnnotationHasChanged(annotation)
-                pdfFragment?.document?.annotationProvider?.addOnAnnotationUpdatedListener(annotationUpdateListener)
                 commentsButton.isEnabled = true
                 if (annotation.type == AnnotationType.STAMP) {
                     commentsButton.setVisible()
@@ -1016,7 +1007,7 @@ abstract class PdfSubmissionView(context: Context, private val studentAnnotation
 
         // If the user has read/write/manage we want to let them delete (and only delete) non-authored annotations
         val annotation = pdfFragment?.selectedAnnotations?.get(0)
-        if (docSession.annotationMetadata?.canManage() == true && annotation?.flags?.contains(AnnotationFlags.LOCKED) == true) {
+        if (::docSession.isInitialized && docSession.annotationMetadata?.canManage() == true && annotation?.flags?.contains(AnnotationFlags.LOCKED) == true) {
             // We need to only return a list with the delete menu item
             delete = ContextualToolbarMenuItem.createSingleItem(context, View.generateViewId(),
                     ContextCompat.getDrawable(context, R.drawable.ic_trash)!!,
