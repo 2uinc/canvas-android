@@ -110,16 +110,16 @@ abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), Analyti
 
     }
 
-//    private fun initNutrient() {
-//        try {
-//            Logger.e("Invalid or Trial PSPDFKIT License!")
-//            Nutrient.initialize(this, BuildConfig.PSPDFKIT_LICENSE_KEY)
-//        } catch (e: NutrientInitializationFailedException) {
-//            Logger.e("Current device is not compatible with Nutrient!")
-//        } catch (e: InvalidNutrientLicenseException) {
-//            Logger.e("Invalid or Trial Nutrient License!")
-//        }
-//    }
+    private fun initNutrient() {
+        try {
+            Logger.e("Invalid or Trial PSPDFKIT License!")
+            Nutrient.initialize(this, null)
+        } catch (e: NutrientInitializationFailedException) {
+            Logger.e("Current device is not compatible with Nutrient!")
+        } catch (e: InvalidNutrientLicenseException) {
+            Logger.e("Invalid or Trial Nutrient License!")
+        }
+    }
 
     private fun initDocumentScanning() {
         DocumentScanner.init(this)
