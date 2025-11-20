@@ -27,91 +27,68 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         app:pclv_indeterminate="true"
+        android:visibility="gone"
         app:pclv_override_color="@color/login_studentAppTheme"/>
 
-    <LinearLayout
-        android:id="@+id/retryLoadingContainer"
+    <ScrollView
+        android:id="@+id/content_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <ImageView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:importantForAccessibility="no"
-            android:src="@drawable/ic_warning"/>
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:contentDescription="@string/scrollInstructions">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/error_loading_submission"/>
+            <ImageView
+                android:id="@+id/previewImageView"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                app:tint="@color/textDark"
+                app:srcCompat="@drawable/ic_canvas_logo_student"/>
 
-        <Button
-            android:id="@+id/retryLoadingButton"
-            style="@style/ButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_marginTop="48dp"
-            android:text="@string/retry"/>
-
-    </LinearLayout>
-
-    <FrameLayout
-        android:id="@+id/contentRoot"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <com.pspdfkit.ui.toolbar.ToolbarCoordinatorLayout
-            android:id="@+id/annotationToolbarLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-
-        <com.pspdfkit.ui.inspector.PropertyInspectorCoordinatorLayout
-            android:id="@+id/inspectorCoordinatorLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-
-        <ImageView
-            android:id="@+id/commentsButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="10dp"
-            android:background="@drawable/bg_annotation_comments"
-            android:clickable="true"
-            android:contentDescription="@string/comments"
-            android:elevation="2dp"
-            android:visibility="gone"
-            android:tint="@color/white"
-            app:srcCompat="@drawable/ic_discussion"
-            tools:visibility="visible"
-            android:focusable="true" />
-
-        <FrameLayout
-            android:id="@+id/content"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipChildren="false"
-            android:clipToPadding="false"/>
-
-        <FrameLayout
-            android:id="@+id/loadingContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/backgroundLightest"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <com.instructure.pandautils.views.ProgressiveCanvasLoadingView
-                android:id="@+id/progressBar"
+            <TextView
+                android:id="@+id/fileNameView"
+                style="@style/TextFont.Medium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                app:pclv_override_color="@color/login_studentAppTheme"
-                app:pclv_progress="1"/>
+                android:layout_marginTop="24dp"
+                android:textColor="@color/textDarkest"
+                android:textSize="20sp"
+                tools:text="sample_file_name.png"
+                android:focusable="true"
+                android:importantForAccessibility="yes"/>
 
-        </FrameLayout>
+            <TextView
+                style="@style/TextFont.Medium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/utils_pdfFileMessage"
+                android:textColor="@color/textDark"
+                android:textSize="12sp"
+                android:focusable="true"
+                android:importantForAccessibility="yes"/>
 
-    </FrameLayout>
+            <Button
+                android:id="@+id/openExternallyButton"
+                style="@style/ButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_marginTop="48dp"
+                android:text="@string/utils_openPDFAnotherApp"/>
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </FrameLayout>

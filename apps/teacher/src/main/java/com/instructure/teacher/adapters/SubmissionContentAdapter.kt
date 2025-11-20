@@ -66,6 +66,5 @@ class SubmissionContentAdapter(
     }
 
     fun updateAnnotations(position: Int) {
-        mContentMap[position]?.updateAnnotations()
     }
 }

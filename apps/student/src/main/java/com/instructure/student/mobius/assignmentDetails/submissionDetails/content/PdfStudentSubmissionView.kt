@@ -35,6 +35,7 @@ import com.instructure.canvasapi2.utils.Analytics
 import com.instructure.canvasapi2.utils.AnalyticsEventConstants
 import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.canvasapi2.utils.Logger
+import com.instructure.canvasapi2.utils.weave.WeaveCoroutine
 import com.instructure.canvasapi2.utils.weave.awaitApi
 import com.instructure.canvasapi2.utils.weave.catch
 import com.instructure.canvasapi2.utils.weave.tryWeave
@@ -62,91 +63,23 @@ class PdfStudentSubmissionView(
     private val activity: FragmentActivity,
     private val pdfUrl: String,
     private val courseId: Long,
-    private val fragmentManager: FragmentManager,
-    private val studentAnnotationSubmit: Boolean = false,
-    private val studentAnnotationView: Boolean = false,
+    private val studentAnnotationView: Boolean = false
+
 ) : PdfSubmissionView(
     activity, studentAnnotationView, courseId
-), AnnotationManager.OnAnnotationCreationModeChangeListener, AnnotationManager.OnAnnotationEditingModeChangeListener {
+){
 
     private val binding: ViewPdfStudentSubmissionBinding
 
-    private var initJob: Job? = null
-    private var deleteJob: Job? = null
+    override lateinit var pdfContentJob: WeaveCoroutine
 
-    override val annotationToolbarLayout: ToolbarCoordinatorLayout
-        get() = binding.annotationToolbarLayout
-    override val inspectorCoordinatorLayout: PropertyInspectorCoordinatorLayout
-        get() = binding.inspectorCoordinatorLayout
-    override val commentsButton: ImageView
-        get() = binding.commentsButton
-    override val loadingContainer: FrameLayout
-        get() = binding.loadingContainer
-    override val progressBar: ProgressiveCanvasLoadingView
-        get() = binding.progressBar
+    private var initJob: Job? = null
     override val progressColor: Int
         get() = R.color.login_studentAppTheme
 
-    override fun disableViewPager() {}
-    override fun enableViewPager() {}
-    override fun setIsCurrentlyAnnotating(boolean: Boolean) {}
-
-    override fun showAnnotationComments(
-        commentList: ArrayList<CanvaDocAnnotation>,
-        headAnnotationId: String,
-        docSession: DocSession,
-        apiValues: ApiValues
-    ) {
-        if (isAttachedToWindow) RouteMatcher.route(
-            activity,
-            AnnotationCommentListFragment.makeRoute(commentList, headAnnotationId, docSession, apiValues, ApiPrefs.user!!.id, !studentAnnotationView)
-        )
-    }
-
-    override fun showFileError() {
-        binding.loadingView.setGone()
-        binding.retryLoadingContainer.setVisible()
-        binding.retryLoadingButton.onClick {
-            setLoading(true)
-            setup()
-        }
-    }
-
-    override fun configureCommentView(commentsButton: ImageView) {
-        // If we are making annotations position the comments button as we would position in the teacher.
-        if (studentAnnotationSubmit) {
-            super.configureCommentView(commentsButton)
-            return
-        }
-
-        //we want to offset the comment button by the height of the action bar
-        val marginDp = TypedValue.applyDimension( TypedValue.COMPLEX_UNIT_DIP, 12f, context.resources.displayMetrics)
-        val layoutParams = commentsButton.layoutParams as LayoutParams
-        commentsButton.drawable.setTint(Color.WHITE)
-        layoutParams.gravity = Gravity.END or Gravity.TOP
-        layoutParams.topMargin = marginDp.toInt()
-        layoutParams.rightMargin = marginDp.toInt()
-
-        commentsButton.onClick {
-            openComments()
-        }
-    }
-
-    override fun logOnAnnotationSelectedAnalytics() {
-        Analytics.logEvent(AnalyticsEventConstants.SUBMISSION_ANNOTATION_SELECTED)
-    }
-
-    override fun showNoInternetDialog() {
-        NoInternetConnectionDialog.show(fragmentManager)
-    }
-
     init {
-        if (!PSPDFKitPreferences.get(getContext()).isAnnotationCreatorSet) {
-            PSPDFKitPreferences.get(getContext()).setAnnotationCreator(ApiPrefs.user?.name)
-        }
 
         binding = ViewPdfStudentSubmissionBinding.inflate(LayoutInflater.from(context), this, true)
-
         setLoading(true)
     }
 
@@ -157,27 +90,15 @@ class PdfStudentSubmissionView(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        //we must set up the sliding panel prior to registering to the event
-        EventBus.getDefault().register(this)
-
         setup()
     }
 
-    override fun attachDocListener() {
-        // We need to add this flag, because we want to show the toolbar in the student annotation, but hide when
-        // we open an already submitted file submission with a teacher's annotations.
-        if (!studentAnnotationSubmit) {
-            // Modify the session data permissions to make sure students can't annotate already submitted assignments
-            if (docSession.annotationMetadata?.canWrite() == true) {
-                docSession.annotationMetadata?.permissions = "read"
-            }
-            // Default is to have top inset, remove this since there will be no toolbar
-            pdfFragment?.setInsets(0, 0, 0, 0)
-        }
-        super.attachDocListener()
-    }
-
     fun setup() {
+
+        binding.openExternallyButton.setOnClickListener {
+            openPdf()
+        }
+
         handlePdfContent(pdfUrl)
         setLoading(false)
     }
@@ -185,69 +106,9 @@ class PdfStudentSubmissionView(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         initJob?.cancel()
-        EventBus.getDefault().unregister(this)
     }
 
-
-    @SuppressLint("CommitTransaction")
-    override fun setFragment(fragment: Fragment) {
-        if (isAttachedToWindow) fragmentManager.beginTransaction().replace(binding.content.id, fragment).commitNowAllowingStateLoss()
+    override fun showNoInternetDialog() {
+        TODO("Not yet implemented")
     }
-
-    override fun removeContentFragment() {
-        val contentFragment = fragmentManager.findFragmentById(binding.content.id)
-        if (contentFragment != null) {
-            fragmentManager.beginTransaction().remove(contentFragment).commitAllowingStateLoss()
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onAnnotationCommentAdded(event: AnnotationCommentAdded) {
-        if (event.assigneeId == ApiPrefs.user!!.id) {
-            //add the comment to the hashmap
-            commentRepliesHashMap[event.annotation.inReplyTo]?.add(event.annotation)
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onAnnotationCommentEdited(event: AnnotationCommentEdited) {
-        if (event.assigneeId == ApiPrefs.user!!.id) {
-            //update the annotation in the hashmap
-            commentRepliesHashMap[event.annotation.inReplyTo]?.find { it.annotationId == event.annotation.annotationId }?.contents = event.annotation.contents
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onAnnotationCommentDeleted(event: AnnotationCommentDeleted) {
-        if (event.assigneeId == ApiPrefs.user!!.id) {
-            if (event.isHeadAnnotation) {
-                //we need to delete the entire list of comments from the hashmap
-                commentRepliesHashMap.remove(event.annotation.inReplyTo)
-                pdfFragment?.selectedAnnotations?.get(0)?.contents = ""
-                noteHinter?.notifyDrawablesChanged()
-            } else {
-                //otherwise just remove the comment
-                commentRepliesHashMap[event.annotation.inReplyTo]?.remove(event.annotation)
-            }
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onAnnotationCommentDeleteAcknowledged(event: AnnotationCommentDeleteAcknowledged) {
-        if (event.assigneeId == ApiPrefs.user!!.id) {
-            deleteJob = tryWeave {
-                for (annotation in event.annotationList) {
-                    awaitApi<ResponseBody> { CanvaDocsManager.deleteAnnotation(apiValues.sessionId, annotation.annotationId, apiValues.canvaDocsDomain, it) }
-                    commentRepliesHashMap[annotation.inReplyTo]?.remove(annotation)
-                }
-            } catch {
-                Logger.d("There was an error acknowledging the delete!")
-            }
-        }
-    }
-
-    class AnnotationCommentAdded(val annotation: CanvaDocAnnotation, val assigneeId: Long)
-    class AnnotationCommentEdited(val annotation: CanvaDocAnnotation, val assigneeId: Long)
-    class AnnotationCommentDeleted(val annotation: CanvaDocAnnotation, val isHeadAnnotation: Boolean, val assigneeId: Long)
-    class AnnotationCommentDeleteAcknowledged(val annotationList: List<CanvaDocAnnotation>, val assigneeId: Long)
 }
