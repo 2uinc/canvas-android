@@ -35,9 +35,7 @@
     <string name="deleteCommentConfirmation">Ou kwè vrèman ou vle efase kòmantè sa a?</string>
     <string name="deleteHeadCommentConfirmation">Eliminasyon kòmantè sa a ap efase tout kòmantè ki gen rapò ak anotasyon sa a. Ou kwè vrèman ou vle fè sa?</string>
     <string name="sendingSimple">Voye</string>
-    <string name="pspdf__annotation_type_stamp">Note Koulè</string>
 
     <string name="removedComment">Elimine %1$s pa %2$s</string>
 
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

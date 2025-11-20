@@ -35,9 +35,7 @@
     <string name="deleteCommentConfirmation">您确认想删除此评论吗？</string>
     <string name="deleteHeadCommentConfirmation">删除此评论的同时将删除与此注释关联的所有评论。是否确定要删除？</string>
     <string name="sendingSimple">正在发送</string>
-    <string name="pspdf__annotation_type_stamp">注释颜色</string>
 
     <string name="removedComment">移除%1$s者 %2$s</string>
 
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

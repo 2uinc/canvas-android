@@ -45,7 +45,6 @@ import com.instructure.student.databinding.DialogSubmissionPickerMediaBinding
 import com.instructure.student.databinding.FragmentSubmissionDetailsEmptyContentBinding
 import com.instructure.student.fragment.BasicQuizViewFragment
 import com.instructure.student.fragment.StudioWebViewFragment
-import com.instructure.student.mobius.assignmentDetails.submission.annnotation.AnnotationSubmissionUploadFragment
 import com.instructure.student.mobius.assignmentDetails.submission.picker.PickerSubmissionMode
 import com.instructure.student.mobius.assignmentDetails.submission.picker.ui.PickerSubmissionUploadFragment
 import com.instructure.student.mobius.assignmentDetails.submission.text.ui.TextSubmissionUploadFragment
@@ -232,23 +231,5 @@ class SubmissionDetailsEmptyContentView(
     fun returnToAssignmentDetails() {
         // Not run on main thread of fragment host by default, so force it to run on UI thread
         activity.runOnUiThread { activity.onBackPressed() }
-    }
-
-    fun showStudentAnnotationView(assignment: Assignment) {
-        logEvent(AnalyticsEventConstants.SUBMIT_STUDENT_ANNOTATION_SELECTED)
-
-        val submissionId = assignment.submission?.id
-        if (submissionId != null) {
-            RouteMatcher.route(
-                activity as FragmentActivity,
-                AnnotationSubmissionUploadFragment.makeRoute(
-                    canvasContext,
-                    assignment.annotatableAttachmentId,
-                    submissionId,
-                    assignment.id,
-                    assignment.name ?: ""
-                )
-            )
-        }
     }
 }

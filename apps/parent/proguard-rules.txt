@@ -187,9 +187,6 @@
 -dontwarn okhttp3.**
 -keep class okhttp3.** { *; }
 
-# PSPDFKit
--keep class com.pspdfkit.** { *; }
--dontwarn com.pspdfkit.**
 -dontwarn sun.misc.**
 -dontwarn android.view.WindowInsets
 -dontwarn android.graphics.Insets

@@ -155,11 +155,6 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
-        <activity
-            android:name=".activity.CandroidPSPDFActivity"
-            android:theme="@style/PSPDFKitTheme"
-            android:windowSoftInputMode="adjustNothing" />
-
         <activity android:name=".activity.PandaAvatarActivity"
             android:label="@string/pandaAvatar"
             android:theme="@style/CanvasMaterialTheme_Default"/>

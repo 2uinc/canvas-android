@@ -30,7 +30,6 @@ import com.instructure.pandautils.features.discussion.router.DiscussionRouterFra
 import com.instructure.pandautils.features.lti.LtiLaunchFragment
 import com.instructure.student.activity.BaseRouterActivity
 import com.instructure.student.fragment.BasicQuizViewFragment
-import com.instructure.student.mobius.assignmentDetails.submission.annnotation.AnnotationSubmissionUploadFragment
 import com.instructure.student.mobius.assignmentDetails.submission.file.ui.UploadStatusSubmissionFragment
 import com.instructure.student.mobius.assignmentDetails.submission.picker.PickerSubmissionMode
 import com.instructure.student.mobius.assignmentDetails.submission.picker.ui.PickerSubmissionUploadFragment
@@ -125,27 +124,6 @@ class StudentAssignmentDetailsRouter: AssignmentDetailsRouter() {
         RouteMatcher.route(
             activity,
             UrlSubmissionUploadFragment.makeRoute(course, assignmentId, assignmentName, initialUrl, isFailure)
-        )
-    }
-
-    override fun navigateToAnnotationSubmissionScreen(
-        activity: FragmentActivity,
-        canvasContext: CanvasContext,
-        annotatableAttachmentId: Long,
-        submissionId: Long,
-        assignmentId: Long,
-        assignmentName: String
-    ) {
-        Analytics.logEvent(AnalyticsEventConstants.SUBMIT_STUDENT_ANNOTATION_SELECTED)
-        RouteMatcher.route(
-            activity,
-            AnnotationSubmissionUploadFragment.makeRoute(
-                canvasContext,
-                annotatableAttachmentId,
-                submissionId,
-                assignmentId,
-                assignmentName
-            )
         )
     }
 

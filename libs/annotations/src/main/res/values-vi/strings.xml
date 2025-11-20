@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Bạn có chắc chắn muốn xóa bình luận này không?</string>
     <string name="deleteHeadCommentConfirmation">Xóa bình luận này sẽ xóa toàn bộ bình luận liên quan trong chú thích này. Bạn có chắc chắn muốn thực hiện không?</string>
     <string name="sendingSimple">Đang Gửi</string>
-    <string name="pspdf__annotation_type_stamp">Màu Ghi Chú</string>
     <string name="removedComment">Đã bị gỡ %1$s bởi %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

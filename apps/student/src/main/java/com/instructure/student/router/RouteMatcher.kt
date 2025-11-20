@@ -649,10 +649,8 @@ object RouteMatcher : BaseRouteMatcher() {
                             route(activity, Route(ViewHtmlFragment::class.java, null, args))
                         } else if (loadedMedia.intent != null) {
                             if (loadedMedia.intent!!.type!!.contains("pdf") && !loadedMedia.isUseOutsideApps) {
-                                // Show pdf with PSPDFkit
-                                val uri = loadedMedia.intent!!.data
                                 val submissionTarget = loadedMedia.bundle?.getParcelable<ShareFileSubmissionTarget>(Const.SUBMISSION_TARGET)
-                                FileUtils.showPdfDocument(uri!!, loadedMedia, activity, submissionTarget)
+                                FileUtils.showPdfDocument(loadedMedia, activity)
                             } else if (loadedMedia.intent?.type == "video/mp4") {
                                 val bundle = BaseViewMediaActivity.makeBundle(
                                     loadedMedia.intent!!.data!!.toString(),

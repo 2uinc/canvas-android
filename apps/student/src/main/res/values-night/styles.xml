@@ -16,28 +16,4 @@
   -->
 <resources>
 
-    <style name="ContextualToolbarStyle">
-        <item name="pspdf__backgroundColor">@color/backgroundLightestElevated</item>
-        <item name="pspdf__submenuBackgroundColor">@color/backgroundLightestElevated</item>
-        <item name="pspdf__iconsColor">@color/white</item>
-    </style>
-
-    <style name="ModalDialogStyle">
-        <item name="pspdf__titleBackground">@color/backgroundLightestElevated</item>
-    </style>
-
-    <!-- Used for stand alone PSPDFKit activity, pdf fragment uses values in CanvasMaterialTheme_Default-->
-    <style name="PSPDFKitTheme" parent="PSPDFKit.Theme.Dark">
-        <item name="colorPrimary">@color/backgroundLightestElevated</item>
-        <item name="colorAccent">@color/textInfo</item>
-        <item name="colorPrimaryDark">@color/backgroundLightestElevated</item>
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="windowActionModeOverlay">true</item>
-        <item name="android:navigationBarColor">@color/backgroundLightest</item>
-        <item name="pspdf__annotationCreationToolbarIconsStyle">@style/PSPDFAnnotationCreationToolbarIconsStyle</item>
-        <item name="pspdf__actionBarIconsStyle">@style/PSPDFKitActionBarIconsStyle</item>
-        <item name="pspdf__contextualToolbarStyle">@style/ContextualToolbarStyle</item>
-    </style>
-
 </resources>

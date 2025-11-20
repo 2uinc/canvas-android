@@ -35,9 +35,5 @@
     <string name="deleteCommentConfirmation">Wollen Sie diesen Kommentar wirklich löschen?</string>
     <string name="deleteHeadCommentConfirmation">Wenn Sie diesen Kommentar löschen, werden auch alle mit dieser Anmerkung assoziierten Kommentare gelöscht. Möchten Sie dies wirklich tun?</string>
     <string name="sendingSimple">Wird gesendet</string>
-    <string name="pspdf__annotation_type_stamp">Hinweisfarbe</string>
-
     <string name="removedComment">%1$s entfernt von %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

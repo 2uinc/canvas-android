@@ -14,7 +14,7 @@
   ~     limitations under the License.
   ~
   -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="noFilesFound">No Files Found</string>
     <string name="searchFilesHint">Search files</string>
     <string name="fileSearchInstructions">Enter a search term with three or more characters</string>
@@ -205,7 +205,7 @@
     <string name="sortByTime">Sort by Time</string>
     <string name="sortByType">Sort by Type</string>
     <string name="sortByDialogCancel">Cancel</string>
-    <string name="assignmentsListAllGradingPeriods">All</string>
+    <string name="assignmentsListAllGradingPeriods" tools:ignore="ExtraTranslation">All</string>
     <string name="a11y_sortByTimeButton">Sort assignments button, sort by time</string>
     <string name="a11y_sortByTypeButton">Sort assignments button, sort by type</string>
     <string name="a11y_assignmentsSortedByTime">Assignments sorted by time</string>

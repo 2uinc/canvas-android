@@ -51,7 +51,6 @@ android {
         /* Add private data */
         PrivateData.merge(project, "student")
         buildConfigField "String", "TRANSLATION_TAGS", "\"${LocaleScanner.getAvailableLanguageTags(project)}\""
-        buildConfigField "String", "PSPDFKIT_LICENSE_KEY", "\"$pspdfkitLicenseKey\""
 
         testBuildType = "debug"
 

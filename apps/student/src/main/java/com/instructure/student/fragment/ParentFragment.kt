@@ -114,8 +114,7 @@ abstract class ParentFragment : BaseCanvasDialogFragment(), FragmentInteractions
                             } else if (loadedMedia.intent != null && context != null) {
                                 // Show pdf with PSPDFkit
                                 if (loadedMedia.intent?.type?.contains("pdf") == true && !loadedMedia.isUseOutsideApps) {
-                                    val uri = loadedMedia.intent!!.data
-                                    FileUtils.showPdfDocument(uri!!, loadedMedia, requireContext())
+                                    FileUtils.showPdfDocument(loadedMedia, requireContext())
                                 } else if (loadedMedia.intent?.type == "video/mp4") {
                                     activity?.startActivity(VideoViewActivity.createIntent(requireContext(), loadedMedia.intent!!.dataString))
                                 } else {

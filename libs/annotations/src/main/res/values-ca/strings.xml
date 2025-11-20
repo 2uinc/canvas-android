@@ -35,8 +35,6 @@
     <string name="deleteCommentConfirmation">Segur que voleu suprimir aquest comentari?</string>
     <string name="deleteHeadCommentConfirmation">Si suprimiu aquest comentari, també se suprimiran tots els comentaris associats a aquesta anotació. Segur que ho voleu fer?</string>
     <string name="sendingSimple">S\'està enviant</string>
-    <string name="pspdf__annotation_type_stamp">Color de la nota</string>
     <string name="removedComment">Eliminat el %1$s per %2$s</string>
 
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

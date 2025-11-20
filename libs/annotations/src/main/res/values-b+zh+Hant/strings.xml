@@ -35,9 +35,7 @@
     <string name="deleteCommentConfirmation">您是否確定要刪除此評論？</string>
     <string name="deleteHeadCommentConfirmation">刪除此評論將會刪除與此註釋相關的所有評論。是否確定要這樣做？</string>
     <string name="sendingSimple">正在發送</string>
-    <string name="pspdf__annotation_type_stamp">注釋顏色</string>
 
     <string name="removedComment">%1$s 由 %2$s移除</string>
 
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

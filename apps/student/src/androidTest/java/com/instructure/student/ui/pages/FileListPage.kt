@@ -95,10 +95,6 @@ class FileListPage(val searchable: Searchable) : BasePage(R.id.fileListPage) {
         onView(withText(android.R.string.ok)).click()
     }
 
-    fun assertPdfPreviewDisplayed() {
-        waitForViewWithId(R.id.pspdf__menu_option_edit_annotations).assertDisplayed()
-    }
-
     // Doesn't worry about having scrolling to the top of the page first...
     fun refresh() {
         onView(allOf(withId(R.id.swipeRefreshLayout), isDisplayingAtLeast(50)))

@@ -17,9 +17,4 @@
   -->
 
 <resources>
-
-    <style name="PSPDFAnnotationCreationToolbarIconsStyle">
-        <item name="pspdf__redoIcon">@drawable/pspdf__ic_undo</item>
-        <item name="pspdf__undoIcon">@drawable/pspdf__ic_redo</item>
-    </style>
 </resources>

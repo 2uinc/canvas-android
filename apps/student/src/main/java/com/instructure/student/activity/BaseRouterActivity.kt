@@ -113,8 +113,7 @@ abstract class BaseRouterActivity : CallbackActivity(), FullScreenInteractions {
                                 InternalWebviewFragment.loadInternalWebView(this@BaseRouterActivity, InternalWebviewFragment.makeRoute(loadedMedia.bundle!!))
                             } else if (loadedMedia.intent != null) {
                                 if (loadedMedia.intent!!.type!!.contains("pdf")) {
-                                    val uri = loadedMedia.intent!!.data
-                                    FileUtils.showPdfDocument(uri!!, loadedMedia, context)
+                                    FileUtils.showPdfDocument(loadedMedia, context)
                                 } else {
                                     context.startActivity(loadedMedia.intent)
                                 }

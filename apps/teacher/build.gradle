@@ -58,7 +58,6 @@ android {
 
         /* Add private data */
         PrivateData.merge(project, "teacher")
-        buildConfigField "String", "PSPDFKIT_LICENSE_KEY", "\"$pspdfkitLicenseKey\""
     }
 
     bundle {
@@ -184,8 +183,6 @@ android {
         execution 'ANDROIDX_TEST_ORCHESTRATOR'
         unitTests.includeAndroidResources = true
     }
-
-
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
