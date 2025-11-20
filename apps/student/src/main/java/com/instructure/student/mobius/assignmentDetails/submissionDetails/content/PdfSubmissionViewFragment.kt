@@ -30,7 +30,7 @@ class PdfSubmissionViewFragment : BaseCanvasFragment() {
     private var courseId by LongArg()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return PdfStudentSubmissionView(requireActivity(), pdfUrl, courseId, childFragmentManager)
+        return PdfStudentSubmissionView(requireActivity(), pdfUrl, courseId)
     }
 
     companion object {

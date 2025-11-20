@@ -43,68 +43,7 @@ object FileUtils {
         context: Context,
         submissionTarget: ShareFileSubmissionTarget? = null
     ) {
-        val annotationCreationList = listOf(
-                AnnotationTool.INK,
-                AnnotationTool.HIGHLIGHT,
-                AnnotationTool.STRIKEOUT,
-                AnnotationTool.SQUARE,
-                AnnotationTool.NOTE,
-                AnnotationTool.FREETEXT,
-                AnnotationTool.ERASER
-        )
-
-        val annotationEditList = listOf(
-            AnnotationType.INK,
-            AnnotationType.HIGHLIGHT,
-            AnnotationType.STRIKEOUT,
-            AnnotationType.SQUARE,
-            AnnotationType.NOTE,
-            AnnotationType.FREETEXT,
-            AnnotationType.NONE // Wee need this to enable the eraser
-        )
-        if (!PSPDFKitPreferences.get(context).isAnnotationCreatorSet) {
-            PSPDFKitPreferences.get(context).setAnnotationCreator(ApiPrefs.user?.shortName.orEmpty())
-        }
-
-        val pspdfActivityConfiguration: PdfActivityConfiguration
-
-        if (loadedMedia.isSubmission) {
-            // We don't want to allow users to edit for submission viewing
-            pspdfActivityConfiguration = PdfActivityConfiguration.Builder(context)
-                .scrollDirection(PageScrollDirection.HORIZONTAL)
-                .showThumbnailGrid()
-                .setThumbnailBarMode(ThumbnailBarMode.THUMBNAIL_BAR_MODE_PINNED)
-                .disableAnnotationEditing()
-                .disableAnnotationList()
-                .disableDocumentEditor()
-                .fitMode(PageFitMode.FIT_TO_WIDTH)
-                .build()
-        } else {
-            // Standard behavior
-            pspdfActivityConfiguration = PdfActivityConfiguration.Builder(context)
-                .scrollDirection(PageScrollDirection.HORIZONTAL)
-                .showThumbnailGrid()
-                .setDocumentInfoViewSeparated(false)
-                .enableDocumentEditor()
-                .enabledAnnotationTools(annotationCreationList)
-                .editableAnnotationTypes(annotationEditList)
-                .fitMode(PageFitMode.FIT_TO_WIDTH)
-                .build()
-        }
-
-        if (PSPDFKit.isOpenableUri(context, uri)) {
-            val intent = PdfActivityIntentBuilder
-                .fromUri(context, uri)
-                .configuration(pspdfActivityConfiguration)
-                .activityClass(CandroidPSPDFActivity::class.java)
-                .build()
-            intent.putExtra(com.instructure.pandautils.utils.Const.SUBMISSION_TARGET, submissionTarget)
-            context.startActivity(intent)
-        } else {
-            //If we still can't open this PDF, we will then attempt to pass it off to the user's pdfviewer
-            context.startActivity(loadedMedia.intent)
-        }
-
+        context.startActivity(loadedMedia.intent)
     }
 
     @IntegerRes
@@ -120,4 +59,6 @@ object FileUtils {
             }
         }
     }
+
+
 }
