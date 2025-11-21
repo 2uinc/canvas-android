@@ -18,9 +18,12 @@ object PDFUtils {
         val response = client.newCall(request).execute()
 
         val pdfFile = File(context.getExternalFilesDir(null), docName)
-        response.body?.byteStream().use { input ->
-            FileOutputStream(pdfFile).use { output ->
-                input?.copyTo(output)
+
+        if(!pdfFile.exists()) {
+            response.body?.byteStream().use { input ->
+                FileOutputStream(pdfFile).use { output ->
+                    input?.copyTo(output)
+                }
             }
         }
         return pdfFile
