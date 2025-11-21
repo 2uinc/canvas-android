@@ -85,7 +85,7 @@
                 style="@style/ButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_marginTop="48dp"
-                android:text="@string/utils_openPDFAnotherApp"/>
+                android:text="@string/utils_openWithAnotherApp"/>
 
         </LinearLayout>
 
