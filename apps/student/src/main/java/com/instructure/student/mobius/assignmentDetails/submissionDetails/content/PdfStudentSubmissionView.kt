@@ -66,7 +66,7 @@ class PdfStudentSubmissionView(
 
     override fun onFileInitialized() {
         CoroutineScope(Dispatchers.Main).launch {
-            binding.openExternallyButton.setText(R.string.utils_openPDFAnotherApp)
+            binding.openExternallyButton.setText(R.string.utils_openWithAnotherApp)
             binding.openExternallyButton.isEnabled = true
         }
     }

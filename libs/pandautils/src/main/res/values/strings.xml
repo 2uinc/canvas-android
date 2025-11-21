@@ -407,9 +407,8 @@
     <string name="utils_unableToViewInBrowser">We are unable to find an external app to view this LTI tool.</string>
 
     <string name="utils_unsupportedFileMessage">This file could not be displayed. Use the button below to open the file with another app on your device.</string>
-    <string name="utils_pdfFileMessage" translatable="false">This file is available to view. Use the button below to open the file with another app on your device.</string>
+    <string name="utils_pdfFileMessage" translatable="false">Use the button below to open the file with another app on your device.</string>
     <string name="utils_openWithAnotherApp">Open with…</string>
-    <string name="utils_openPDFAnotherApp" translatable="false">Open PDF</string>
     <string name="utils_couldNotPlayFormat">This media format is not supported</string>
     <string name="utils_fullscreen">fullscreen</string>
 
