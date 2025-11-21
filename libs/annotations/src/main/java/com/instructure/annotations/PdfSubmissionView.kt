@@ -62,19 +62,20 @@ abstract class PdfSubmissionView(
     abstract var pdfContentJob: WeaveCoroutine
     protected lateinit var docSession: DocSession
     protected lateinit var apiValues: ApiValues
-    private var fileJob: Job? = null
 
     @get:ColorRes
     abstract val progressColor: Int
 
     lateinit var file: File
 
+    protected open fun onFileInitialized() {}
+
+
     abstract fun showNoInternetDialog()
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         pdfContentJob?.cancel()
-        fileJob?.cancel()
     }
 
     protected fun handlePdfContent(url: String) {
@@ -96,13 +97,13 @@ abstract class PdfSubmissionView(
                         )
                     }
 
-                    load(apiValues.pdfUrl, docSession.pdfjs.documentName) {}
+                    load(apiValues.pdfUrl, docSession.pdfjs.documentName)
                 } else {
                     toast(R.string.errorOccurred)
                 }
             } else {
                 //keep things working if they don't have canvadocs
-                load(url, docSession.pdfjs.documentName) { }
+                load(url, docSession.pdfjs.documentName)
             }
         } catch {
             // Show error
@@ -112,14 +113,17 @@ abstract class PdfSubmissionView(
     }
 
 
-    protected fun load(url: String, docName: String, onFinished: (Uri) -> Unit) {
+    protected fun load(url: String, docName: String) {
         CoroutineScope(Dispatchers.IO).launch {
             val fileName = URLDecoder.decode(docName, StandardCharsets.UTF_8.toString())
             file = PDFUtils.downloadPdf(url, fileName, context)
+            onFileInitialized()
         }
     }
 
     protected fun openPdf() {
-        PDFUtils.openPdf(context, file)
+        if(::file.isInitialized) {
+            PDFUtils.openPdf(context, file)
+        }
     }
 }

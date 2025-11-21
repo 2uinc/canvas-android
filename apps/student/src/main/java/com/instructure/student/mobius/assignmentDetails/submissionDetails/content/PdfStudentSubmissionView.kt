@@ -24,7 +24,10 @@ import com.instructure.canvasapi2.utils.weave.WeaveCoroutine
 import com.instructure.pandautils.utils.setVisible
 import com.instructure.student.R
 import com.instructure.student.databinding.ViewPdfStudentSubmissionBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @SuppressLint("ViewConstructor")
 class PdfStudentSubmissionView(
@@ -61,8 +64,17 @@ class PdfStudentSubmissionView(
         setup()
     }
 
+    override fun onFileInitialized() {
+        CoroutineScope(Dispatchers.Main).launch {
+            binding.openExternallyButton.setText(R.string.utils_openPDFAnotherApp)
+            binding.openExternallyButton.isEnabled = true
+        }
+    }
+
     fun setup() {
 
+        binding.openExternallyButton.setText(R.string.downloadingFile)
+        binding.openExternallyButton.isEnabled = false
         binding.openExternallyButton.setOnClickListener {
             openPdf()
         }
