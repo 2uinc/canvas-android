@@ -51,3 +51,6 @@ fastlane/.idea
 apps/captures
 
 libs/DocumentScanner/build/
+apps/buildSrc/src/main/java/candroid.keystore
+open_source_data/student/google-services.json
+open_source_data/student/google-services.json

@@ -20,20 +20,9 @@ package com.instructure.student.util
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.IntegerRes
-import com.instructure.canvasapi2.utils.ApiPrefs
 import com.instructure.pandautils.loaders.OpenMediaAsyncTaskLoader
 import com.instructure.student.R
-import com.instructure.student.activity.CandroidPSPDFActivity
 import com.instructure.pandautils.features.shareextension.ShareFileSubmissionTarget
-import com.pspdfkit.PSPDFKit
-import com.pspdfkit.annotations.AnnotationType
-import com.pspdfkit.configuration.activity.PdfActivityConfiguration
-import com.pspdfkit.configuration.activity.ThumbnailBarMode
-import com.pspdfkit.configuration.page.PageFitMode
-import com.pspdfkit.configuration.page.PageScrollDirection
-import com.pspdfkit.preferences.PSPDFKitPreferences
-import com.pspdfkit.ui.PdfActivityIntentBuilder
-import com.pspdfkit.ui.special_mode.controller.AnnotationTool
 
 object FileUtils {
 
