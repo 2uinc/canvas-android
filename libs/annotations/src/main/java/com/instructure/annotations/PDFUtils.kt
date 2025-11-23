@@ -22,7 +22,7 @@ object PDFUtils {
 
             val pdfFile = File(context.getExternalFilesDir(null), docName)
 
-            if(!pdfFile.exists()) {
+            if (!pdfFile.exists()) {
                 response.body?.byteStream().use { input ->
                     FileOutputStream(pdfFile).use { output ->
                         input?.copyTo(output)
