@@ -57,8 +57,6 @@ abstract class PdfSubmissionView(
     private val courseId: Long
 ) : FrameLayout(context) {
 
-    private var openMediaBundle: Bundle? = null
-
     abstract var pdfContentJob: WeaveCoroutine
     protected lateinit var docSession: DocSession
     protected lateinit var apiValues: ApiValues
@@ -69,9 +67,6 @@ abstract class PdfSubmissionView(
     lateinit var file: File
 
     protected open fun onFileInitialized() {}
-
-
-    abstract fun showNoInternetDialog()
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
