@@ -27,7 +27,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         app:pclv_indeterminate="true"
-        android:visibility="gone"
         app:pclv_override_color="@color/login_studentAppTheme"/>
 
     <ScrollView
@@ -35,6 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
+        android:visibility="gone"
         android:scrollbars="none">
 
         <LinearLayout
