@@ -9,24 +9,26 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-object PDFUtils {
+    suspend fun downloadPdf(url: String, docName: String, context: Context): File {
+        return withContext(Dispatchers.IO) {
+            val client = OkHttpClient()
+            val request = Request.Builder().url(url).build()
+            val response = client.newCall(request).execute()
 
-    fun downloadPdf(url: String, docName: String, context: Context): File {
-        val client = OkHttpClient()
-        val request = Request.Builder().url(url).build()
-        val response = client.newCall(request).execute()
+            val pdfFile = File(context.getExternalFilesDir(null), docName)
 
-        val pdfFile = File(context.getExternalFilesDir(null), docName)
-
-        if (!pdfFile.exists()) {
-            response.body?.byteStream().use { input ->
-                FileOutputStream(pdfFile).use { output ->
-                    input?.copyTo(output)
+            if(!pdfFile.exists()) {
+                response.body?.byteStream().use { input ->
+                    FileOutputStream(pdfFile).use { output ->
+                        input?.copyTo(output)
+                    }
                 }
             }
+            pdfFile
         }
-        return pdfFile
     }
 
 
