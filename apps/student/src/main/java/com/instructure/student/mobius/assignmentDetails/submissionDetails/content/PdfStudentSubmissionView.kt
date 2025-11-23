@@ -87,8 +87,4 @@ class PdfStudentSubmissionView(
         super.onDetachedFromWindow()
         initJob?.cancel()
     }
-
-    override fun showNoInternetDialog() {
-        TODO("Not yet implemented")
-    }
 }
