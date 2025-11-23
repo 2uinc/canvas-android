@@ -12,6 +12,8 @@ import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+class PDFUtils {
+
     suspend fun downloadPdf(url: String, docName: String, context: Context): File {
         return withContext(Dispatchers.IO) {
             val client = OkHttpClient()
