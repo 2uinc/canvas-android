@@ -50,7 +50,6 @@ class PdfStudentSubmissionView(
         get() = R.color.login_studentAppTheme
 
     init {
-
         binding = ViewPdfStudentSubmissionBinding.inflate(LayoutInflater.from(context), this, true)
         setLoading(true)
     }
@@ -72,7 +71,7 @@ class PdfStudentSubmissionView(
 
     fun setup() {
 
-        binding.openExternallyButton.setText(R.string.downloadingFile)
+        binding.openExternallyButton.setText(R.string.downloadingInProgress)
         binding.openExternallyButton.isEnabled = false
 
         binding.openExternallyButton.setOnClickListener {

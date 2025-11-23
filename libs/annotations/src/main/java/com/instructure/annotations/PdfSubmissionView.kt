@@ -59,7 +59,7 @@ abstract class PdfSubmissionView(
 
     abstract var pdfContentJob: WeaveCoroutine
 
-    abstract var pdfdownloadJob: Job
+    lateinit var pdfdownloadJob: Job
     protected lateinit var docSession: DocSession
     protected lateinit var apiValues: ApiValues
 
