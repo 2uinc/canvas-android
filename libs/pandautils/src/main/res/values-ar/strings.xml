@@ -382,6 +382,7 @@
     <string name="utils_uploadingFile">جارٍ تحميل الملف&#8230;</string>
     <string name="utils_noApps">لا توجد أي تطبيقات مثبتة على جهازك قادرة على معالجة هذا الملف.</string>
     <string name="utils_errorGettingPhoto">حدث خطأ أثناء الحصول على الصورة. يرجى إعادة المحاولة.</string>
+    <string name="utils_oneOrMoreExtensionNotAllowed">ملف واحد أو أكثر له امتداد غير مسموح به</string>
     <string name="utils_fileUploadNotSupported">لا يمكنك تحميل ملفات إلى المهمة المحددة.</string>
     <string name="utils_noFilesUploaded">لم تقم بتحديد أي ملفات.</string>
     <string name="utils_attachments">المرفقات</string>
