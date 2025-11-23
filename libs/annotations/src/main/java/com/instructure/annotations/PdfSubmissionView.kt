@@ -116,7 +116,7 @@ abstract class PdfSubmissionView(
     protected fun load(url: String, docName: String) {
         CoroutineScope(Dispatchers.IO).launch {
             val fileName = URLDecoder.decode(docName, StandardCharsets.UTF_8.toString())
-            file = PDFUtils().downloadPdf(url, fileName, context)
+            file = PDFUtils.downloadPdf(url, fileName, context)
             withContext(Dispatchers.Main){
                 onFileInitialized()
             }
@@ -125,7 +125,7 @@ abstract class PdfSubmissionView(
 
     protected fun openPdf() {
         if(::file.isInitialized) {
-            PDFUtils().openPdf(context, file)
+            PDFUtils.openPdf(context, file)
         }
     }
 }
