@@ -65,7 +65,6 @@ class PdfStudentSubmissionView(
         setup()
     }
 
-    @SuppressLint("ResourceAsColor")
     override fun onFileInitialized() {
         binding.openExternallyButton.setText(R.string.utils_openWithAnotherApp)
         binding.openExternallyButton.isEnabled = true
