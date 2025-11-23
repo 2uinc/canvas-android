@@ -58,6 +58,8 @@ abstract class PdfSubmissionView(
 ) : FrameLayout(context) {
 
     abstract var pdfContentJob: WeaveCoroutine
+
+    abstract var pdfdownloadJob: Job
     protected lateinit var docSession: DocSession
     protected lateinit var apiValues: ApiValues
 
@@ -70,7 +72,8 @@ abstract class PdfSubmissionView(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        pdfContentJob?.cancel()
+        pdfContentJob.cancel()
+        pdfdownloadJob.cancel()
     }
 
     protected fun handlePdfContent(url: String) {
@@ -109,7 +112,7 @@ abstract class PdfSubmissionView(
 
 
     protected fun load(url: String, docName: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+         pdfdownloadJob = CoroutineScope(Dispatchers.IO).launch {
             val fileName = URLDecoder.decode(docName, StandardCharsets.UTF_8.toString())
             file = PDFUtils.downloadPdf(url, fileName, context)
             withContext(Dispatchers.Main){
