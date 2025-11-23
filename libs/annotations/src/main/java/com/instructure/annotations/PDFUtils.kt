@@ -20,6 +20,9 @@ object PDFUtils {
             val request = Request.Builder().url(url).build()
             val response = client.newCall(request).execute()
 
+            if (!response.isSuccessful) {
+                throw Exception("Failed to download PDF: HTTP ${response.code}")
+            }
             val pdfFile = File(context.getExternalFilesDir(null), docName)
 
             if (!pdfFile.exists()) {
