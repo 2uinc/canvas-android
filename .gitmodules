@@ -1,3 +1,4 @@
 [submodule "apps/mobile-offline-downloader-android"]
 	path = apps/mobile-offline-downloader-android
 	url = https://github.com/2uinc/mobile-offline-downloader-android.git
+	branch = main

@@ -193,16 +193,6 @@
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn okhttp3.**
 
-#PSPDFKit
--keep class com.pspdfkit.** { *; }
--dontwarn sun.misc.**
--dontwarn edu.umd.cs.findbugs.annotations.SuppressWarnings
--keepnames class io.reactivex.android.schedulers.AndroidSchedulers
--keepnames class io.reactivex.Observable
--dontwarn com.pspdfkit.**
--dontwarn android.view.WindowInsets
--dontwarn android.graphics.Insets
-
 # Keep third party lib class names. PSPDFKit relies on those class names to be present.
 -keepnames class rx.android.schedulers.AndroidSchedulers
 -keepnames class rx.Observable

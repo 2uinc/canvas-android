@@ -122,10 +122,6 @@ class AnnotationCommentListFragment : ParentFragment() {
         sendCommentJob?.cancel()
         editCommentJob?.cancel()
         deleteCommentJob?.cancel()
-        EventBus.getDefault().post(
-            PdfStudentSubmissionView.AnnotationCommentDeleteAcknowledged(
-                annotations.filter { it.deleted && it.deleteAcknowledged.isNullOrEmpty() },
-                assigneeId))
     }
 
     fun configureRecyclerView() {
@@ -186,7 +182,6 @@ class AnnotationCommentListFragment : ParentFragment() {
                 val rootComment = annotations.firstOrNull()
                 if (rootComment != null) {
                     val newCommentReply = awaitApi<CanvaDocAnnotation> { CanvaDocsManager.putAnnotation(apiValues.sessionId, generateAnnotationId(), createCommentReplyAnnotation(comment, headAnnotationId, apiValues.documentId, ApiPrefs.user?.id.toString(), rootComment.page), apiValues.canvaDocsDomain, it) }
-                    EventBus.getDefault().post(PdfStudentSubmissionView.AnnotationCommentAdded(newCommentReply, assigneeId))
                     // The put request doesn't return this property, so we need to set it to true
                     newCommentReply.isEditable = true
                     recyclerAdapter?.add(newCommentReply) //ALSO, add it to the UI
@@ -204,7 +199,6 @@ class AnnotationCommentListFragment : ParentFragment() {
     private fun editComment(annotation: CanvaDocAnnotation, position: Int) {
         editCommentJob = tryWeave {
             awaitApi<CanvaDocAnnotation> { CanvaDocsManager.putAnnotation(apiValues.sessionId, annotation.annotationId, annotation, apiValues.canvaDocsDomain, it) }
-            EventBus.getDefault().post(PdfStudentSubmissionView.AnnotationCommentEdited(annotation, assigneeId))
             // Update the UI
             recyclerAdapter?.add(annotation)
             recyclerAdapter?.notifyItemChanged(position)
@@ -219,10 +213,8 @@ class AnnotationCommentListFragment : ParentFragment() {
             awaitApi<ResponseBody> { CanvaDocsManager.deleteAnnotation(apiValues.sessionId, annotation.annotationId, apiValues.canvaDocsDomain, it) }
             if(annotation.annotationId == annotations.firstOrNull()?.annotationId) {
                 //this is the root comment, deleting this deletes the entire thread
-                EventBus.getDefault().post(PdfStudentSubmissionView.AnnotationCommentDeleted(annotation, true, assigneeId))
                 headAnnotationDeleted()
             } else {
-                EventBus.getDefault().post(PdfStudentSubmissionView.AnnotationCommentDeleted(annotation, false, assigneeId))
                 recyclerAdapter?.remove(annotation)
                 recyclerAdapter?.notifyItemChanged(position)
             }

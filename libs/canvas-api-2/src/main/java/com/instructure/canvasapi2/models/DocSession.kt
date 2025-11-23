@@ -22,25 +22,28 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class DocSession(
-        @SerializedName("document_id")
-        var documentId: String,
-        @SerializedName("urls")
-        var annotationUrls: AnnotationUrls,
-        @SerializedName("annotations")
-        var annotationMetadata: AnnotationMetadata? = null,
-        @SerializedName("panda_push")
-        var pandaPush: PandaPush? = null,
-        var rotations: HashMap<String, Int>? = null
+    @SerializedName("document_id")
+    var documentId: String,
+    @SerializedName("urls")
+    var annotationUrls: AnnotationUrls,
+    @SerializedName("pdfjs")
+    var pdfjs: Pdfjs,
+    @SerializedName("annotations")
+    var annotationMetadata: AnnotationMetadata? = null,
+    @SerializedName("panda_push")
+    var pandaPush: PandaPush? = null,
+    var rotations: HashMap<String, Int>? = null
 ) : Parcelable
 
 @Parcelize
 data class AnnotationMetadata(
-        var enabled: Boolean,
-        @SerializedName("user_name")
-        var userName: String,
-        @SerializedName("user_id")
-        var userId: String,
-        var permissions: String? = null) : Parcelable {
+    var enabled: Boolean,
+    @SerializedName("user_name")
+    var userName: String,
+    @SerializedName("user_id")
+    var userId: String,
+    var permissions: String? = null
+) : Parcelable {
 
     /*
         The permission field is given to us as a string with the form:
@@ -50,31 +53,39 @@ data class AnnotationMetadata(
         -undefined/null (no permission present)
     */
 
-    fun canRead() : Boolean = permissions?.contains("read") ?: false
-    fun canWrite() : Boolean = permissions?.contains("write") ?: false
-    fun canManage() : Boolean = permissions?.contains("manage") ?: false
+    fun canRead(): Boolean = permissions?.contains("read") ?: false
+    fun canWrite(): Boolean = permissions?.contains("write") ?: false
+    fun canManage(): Boolean = permissions?.contains("manage") ?: false
 }
 
 
 @Parcelize
 data class AnnotationUrls(
-        @SerializedName("pdf_download")
-        var pdfDownload: String,
-        @SerializedName("annotated_pdf_download")
-        var annotatedPdfDownload: String
+    @SerializedName("pdf_download")
+    var pdfDownload: String,
+    @SerializedName("annotated_pdf_download")
+    var annotatedPdfDownload: String
+) : Parcelable
+
+@Parcelize
+data class Pdfjs(
+    @SerializedName("documentName")
+    val documentName: String,
+    @SerializedName("url")
+    val url: String
 ) : Parcelable
 
 @Parcelize
 data class PandaPush(
-        @SerializedName("document_channel")
-        var documentChannel: String? = null
+    @SerializedName("document_channel")
+    var documentChannel: String? = null
 ) : Parcelable
 
 @Parcelize
 data class ApiValues(
-        val documentId: String,
-        val pdfUrl: String,
-        val sessionId: String,
-        val canvaDocsDomain: String
+    val documentId: String,
+    val pdfUrl: String,
+    val sessionId: String,
+    val canvaDocsDomain: String
 ) : Parcelable
 

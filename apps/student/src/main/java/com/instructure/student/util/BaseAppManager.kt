@@ -35,10 +35,6 @@ import com.instructure.pandautils.utils.ThemePrefs
 import com.instructure.student.BuildConfig
 import com.instructure.student.R
 import com.instructure.student.activity.NavigationActivity
-import com.pspdfkit.PSPDFKit
-import com.pspdfkit.exceptions.InvalidPSPDFKitLicenseException
-import com.pspdfkit.exceptions.PSPDFKitInitializationFailedException
-import com.pspdfkit.initialization.InitializationOptions
 import com.zynksoftware.documentscanner.ui.DocumentScanner
 
 abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), AnalyticsEventHandling {
@@ -60,8 +56,6 @@ abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), Analyti
 
         // Hold off on initializing this until we emit the user properties.
         RemoteConfigUtils.initialize()
-
-        //initPSPDFKit()
 
         initDocumentScanning()
 
@@ -108,16 +102,6 @@ abstract class BaseAppManager : com.instructure.canvasapi2.AppManager(), Analyti
 
     override fun trackTiming(category: String?, name: String?, label: String?, duration: Long) {
 
-    }
-
-    private fun initPSPDFKit() {
-        try {
-            PSPDFKit.initialize(this, InitializationOptions(licenseKey = BuildConfig.PSPDFKIT_LICENSE_KEY))
-        } catch (e: PSPDFKitInitializationFailedException) {
-            Logger.e("Current device is not compatible with PSPDFKIT!")
-        } catch (e: InvalidPSPDFKitLicenseException) {
-            Logger.e("Invalid or Trial PSPDFKIT License!")
-        }
     }
 
     private fun initDocumentScanning() {
