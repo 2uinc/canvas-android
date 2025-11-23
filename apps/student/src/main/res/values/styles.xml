@@ -35,71 +35,8 @@
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowAnimationStyle">@null</item>
-    </style>
-
-    <!-- Used for stand alone PSPDFKit activity, pdf fragment uses values in CanvasMaterialTheme_Default-->
-    <style name="PSPDFKitTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
-        <item name="colorPrimary">@color/ash</item>
-        <item name="colorAccent">@color/ash</item>
-        <item name="colorPrimaryDark">@color/ash</item>
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="windowActionModeOverlay">true</item>
-        <item name="android:alertDialogTheme">@style/CanvasDialogTheme_Default</item>
-        <item name="alertDialogTheme">@style/CanvasDialogTheme_Default</item>
-        <item name="pspdf__annotationCreationToolbarIconsStyle">@style/PSPDFAnnotationCreationToolbarIconsStyle</item>
-        <item name="pspdf__actionBarIconsStyle">@style/PSPDFKitActionBarIconsStyle</item>
-        <item name="pspdf__contextualToolbarStyle">@style/ContextualToolbarStyle</item>
-    </style>
-
-    <style name="PSPDFKitActionBarIconsStyle">
-        <item name="pspdf__iconsColor">@color/white</item>
-        <item name="pspdf__iconsColorActivated">@color/textInfo</item>
-    </style>
-
-    <style name="ContextualToolbarStyle">
-        <item name="pspdf__backgroundColor">@color/ash</item>
-        <item name="pspdf__submenuBackgroundColor">@color/licorice</item>
-        <item name="pspdf__iconsColor">@color/white</item>
-    </style>
-
-    <style name="AnnotationCreationToolbarIconsStyle">
-        <item name="pspdf__iconsColor">@color/white</item>
-        <item name="pspdf__highlightIcon">@drawable/ic_highlighter_icon</item>
-        <item name="pspdf__strikeoutIcon">@drawable/ic_strike_through_icon</item>
-        <item name="pspdf__stampIcon">@drawable/ic_stamp_icon</item>
-        <item name="pspdf__inkPenIcon">@drawable/ic_ink_icon</item>
-        <item name="pspdf__freeTextIcon">@drawable/ic_text_box_icon</item>
-        <item name="pspdf__squareIcon">@drawable/ic_square_icon</item>
-    </style>
-
-    <style name="AnnotationEditingToolbarIconsStyle">
-        <item name="pspdf__iconsColor">@color/white</item>
-        <item name="pspdf__deleteIcon">@drawable/ic_trash</item>
-        <item name="pspdf__editIcon">@drawable/ic_edit</item>
-    </style>
-
-    <style name="AnnotationNoteHinter">
-        <item name="pspdf__noteHinterColor">@color/textInfo</item>
-        <item name="pspdf__noteHinterAlpha">255</item>
-        <item name="pspdf__noteHinterIcon">@drawable/ic_annotation_comment_indicator</item>
-    </style>
-
-    <style name="StampPickerStyle">
-        <item name="pspdf__maxHeight">380dp</item>
-        <item name="pspdf__maxWidth">100dp</item>
-        <item name="pspdf__backgroundColor">@color/backgroundLightest</item>
-    </style>
-
-    <style name="ModalDialogStyle">
-        <item name="pspdf__titleBackground">@color/ash</item>
-    </style>
-
-    <style name="PropertyInspector">
-        <item name="pspdf__backgroundColor">@color/backgroundLightest</item>
-        <item name="pspdf__textColor">@color/textDarkest</item>
-    </style>
-
+    </style> ̰
+     ̰
     <style name="Theme.Notorious" parent="CanvasMaterialTheme_Default">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>

@@ -21,6 +21,7 @@ import android.view.LayoutInflater
 import androidx.fragment.app.FragmentActivity
 import com.instructure.annotations.PdfSubmissionView
 import com.instructure.canvasapi2.utils.weave.WeaveCoroutine
+import com.instructure.pandautils.utils.bind
 import com.instructure.pandautils.utils.setVisible
 import com.instructure.student.R
 import com.instructure.student.databinding.ViewPdfStudentSubmissionBinding
@@ -64,17 +65,17 @@ class PdfStudentSubmissionView(
         setup()
     }
 
+    @SuppressLint("ResourceAsColor")
     override fun onFileInitialized() {
-        CoroutineScope(Dispatchers.Main).launch {
-            binding.openExternallyButton.setText(R.string.utils_openWithAnotherApp)
-            binding.openExternallyButton.isEnabled = true
-        }
+        binding.openExternallyButton.setText(R.string.utils_openWithAnotherApp)
+        binding.openExternallyButton.isEnabled = true
     }
 
     fun setup() {
 
         binding.openExternallyButton.setText(R.string.downloadingFile)
         binding.openExternallyButton.isEnabled = false
+
         binding.openExternallyButton.setOnClickListener {
             openPdf()
         }

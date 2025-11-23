@@ -117,7 +117,9 @@ abstract class PdfSubmissionView(
         CoroutineScope(Dispatchers.IO).launch {
             val fileName = URLDecoder.decode(docName, StandardCharsets.UTF_8.toString())
             file = PDFUtils.downloadPdf(url, fileName, context)
-            onFileInitialized()
+            withContext(Dispatchers.Main){
+                onFileInitialized()
+            }
         }
     }
 
