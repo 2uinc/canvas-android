@@ -53,9 +53,7 @@ class AnnotationSubmissionViewFragment : BaseCanvasFragment() {
                 PdfStudentSubmissionView(
                     requireActivity(),
                     it,
-                    courseId,
-                    childFragmentManager,
-                    studentAnnotationView = true,
+                    courseId
                 )
             )
         }

@@ -71,8 +71,6 @@ class AnnotationSubmissionUploadFragment : BaseCanvasFragment() {
                 PdfStudentSubmissionView(
                     activity = requireActivity(),
                     pdfUrl = it,
-                    fragmentManager = childFragmentManager,
-                    studentAnnotationSubmit = true,
                     courseId = canvasContext.id
                 )
             )
