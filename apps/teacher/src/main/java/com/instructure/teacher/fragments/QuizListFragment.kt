@@ -50,7 +50,6 @@ import com.instructure.teacher.presenters.QuizListPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.RecyclerViewUtils
 import com.instructure.teacher.utils.setupBackButton
-import com.instructure.teacher.view.QuizSubmissionGradedEvent
 import com.instructure.teacher.viewinterface.QuizListView
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -190,12 +189,6 @@ class QuizListFragment : BaseExpandableSyncFragment<
             // overwrite the data from the network if we refresh the presenter from here.
             needToForceNetwork = true
         }
-    }
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onQuizGraded(event: QuizSubmissionGradedEvent) {
-        event.once(javaClass.simpleName) { needToForceNetwork = true }
     }
 
     override fun onHandleBackPressed() = binding.quizListToolbar.closeSearch()

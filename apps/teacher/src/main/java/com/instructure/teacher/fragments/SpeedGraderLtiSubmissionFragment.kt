@@ -35,7 +35,6 @@ import com.instructure.pandautils.utils.setVisible
 import com.instructure.pandautils.views.CanvasWebView
 import com.instructure.teacher.R
 import com.instructure.teacher.databinding.FragmentSpeedGraderLtiSubmissionBinding
-import com.instructure.teacher.view.ExternalToolContent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -87,9 +86,9 @@ class SpeedGraderLtiSubmissionFragment : BaseCanvasFragment() {
     }
 
     companion object {
-        fun newInstance(content: ExternalToolContent) = SpeedGraderLtiSubmissionFragment().apply {
-            url = content.url
-        }
+//        fun newInstance(content: ExternalToolContent) = SpeedGraderLtiSubmissionFragment().apply {
+//            url = content.url
+//        }
     }
 }
 

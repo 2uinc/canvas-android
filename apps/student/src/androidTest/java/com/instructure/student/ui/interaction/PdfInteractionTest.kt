@@ -127,55 +127,6 @@ class PdfInteractionTest : StudentComposeTest() {
         fileListPage.assertPdfPreviewDisplayed()
     }
 
-    @Test
-    @TestMetaData(Priority.IMPORTANT, FeatureCategory.ASSIGNMENTS, TestCategory.INTERACTION, SecondaryFeatureCategory.SUBMISSIONS_ANNOTATIONS)
-    fun testAnnotations_openPdfsInPSPDFKitFromLinksInAssignment() {
-        // Annotation toolbar icon needs to be present, this link is specific to assignment details, as that was the advertised use case
-        val data = MockCanvas.init(
-                studentCount = 1,
-                courseCount = 1
-        )
-
-        val course = data.courses.values.first()
-        val student = data.students[0]
-        val token = data.tokenFor(student)!!
-        data.addAssignmentsToGroups(course)
-        tokenLogin(data.domain, token, student)
-        routeTo("courses/${course.id}/assignments", data.domain)
-
-        val fileId = data.newItemId()
-        val url = """https://mock-data.instructure.com/courses/${course.id}/files/${fileId}/download?"""
-
-        data.addFileToCourse(
-            courseId = course.id,
-            displayName = pdfFileName,
-            contentType = "application/pdf",
-            fileId = fileId,
-            url = url
-        )
-
-        val uniqueFileName = OpenMediaAsyncTaskLoader.makeFilenameUnique(pdfFileName, url, fileId.toString())
-
-        cacheFile(student.id.toString(), uniqueFileName)
-
-        val pdfUrlElementId = "testLinkElement"
-        val assignmentDescriptionHtml = """<a id="$pdfUrlElementId" href="$url">pdf baby!!!</a>"""
-
-        val assignment = data.addAssignment(courseId = course.id, submissionTypeList = listOf(Assignment.SubmissionType.ONLINE_UPLOAD), description = assignmentDescriptionHtml)
-
-        assignmentListPage.refreshAssignmentList()
-        assignmentListPage.clickAssignment(assignment)
-        assignmentDetailsPage.assertAssignmentDetails(assignment)
-
-        // Scroll to the description, as it will likely be offscreen for landscape tests
-        assignmentDetailsPage.scrollToAssignmentDescription()
-
-        // Click the url in the description to load the pdf
-        Web.onWebView(withId(R.id.contentWebView))
-            .withElement(DriverAtoms.findElement(Locator.ID, pdfUrlElementId))
-            .perform(DriverAtoms.webClick())
-        fileListPage.assertPdfPreviewDisplayed()
-    }
 
     private fun getToCourse(): MockCanvas {
         val data = MockCanvas.init(

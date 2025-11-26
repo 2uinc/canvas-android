@@ -36,9 +36,7 @@ import com.instructure.teacher.events.SubmissionUpdatedEvent
 import com.instructure.teacher.events.post
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.transformForQuizGrading
-import com.instructure.teacher.view.QuizSubmissionGradedEvent
 import kotlinx.coroutines.Job
-import org.greenrobot.eventbus.EventBus
 
 @ScreenView(SCREEN_VIEW_SPEED_GRADER_QUIZ_WEB_VIEW)
 class SpeedGraderQuizWebViewFragment : InternalWebViewFragment() {
@@ -93,7 +91,7 @@ class SpeedGraderQuizWebViewFragment : InternalWebViewFragment() {
             try {
                 val updatedSubmission = awaitApi<Submission> { SubmissionManager.getSingleSubmission(mCourseId, mAssignmentId, mStudentId, it, true) }
                 updatedSubmission.transformForQuizGrading()
-                EventBus.getDefault().postSticky(QuizSubmissionGradedEvent(updatedSubmission))
+//                EventBus.getDefault().postSticky(QuizSubmissionGradedEvent(updatedSubmission))
                 SubmissionUpdatedEvent(updatedSubmission).post()
             } catch (e: StatusCallbackError) {
                 toast(R.string.error_saving_quiz)

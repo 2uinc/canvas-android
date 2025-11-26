@@ -46,7 +46,6 @@ import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.setupBackButtonWithExpandCollapseAndBack
 import com.instructure.teacher.utils.setupMenu
 import com.instructure.teacher.utils.updateToolbarExpandCollapseIcon
-import com.instructure.teacher.view.MediaContent
 import org.greenrobot.eventbus.EventBus
 
 @ScreenView(SCREEN_VIEW_VIEW_MEDIA)
@@ -213,7 +212,7 @@ class ViewMediaFragment : BaseCanvasFragment(), ShareableFile {
 
     companion object {
 
-        fun newInstance(media: MediaContent) = newInstance(media.uri, media.thumbnailUrl, media.contentType!!, media.displayName)
+//        fun newInstance(media: MediaContent) = newInstance(media.uri, media.thumbnailUrl, media.contentType!!, media.displayName)
 
         fun newInstance(
             uri: Uri,

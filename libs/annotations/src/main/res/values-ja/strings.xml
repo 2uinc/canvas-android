@@ -35,9 +35,5 @@
     <string name="deleteCommentConfirmation">このコメントを削除してもよろしいですか?</string>
     <string name="deleteHeadCommentConfirmation">このコメントを削除すると、この注釈に関連付けられているすべてのコメントが削除されます。よろしいですか？</string>
     <string name="sendingSimple">送信中</string>
-    <string name="pspdf__annotation_type_stamp">ノートの色</string>
-
     <string name="removedComment">%1$sにより除去済%2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

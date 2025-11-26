@@ -190,16 +190,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
-                    <com.pspdfkit.ui.toolbar.ToolbarCoordinatorLayout
-                        android:id="@+id/annotationToolbarLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                    <com.pspdfkit.ui.inspector.PropertyInspectorCoordinatorLayout
-                        android:id="@+id/inspectorCoordinatorLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
                     <ImageView
                         android:id="@+id/commentsButton"
                         android:layout_width="44dp"

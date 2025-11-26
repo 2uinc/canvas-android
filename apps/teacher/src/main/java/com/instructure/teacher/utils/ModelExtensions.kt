@@ -37,7 +37,6 @@ import com.instructure.teacher.fragments.ViewImageFragment
 import com.instructure.teacher.fragments.ViewPdfFragment
 import com.instructure.teacher.fragments.ViewUnsupportedFileFragment
 import com.instructure.teacher.router.RouteMatcher
-import com.pspdfkit.ui.PdfFragment
 
 // region Attachment extensions
 
@@ -81,7 +80,6 @@ fun viewMedia(
     when {
         // PDF
         contentType == "application/pdf" -> {
-            PdfFragment()
             val bundle = ViewPdfFragment.newInstance(url ?: "", toolbarColor, editableFile).nonNullArgs
             if (fullScreen) {
                 RouteMatcher.route(activity, Route(ViewPdfFragment::class.java, null, bundle))
