@@ -27,7 +27,6 @@ import com.instructure.pandautils.features.settings.inboxsignature.InboxSignatur
 import com.instructure.pandautils.features.smartsearch.SmartSearchFragment
 import com.instructure.pandautils.fragments.RemoteConfigParamsFragment
 import com.instructure.pandautils.utils.Const
-import com.instructure.student.AnnotationComments.AnnotationCommentListFragment
 import com.instructure.student.activity.NothingToSeeHereFragment
 import com.instructure.student.features.coursebrowser.CourseBrowserFragment
 import com.instructure.student.features.discussion.details.DiscussionDetailsFragment
@@ -168,7 +167,6 @@ object RouteResolver {
             cls.isA<UrlSubmissionUploadFragment>() -> UrlSubmissionUploadFragment.newInstance(route)
             cls.isA<PickerSubmissionUploadFragment>() -> PickerSubmissionUploadFragment.newInstance(route)
             cls.isA<UploadStatusSubmissionFragment>() -> UploadStatusSubmissionFragment.newInstance(route)
-            cls.isA<AnnotationCommentListFragment>() -> AnnotationCommentListFragment.newInstance(route)
             cls.isA<NothingToSeeHereFragment>() -> NothingToSeeHereFragment.newInstance()
             cls.isA<AnnotationSubmissionUploadFragment>() -> AnnotationSubmissionUploadFragment.newInstance(route)
             cls.isA<PushNotificationPreferencesFragment>() -> PushNotificationPreferencesFragment.newInstance()

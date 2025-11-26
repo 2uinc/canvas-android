@@ -80,10 +80,6 @@ import com.instructure.teacher.presenters.SpeedGraderCommentsPresenter
 import com.instructure.teacher.utils.RecyclerViewUtils
 import com.instructure.teacher.utils.getColorCompat
 import com.instructure.teacher.utils.view
-import com.instructure.teacher.view.CommentTextFocusedEvent
-import com.instructure.teacher.view.MediaCommentDialogClosedEvent
-import com.instructure.teacher.view.SubmissionSelectedEvent
-import com.instructure.teacher.view.UploadMediaCommentEvent
 import com.instructure.teacher.viewinterface.SpeedGraderCommentsView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -221,13 +217,6 @@ class SpeedGraderCommentsFragment : BaseListFragment<SubmissionCommentWrapper, S
             errorLayout?.announceForAccessibility(getString(R.string.sendingSimple))
         }
 
-        commentEditText.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                (requireActivity() as SpeedGraderActivity).openCommentLibrary(mSubmissionId)
-                EventBus.getDefault().post(CommentTextFocusedEvent(mAssignee.id))
-            }
-        }
-
         addAttachment.onClick {
             (requireActivity() as SpeedGraderActivity).closeCommentLibrary()
             SGAddMediaCommentDialog.show(requireActivity().supportFragmentManager,
@@ -266,18 +255,6 @@ class SpeedGraderCommentsFragment : BaseListFragment<SubmissionCommentWrapper, S
 
     override fun checkIfEmpty() = with(binding) {
          RecyclerViewUtils.checkIfEmpty(speedGraderCommentsEmptyView, speedGraderCommentsRecyclerView, swipeRefreshLayout, adapter, presenter.isEmpty)
-    }
-
-    @Suppress("unused")
-    @Subscribe
-    fun onUploadMediaComment(event: UploadMediaCommentEvent) {
-        lifecycleScope.launch {
-            if (mAssignee.id == event.assigneeId) {
-                val id = presenter.createPendingMediaComment(event.file.absolutePath)
-                uploadSGMediaComment(event.file, event.assignmentId, event.courseId, id, event.attemptId)
-                binding.commentInputContainer.addAttachment.isEnabled = true
-            }
-        }
     }
 
     @Suppress("unused")
@@ -343,12 +320,6 @@ class SpeedGraderCommentsFragment : BaseListFragment<SubmissionCommentWrapper, S
         super.onDestroy()
     }
 
-    @Suppress("UNUSED_PARAMETER", "unused")
-    @Subscribe
-    fun onMediaCommentDialogClosed(event: MediaCommentDialogClosedEvent) {
-        binding.commentInputContainer.addAttachment.isEnabled = true
-    }
-
     @Suppress("unused")
     @Subscribe
     fun onUploadMediaCommentSuccess(event: UploadMediaCommentUpdateEvent) {
@@ -387,12 +358,6 @@ class SpeedGraderCommentsFragment : BaseListFragment<SubmissionCommentWrapper, S
             attemptId = attemptId.takeIf { assignmentEnhancementsEnabled },
             mediaCommentId = dbId
         )
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onSwitchSubmission(event: SubmissionSelectedEvent) {
-        presenter.selectedAttemptId = event.submission?.attempt
-        presenter.refresh(false)
     }
 
     companion object {
