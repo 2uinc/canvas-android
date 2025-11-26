@@ -35,4 +35,6 @@
     <string name="deleteHeadCommentConfirmation">Deleting this comment will delete all comments associated with this annotation. Are you sure you want to do this?</string>
     <string name="sendingSimple">Sending</string>
     <string name="removedComment">Removed %1$s by %2$s</string>
+    <string name="noPDFViewerFound" translatable="false">No PDF viewer found</string>
+
 </resources>
