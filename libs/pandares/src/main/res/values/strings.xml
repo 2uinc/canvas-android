@@ -1032,6 +1032,7 @@
     <string name="unsupportedTabLabel">Not supported on this device</string>
 
     <string name="downloadingFile">Downloading</string>
+    <string name="downloadingInProgress" translatable="false">Downloading...</string>
     <string name="downloadFailed">Download failed</string>
     <string name="downloadSuccessful">Download successful</string>
 
