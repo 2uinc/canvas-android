@@ -26,7 +26,6 @@ import com.instructure.pandautils.fragments.HtmlContentFragment
 import com.instructure.pandautils.fragments.RemoteConfigParamsFragment
 import com.instructure.pandautils.utils.Const
 import com.instructure.pandautils.utils.argsWithContext
-import com.instructure.teacher.PSPDFKit.AnnotationComments.AnnotationCommentListFragment
 import com.instructure.teacher.adapters.StudentContextFragment
 import com.instructure.teacher.features.assignment.details.AssignmentDetailsFragment
 import com.instructure.teacher.features.assignment.submission.SubmissionListFragment
@@ -181,8 +180,6 @@ object RouteResolver {
             fragment = ChooseRecipientsFragment.newInstance(route.arguments)
         } else if (SpeedGraderQuizWebViewFragment::class.java.isAssignableFrom(cls)) {
             fragment = SpeedGraderQuizWebViewFragment.newInstance(route.arguments)
-        } else if (AnnotationCommentListFragment::class.java.isAssignableFrom(cls)) {
-            fragment = AnnotationCommentListFragment.newInstance(route.arguments)
         } else if (SettingsFragment::class.java.isAssignableFrom(cls)) {
             fragment = SettingsFragment.newInstance(route)
         } else if (ProfileEditFragment::class.java.isAssignableFrom(cls)) {

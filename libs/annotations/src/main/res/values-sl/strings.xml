@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Ali ste prepričani, da želite odstraniti ta komentar?</string>
     <string name="deleteHeadCommentConfirmation">Z brisanjem tega komentarja bodo odstranjeni vsi komentarji, povezani s to opombo. Ali ste prepričani, da to želite storiti?</string>
     <string name="sendingSimple">Pošiljanje</string>
-    <string name="pspdf__annotation_type_stamp">Barva opombe</string>
     <string name="removedComment">Odstranjeno %1$s, odstranil %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Ydych chi’n siŵr eich bod am ddileu’r sylw hwn?</string>
     <string name="deleteHeadCommentConfirmation">Wrth ddileu’r sylw hwn, bydd yr holl sylwadau sy’n gysylltiedig â’r anodiad hwn yn cael eu dileu. Ydych chi’n siŵr eich bod am wneud hyn?</string>
     <string name="sendingSimple">Wrthi’n anfon</string>
-    <string name="pspdf__annotation_type_stamp">Lliw y Nodyn</string>
     <string name="removedComment">%2$s wedi tynnu %1$s </string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

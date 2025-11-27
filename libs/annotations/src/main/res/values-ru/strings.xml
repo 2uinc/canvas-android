@@ -35,9 +35,5 @@
     <string name="deleteCommentConfirmation">Удалить данный комментарий?</string>
     <string name="deleteHeadCommentConfirmation">Удаление этого комментария приведет к удалению всех связанных с данной аннотацией комментариев. Вы действительно хотите сделать это?</string>
     <string name="sendingSimple">Отправка</string>
-    <string name="pspdf__annotation_type_stamp">Отметить цвет</string>
-
     <string name="removedComment">%1$s удален %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

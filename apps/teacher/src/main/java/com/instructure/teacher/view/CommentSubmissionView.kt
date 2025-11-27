@@ -92,7 +92,7 @@ class CommentSubmissionView(context: Context, val submission: Submission) : Line
             binding.subtitleTextView.text = subtitle
         }
 
-        binding.root.onClick { EventBus.getDefault().post(SubmissionSelectedEvent(submission)) }
+//        binding.root.onClick { EventBus.getDefault().post(SubmissionSelectedEvent(submission)) }
         addView(binding.root)
     }
 
@@ -118,8 +118,8 @@ class CommentSubmissionView(context: Context, val submission: Submission) : Line
             binding.titleTextView.text = attachment.displayName
             binding.subtitleTextView.text = Formatter.formatFileSize(context, attachment.size)
             binding.root.onClick {
-                EventBus.getDefault().post(SubmissionSelectedEvent(submission))
-                EventBus.getDefault().post(SubmissionFileSelectedEvent(submission.id, attachment))
+//                EventBus.getDefault().post(SubmissionSelectedEvent(submission))
+//                EventBus.getDefault().post(SubmissionFileSelectedEvent(submission.id, attachment))
             }
             (binding.root.layoutParams as LayoutParams).topMargin = context.DP(4).toInt()
             addView(binding.root)

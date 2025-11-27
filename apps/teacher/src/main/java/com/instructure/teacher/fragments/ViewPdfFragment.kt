@@ -36,9 +36,6 @@ import com.instructure.teacher.presenters.ViewPdfFragmentPresenter
 import com.instructure.teacher.router.RouteMatcher
 import com.instructure.teacher.utils.*
 import com.instructure.teacher.viewinterface.ViewPdfFragmentView
-import com.pspdfkit.configuration.PdfConfiguration
-import com.pspdfkit.configuration.page.PageScrollDirection
-import com.pspdfkit.ui.PdfFragment
 import com.instructure.pandautils.blueprint.PresenterFragment
 import org.greenrobot.eventbus.EventBus
 
@@ -51,8 +48,6 @@ class ViewPdfFragment : PresenterFragment<ViewPdfFragmentPresenter, ViewPdfFragm
     private var mToolbarColor by IntArg()
     private var mEditableFile: EditableFile? by NullableParcelableArg()
     private var isInModulesPager by BooleanArg()
-
-    private val mPdfConfiguration: PdfConfiguration = PdfConfiguration.Builder().scrollDirection(PageScrollDirection.VERTICAL).build()
 
     override fun onPresenterPrepared(presenter: ViewPdfFragmentPresenter) = Unit
     override fun onRefreshFinished() = Unit
@@ -142,8 +137,6 @@ class ViewPdfFragment : PresenterFragment<ViewPdfFragmentPresenter, ViewPdfFragm
 
     override fun onLoadingFinished(fileUri: Uri) {
         binding.pdfProgressBar.setGone()
-        val newPdfFragment = PdfFragment.newInstance(fileUri, mPdfConfiguration)
-        childFragmentManager.beginTransaction().replace(R.id.pdfFragmentContainer, newPdfFragment).commit()
     }
 
     override fun onLoadingError() {

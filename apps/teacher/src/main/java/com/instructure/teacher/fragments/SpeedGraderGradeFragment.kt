@@ -44,7 +44,6 @@ import com.instructure.teacher.events.AssignmentGradedEvent
 import com.instructure.teacher.factory.SpeedGraderGradePresenterFactory
 import com.instructure.teacher.presenters.SpeedGraderGradePresenter
 import com.instructure.teacher.utils.getDisplayGrade
-import com.instructure.teacher.view.QuizSubmissionGradedEvent
 import com.instructure.teacher.viewinterface.SpeedGraderGradeView
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -82,16 +81,16 @@ class SpeedGraderGradeFragment : BasePresenterFragment<
         super.onStop()
     }
 
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onQuizSaved(event: QuizSubmissionGradedEvent) {
-        event.once("GradeFragment|${mCourse.id}|${mAssignment.id}|${mSubmission?.id}|${mAssignee.id}") {
-            if (it.id == mSubmission?.id) {
-                presenter.submission = it
-                setupViews()
-            }
-        }
-    }
+//    @Suppress("unused")
+//    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+//    fun onQuizSaved(event: QuizSubmissionGradedEvent) {
+//        event.once("GradeFragment|${mCourse.id}|${mAssignment.id}|${mSubmission?.id}|${mAssignee.id}") {
+//            if (it.id == mSubmission?.id) {
+//                presenter.submission = it
+//                setupViews()
+//            }
+//        }
+//    }
 
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)

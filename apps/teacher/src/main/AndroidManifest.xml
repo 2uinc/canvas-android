@@ -194,13 +194,6 @@
             android:name=".activities.InternalWebViewActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
-        <activity
-            android:name=".activities.SpeedGraderActivity"
-            android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:launchMode="singleTask"
-            android:theme="@style/PSPDFKitTheme" />
-
         <activity android:name=".activities.FullscreenActivity"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/AppTheme.NoActionBar"/>

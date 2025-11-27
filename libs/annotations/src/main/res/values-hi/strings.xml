@@ -35,8 +35,6 @@
     <string name="deleteCommentConfirmation">क्या आप सच में इस टिप्पणी को मिटाना चाहते हैं?</string>
     <string name="deleteHeadCommentConfirmation">इस टिप्पणी को मिटाने से इस एनोटेशन से जुड़ी सभी टिप्पणियां मिटा दी जाएंगी। क्या आप सच में ऐसा करना चाहते हैं?</string>
     <string name="sendingSimple">भेजा जा रहा है</string>
-    <string name="pspdf__annotation_type_stamp">नोट का रंग</string>
     <string name="removedComment">%1$s को %2$s द्वारा निकाला गया</string>
-    <string name="pspdf__stamp_standard_section"></string>
 
 </resources>

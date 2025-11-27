@@ -274,8 +274,7 @@ class OpenMediaAsyncTaskLoader(context: Context, args: Bundle?) : AsyncTaskLoade
             intent.setDataAndType(fileUri, contentResolver.getType(fileUri))
         }
 
-        // We know that we can always handle pdf intents with pspdfkit, so we don't want to error out here
-        if (!isIntentHandledByActivity(intent) && mimeType != "application/pdf") {
+        if (!isIntentHandledByActivity(intent)) {
             loadedMedia.errorMessage = R.string.noApps
             loadedMedia.errorType = ErrorType.NO_APPS
         } else {

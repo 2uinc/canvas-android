@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">E tino hiahia ana koe ki te muku i tēnei kōrero?</string>
     <string name="deleteHeadCommentConfirmation">Te whakakore i tēnei kōrero ka muku i ngā kōrero katoa e pā ana ki tēnei tuhinga. E tino hiahia ana koe ki te mahi i tēnei?</string>
     <string name="sendingSimple">E tuku ana</string>
-    <string name="pspdf__annotation_type_stamp">Tuhi Tae</string>
     <string name="removedComment">Kua tangohia %1$s e %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

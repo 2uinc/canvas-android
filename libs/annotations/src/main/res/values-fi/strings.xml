@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Haluatko varmasti poistaa tämän kommentin?</string>
     <string name="deleteHeadCommentConfirmation">Tämän kommentin poistaminen poistaa kaikki tähän huomatukseen liitetyt kommentit. Haluatko varmasti tehdä näin?</string>
     <string name="sendingSimple">Lähetetään</string>
-    <string name="pspdf__annotation_type_stamp">Huomautuksen väri</string>
     <string name="removedComment">Kohteen %1$s poistaja %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

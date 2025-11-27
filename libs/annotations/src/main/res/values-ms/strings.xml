@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Adakah anda pasti anda mahu memadamkan komen ini?</string>
     <string name="deleteHeadCommentConfirmation">Apabila memadamkan komen ini, semua komen yang berkaitan dengan anotasi ini akan turut terpadam. Adakah anda pasti anda ingin melakukan ini?</string>
     <string name="sendingSimple">Menghantar</string>
-    <string name="pspdf__annotation_type_stamp">Warna Nota</string>
     <string name="removedComment">Dialih keluar %1$s oleh %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

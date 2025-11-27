@@ -35,9 +35,5 @@
     <string name="deleteCommentConfirmation">Weet je zeker dat je deze opmerking wilt verwijderen?</string>
     <string name="deleteHeadCommentConfirmation">Door deze opmerking te verwijderen worden alle opmerkingen bij deze aantekening verwijderd. Weet je zeker dat je dit wilt doen?</string>
     <string name="sendingSimple">Bezig met verzenden</string>
-    <string name="pspdf__annotation_type_stamp">Kleur van opmerking</string>
-
     <string name="removedComment">%1$s verwijderd door %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

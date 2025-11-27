@@ -58,7 +58,6 @@ android {
 
         /* Add private data */
         PrivateData.merge(project, "teacher")
-        buildConfigField "String", "PSPDFKIT_LICENSE_KEY", "\"$pspdfkitLicenseKey\""
     }
 
     bundle {

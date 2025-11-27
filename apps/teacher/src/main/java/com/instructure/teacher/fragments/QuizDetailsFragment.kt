@@ -77,7 +77,6 @@ import com.instructure.teacher.utils.setupBackButtonWithExpandCollapseAndBack
 import com.instructure.teacher.utils.setupMenu
 import com.instructure.teacher.utils.shuffleAnswersDisplayable
 import com.instructure.teacher.utils.updateToolbarExpandCollapseIcon
-import com.instructure.teacher.view.QuizSubmissionGradedEvent
 import com.instructure.teacher.viewinterface.QuizDetailsView
 import kotlinx.coroutines.Job
 import org.greenrobot.eventbus.EventBus
@@ -515,14 +514,6 @@ class QuizDetailsFragment : BasePresenterFragment<
                 needToForceNetwork = true
                 AssignmentUpdatedEvent(presenter.mQuiz.assignmentId, javaClass.simpleName).post()
             }
-        }
-    }
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onQuizGraded(event: QuizSubmissionGradedEvent) {
-        event.once(javaClass.simpleName) {
-            if (presenter.mQuiz.assignmentId == it.assignmentId) needToForceNetwork = true
         }
     }
 

@@ -20,8 +20,6 @@ import com.instructure.annotations.FileCaching.FetchFileAsyncTask
 import com.instructure.annotations.FileCaching.FileCache
 import com.instructure.canvasapi2.utils.weave.resumeSafely
 import com.instructure.canvasapi2.utils.weave.resumeSafelyWithException
-import com.pspdfkit.annotations.Annotation
-import com.pspdfkit.document.PdfDocument
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 
@@ -111,24 +109,6 @@ fun Annotation.setIsNotFound(isNotFound: Boolean) {
 }
 
 fun Annotation.getContext() = (this as? PSCanvaInterface)?.context ?: ""
-
-/**
- * Finds an annotation based on it's id
- */
-fun PdfDocument.findAnnotationById(id: String, pageIndex: Int): Annotation? {
-    val annotations = this.annotationProvider.getAnnotations(pageIndex)
-    return annotations.find { it.getId() == id }
-}
-
-fun PdfDocument.removeAnnotation(id: String, pageIndex: Int) {
-    val annotationToRemove = findAnnotationById(id, pageIndex) ?: return
-    annotationProvider.removeAnnotationFromPage(annotationToRemove)
-}
-
-fun PdfDocument.addAnnotation(annotation: Annotation) {
-    annotationProvider.addAnnotationToPage(annotation)
-}
-
 
 // Delegate
 interface PSCanvaInterface {

@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">¿Estás seguro de que quieres eliminar este comentario?</string>
     <string name="deleteHeadCommentConfirmation">Al eliminar este comentario, se eliminarán todos los comentarios asociados con esta anotación. ¿Estás seguro de que quieres realizar esta acción?</string>
     <string name="sendingSimple">Enviando</string>
-    <string name="pspdf__annotation_type_stamp">Color de la nota</string>
     <string name="removedComment">Eliminado %1$s por %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

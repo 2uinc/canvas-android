@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Vill du ta bort den här kommentaren?</string>
     <string name="deleteHeadCommentConfirmation">Om du tar bort den här kommentaren tas alla kommentarer som är kopplade till den här noteringen bort. Vill du göra detta?</string>
     <string name="sendingSimple">Skickar</string>
-    <string name="pspdf__annotation_type_stamp">Anteckningsfärg</string>
     <string name="removedComment">Borttagen %1$s av %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

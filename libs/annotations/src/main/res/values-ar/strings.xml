@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">هل تريد بالتأكيد حذف هذا التعليق؟</string>
     <string name="deleteHeadCommentConfirmation">سيؤدي حذف هذا التعليق إلى حذف جميع التعليقات المرتبطة بهذا التعليق التوضيحي. هل ترغب بالتأكيد في فعل هذا؟</string>
     <string name="sendingSimple">جارٍ الإرسال</string>
-    <string name="pspdf__annotation_type_stamp">لون الملاحظة</string>
     <string name="removedComment">تمت إزالة %1$s بواسطة %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

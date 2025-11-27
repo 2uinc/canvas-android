@@ -35,9 +35,5 @@
     <string name="deleteCommentConfirmation">Er du sikker på, at du ønsker at slette denne kommentar?</string>
     <string name="deleteHeadCommentConfirmation">Hvis du sletter denne kommentar, slettes alle kommentarer, der er knyttet til denne anmærkning. Er du sikker på, du vil gøre det?</string>
     <string name="sendingSimple">Sender</string>
-    <string name="pspdf__annotation_type_stamp">Bemærkningens farve</string>
-
     <string name="removedComment">Fjernet %1$s af %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

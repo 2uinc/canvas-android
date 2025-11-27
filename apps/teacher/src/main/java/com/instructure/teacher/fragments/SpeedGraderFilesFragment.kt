@@ -31,8 +31,6 @@ import com.instructure.teacher.factory.SpeedGraderFilesPresenterFactory
 import com.instructure.teacher.holders.AttachmentViewHolder
 import com.instructure.teacher.presenters.SpeedGraderFilesPresenter
 import com.instructure.teacher.utils.RecyclerViewUtils
-import com.instructure.teacher.view.SubmissionFileSelectedEvent
-import com.instructure.teacher.view.SubmissionSelectedEvent
 import com.instructure.teacher.viewinterface.SpeedGraderFilesView
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -73,7 +71,7 @@ class SpeedGraderFilesFragment : BaseSyncFragment<
 
     override fun createAdapter(): AttachmentAdapter {
         return AttachmentAdapter(requireContext(), presenter) {
-            EventBus.getDefault().post(SubmissionFileSelectedEvent(presenter.getSubmission()?.id ?: -1, it))
+//            EventBus.getDefault().post(SubmissionFileSelectedEvent(presenter.getSubmission()?.id ?: -1, it))
         }
     }
 
@@ -92,13 +90,5 @@ class SpeedGraderFilesFragment : BaseSyncFragment<
     override fun onStop() {
         super.onStop()
         EventBus.getDefault().unregister(this)
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onSubmissionSelected(event: SubmissionSelectedEvent) {
-        if (event.submission?.id == presenter.getSubmission()?.id) {
-            presenter.setSubmission(event.submission)
-            adapter.setSelectedPosition(0)
-        }
     }
 }

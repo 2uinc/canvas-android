@@ -35,8 +35,6 @@
     <string name="deleteCommentConfirmation">Anda yakin mau menghapus komentar ini?</string>
     <string name="deleteHeadCommentConfirmation">Menghapus komentar ini akan menghapus semua komentar yang berkaitan dengan anotasi ini. Anda yakin mau melakukan ini?</string>
     <string name="sendingSimple">Sedang mengirim</string>
-    <string name="pspdf__annotation_type_stamp">Catat Warna</string>
     <string name="removedComment">Menghapus %1$s oleh %2$s</string>
-    <string name="pspdf__stamp_standard_section"></string>
 
 </resources>

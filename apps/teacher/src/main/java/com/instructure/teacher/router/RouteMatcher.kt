@@ -67,7 +67,6 @@ import com.instructure.pandautils.utils.LoaderUtils
 import com.instructure.pandautils.utils.RouteUtils
 import com.instructure.pandautils.utils.argsWithContext
 import com.instructure.pandautils.utils.nonNullArgs
-import com.instructure.teacher.PSPDFKit.AnnotationComments.AnnotationCommentListFragment
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.BottomSheetActivity
 import com.instructure.teacher.activities.FullscreenActivity
@@ -261,7 +260,6 @@ object RouteMatcher : BaseRouteMatcher() {
         fullscreenFragments.add(LtiLaunchFragment::class.java)
         fullscreenFragments.add(SpeedGraderQuizWebViewFragment::class.java)
         fullscreenFragments.add(HtmlContentFragment::class.java)
-        fullscreenFragments.add(ViewPdfFragment::class.java)
         fullscreenFragments.add(ViewHtmlFragment::class.java)
         fullscreenFragments.add(EditDashboardFragment::class.java)
         fullscreenFragments.add(CourseBrowserFragment::class.java)
@@ -284,7 +282,6 @@ object RouteMatcher : BaseRouteMatcher() {
         bottomSheetFragments.add(InboxComposeFragment::class.java)
         bottomSheetFragments.add(ChooseRecipientsFragment::class.java)
         bottomSheetFragments.add(CreateDiscussionWebViewFragment::class.java)
-        bottomSheetFragments.add(AnnotationCommentListFragment::class.java)
         bottomSheetFragments.add(ProfileFragment::class.java)
         bottomSheetFragments.add(ProfileEditFragment::class.java)
         bottomSheetFragments.add(StudentContextFragment::class.java)
@@ -518,7 +515,6 @@ object RouteMatcher : BaseRouteMatcher() {
             ViewUnsupportedFileFragment::class.java.isAssignableFrom(cls) -> fragment = ViewUnsupportedFileFragment.newInstance(route.arguments)
             ChooseRecipientsFragment::class.java.isAssignableFrom(cls) -> fragment = ChooseRecipientsFragment.newInstance(route.arguments)
             SpeedGraderQuizWebViewFragment::class.java.isAssignableFrom(cls) -> fragment = SpeedGraderQuizWebViewFragment.newInstance(route.arguments)
-            AnnotationCommentListFragment::class.java.isAssignableFrom(cls) -> fragment = AnnotationCommentListFragment.newInstance(route.arguments)
             CreateDiscussionWebViewFragment::class.java.isAssignableFrom(cls) -> fragment = CreateDiscussionWebViewFragment.newInstance(route)
             SettingsFragment::class.java.isAssignableFrom(cls) -> fragment = SettingsFragment.newInstance(route)
             ProfileEditFragment::class.java.isAssignableFrom(cls) -> fragment = ProfileEditFragment.newInstance(route.arguments)

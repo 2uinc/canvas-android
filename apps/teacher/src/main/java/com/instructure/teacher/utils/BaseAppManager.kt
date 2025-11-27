@@ -40,10 +40,6 @@ import com.instructure.teacher.BuildConfig
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.InitActivity
 import com.instructure.teacher.tasks.TeacherLogoutTask
-import com.pspdfkit.PSPDFKit
-import com.pspdfkit.exceptions.InvalidPSPDFKitLicenseException
-import com.pspdfkit.exceptions.PSPDFKitInitializationFailedException
-import com.pspdfkit.initialization.InitializationOptions
 
 abstract class BaseAppManager : com.instructure.canvasapi2.AppManager() {
 
@@ -74,14 +70,6 @@ abstract class BaseAppManager : com.instructure.canvasapi2.AppManager() {
         }
 
         ColorKeeper.defaultColor = getColorCompat(R.color.textDarkest)
-
-        try {
-            PSPDFKit.initialize(this, InitializationOptions(licenseKey = BuildConfig.PSPDFKIT_LICENSE_KEY))
-        } catch (e: PSPDFKitInitializationFailedException) {
-            Logger.e("Current device is not compatible with PSPDFKIT!")
-        } catch (e: InvalidPSPDFKitLicenseException) {
-            Logger.e("Invalid or Trial PSPDFKIT License!")
-        }
 
         MasqueradeHelper.masqueradeLogoutTask = Runnable {
             TeacherLogoutTask(

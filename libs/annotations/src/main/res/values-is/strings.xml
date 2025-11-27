@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">Viltu örugglega eyða þessari athugasemd?</string>
     <string name="deleteHeadCommentConfirmation">Ef þessari athugasemd er eytt verður öllum athugasemdum sem tengjast þessari textaskýringu eytt. Viltu örugglega gera þetta?</string>
     <string name="sendingSimple">Sendi</string>
-    <string name="pspdf__annotation_type_stamp">Litur glósu</string>
     <string name="removedComment">Fjarlægt %1$s af %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>
