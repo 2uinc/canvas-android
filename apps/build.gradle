@@ -45,13 +45,6 @@ allprojects {
         }
         mavenCentral()
         maven { url 'https://jitpack.io' }
-        maven {
-            credentials {
-                username pspdfMavenUser
-                password pspdfMavenPass
-            }
-            url 'https://customers.pspdfkit.com/maven/'
-        }
         maven { url "https://maven.google.com/" }
     }
 }

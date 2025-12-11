@@ -49,7 +49,6 @@ import com.instructure.teacher.events.SubmissionCommentsUpdated
 import com.instructure.teacher.events.SubmissionFilterChangedEvent
 import com.instructure.teacher.features.postpolicies.ui.PostPolicyFragment
 import com.instructure.teacher.router.RouteMatcher
-import com.instructure.teacher.view.QuizSubmissionGradedEvent
 import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -144,12 +143,6 @@ class SubmissionListFragment : BaseCanvasFragment() {
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun onAssignmentGraded(event: AssignmentGradedEvent) {
-        viewModel.uiState.value.actionHandler(SubmissionListAction.Refresh)
-    }
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onQuizGraded(event: QuizSubmissionGradedEvent) {
         viewModel.uiState.value.actionHandler(SubmissionListAction.Refresh)
     }
 

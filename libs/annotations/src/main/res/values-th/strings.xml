@@ -35,8 +35,5 @@
     <string name="deleteCommentConfirmation">แน่ใจว่าต้องการลบความเห็นนี้หรือไม่</string>
     <string name="deleteHeadCommentConfirmation">การลบความเห็นนี้จะเป็นการลบความเห็นทั้งหมดที่เชื่อมโยงกับหมายเหตุกำกับนี้ แน่ใจว่าต้องการดำเนินการหรือไม่</string>
     <string name="sendingSimple">กำลังส่ง</string>
-    <string name="pspdf__annotation_type_stamp">สีหมายเหตุ</string>
     <string name="removedComment">ลบ %1$s โดย %2$s</string>
-
-    <string name="pspdf__stamp_standard_section"></string>
 </resources>

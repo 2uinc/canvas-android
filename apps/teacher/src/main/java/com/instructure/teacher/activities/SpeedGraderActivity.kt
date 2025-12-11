@@ -83,11 +83,7 @@ import com.instructure.teacher.utils.isTalkbackEnabled
 import com.instructure.teacher.utils.setupBackButton
 import com.instructure.teacher.utils.setupMenu
 import com.instructure.teacher.utils.toast
-import com.instructure.teacher.view.AudioPermissionGrantedEvent
-import com.instructure.teacher.view.TabSelectedEvent
-import com.instructure.teacher.view.VideoPermissionGrantedEvent
 import com.instructure.teacher.viewinterface.SpeedGraderView
-import com.pspdfkit.preferences.PSPDFKitPreferences
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import org.greenrobot.eventbus.EventBus
@@ -165,10 +161,6 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Set the PDF author, but only if it hasn't been set yet
-        if (!PSPDFKitPreferences.get(this).isAnnotationCreatorSet) {
-            PSPDFKitPreferences.get(this).setAnnotationCreator(ApiPrefs.user?.name)
-        }
 
         setContentView(binding.root)
 
@@ -307,13 +299,6 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
     }
 
     @Suppress("unused")
-    @Subscribe
-    fun onTabSelected(event: TabSelectedEvent) {
-        binding.submissionContentPager.hideKeyboard()
-        adapter.initialTabIdx = event.selectedTabIdx
-    }
-
-    @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun onAssignmentGraded(event: AssignmentGradedEvent) {
         event.once(javaClass.simpleName) {
@@ -325,7 +310,7 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
     fun requestAudioPermissions(assigneeId: Long) {
         if (checkAudioPermission()) {
             // We have the permission
-            EventBus.getDefault().post(AudioPermissionGrantedEvent(assigneeId))
+//            EventBus.getDefault().post(AudioPermissionGrantedEvent(assigneeId))
         } else {
             this.assigneeId = assigneeId
             ActivityCompat.requestPermissions(this, arrayOf(PermissionUtils.RECORD_AUDIO), PermissionUtils.PERMISSION_REQUEST_CODE)
@@ -335,7 +320,7 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
     fun requestVideoPermissions(assigneeId: Long) {
         if (checkVideoPermission()) {
             // We have the permissions
-            EventBus.getDefault().post(VideoPermissionGrantedEvent(assigneeId))
+//            EventBus.getDefault().post(VideoPermissionGrantedEvent(assigneeId))
         } else {
             this.assigneeId = assigneeId
             ActivityCompat.requestPermissions(this, arrayOf(PermissionUtils.CAMERA, PermissionUtils.RECORD_AUDIO), PermissionUtils.PERMISSION_REQUEST_CODE)
@@ -350,10 +335,10 @@ class SpeedGraderActivity : BasePresenterActivity<SpeedGraderPresenter, SpeedGra
             when {
                 permissions.contains(PermissionUtils.CAMERA) && permissions.contains(PermissionUtils.RECORD_AUDIO) -> {
                     if(grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                        EventBus.getDefault().post(VideoPermissionGrantedEvent(assigneeId))
+//                        EventBus.getDefault().post(VideoPermissionGrantedEvent(assigneeId))
                     }
                 }
-                permissions.contains(PermissionUtils.RECORD_AUDIO) ->  EventBus.getDefault().post(AudioPermissionGrantedEvent(assigneeId))
+//                permissions.contains(PermissionUtils.RECORD_AUDIO) ->  EventBus.getDefault().post(AudioPermissionGrantedEvent(assigneeId))
             }
         }
     }

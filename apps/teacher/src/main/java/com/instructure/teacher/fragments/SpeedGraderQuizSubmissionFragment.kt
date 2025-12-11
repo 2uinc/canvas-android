@@ -29,8 +29,6 @@ import com.instructure.pandautils.utils.*
 import com.instructure.teacher.R
 import com.instructure.teacher.databinding.FragmentSpeedGraderQuizSubmissionBinding
 import com.instructure.teacher.router.RouteMatcher
-import com.instructure.teacher.view.QuizContent
-import com.instructure.teacher.view.QuizSubmissionGradedEvent
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -77,15 +75,15 @@ class SpeedGraderQuizSubmissionFragment : BaseCanvasFragment() {
         super.onStop()
     }
 
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onQuizGraded(event: QuizSubmissionGradedEvent) {
-        event.once("QuizSubFrag|$mCourseId|$mAssignmentId|$mStudentId") {
-            if (it.userId != mStudentId) return@once
-            mPendingReview = false
-            setupViews()
-        }
-    }
+//    @Suppress("unused")
+//    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+//    fun onQuizGraded(event: QuizSubmissionGradedEvent) {
+//        event.once("QuizSubFrag|$mCourseId|$mAssignmentId|$mStudentId") {
+//            if (it.userId != mStudentId) return@once
+//            mPendingReview = false
+//            setupViews()
+//        }
+//    }
 
     private fun viewQuizSubmission() {
         val bundle = SpeedGraderQuizWebViewFragment.newInstance(mCourseId, mAssignmentId, mStudentId, mUrl).nonNullArgs
@@ -93,12 +91,12 @@ class SpeedGraderQuizSubmissionFragment : BaseCanvasFragment() {
     }
 
     companion object {
-        fun newInstance(content: QuizContent) = SpeedGraderQuizSubmissionFragment().apply {
-            mCourseId = content.courseId
-            mAssignmentId = content.assignmentId
-            mStudentId = content.studentId
-            mUrl = content.url
-            mPendingReview = content.pendingReview
-        }
+//        fun newInstance(content: QuizContent) = SpeedGraderQuizSubmissionFragment().apply {
+//            mCourseId = content.courseId
+//            mAssignmentId = content.assignmentId
+//            mStudentId = content.studentId
+//            mUrl = content.url
+//            mPendingReview = content.pendingReview
+//        }
     }
 }

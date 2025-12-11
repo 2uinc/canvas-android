@@ -34,8 +34,5 @@
     <string name="deleteCommentConfirmation">An bhfuil tú cinnte gur mhaith leat an nóta tráchta seo a scriosadh?</string>
     <string name="deleteHeadCommentConfirmation">Má scriosann tú an ráiteas seo, scriosfar gach ráiteas a bhaineann leis an nótaí mínithe seo. An bhfuil tú cinnte gur mhaith leat é seo a dhéanamh?</string>
     <string name="sendingSimple">Ag seoladh</string>
-    <string name="pspdf__annotation_type_stamp">Dath Nóta</string>
     <string name="removedComment">%1$s bainte ag %2$s</string>
-    <string name="pspdf__stamp_standard_section"></string>
-
 </resources>

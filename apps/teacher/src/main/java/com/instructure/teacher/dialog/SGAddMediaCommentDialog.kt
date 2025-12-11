@@ -28,7 +28,6 @@ import com.instructure.pandautils.utils.*
 import com.instructure.teacher.R
 import com.instructure.teacher.activities.SpeedGraderActivity
 import com.instructure.teacher.databinding.DialogSgAddAttachmentCommentBinding
-import com.instructure.teacher.view.MediaCommentDialogClosedEvent
 import org.greenrobot.eventbus.EventBus
 
 class SGAddMediaCommentDialog : BaseCanvasAppCompatDialogFragment() {
@@ -77,7 +76,6 @@ class SGAddMediaCommentDialog : BaseCanvasAppCompatDialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        EventBus.getDefault().post(MediaCommentDialogClosedEvent())
     }
 
     companion object {
