@@ -18,6 +18,7 @@
 package com.instructure.student.util
 
 import android.content.Intent
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Constraints
@@ -27,6 +28,14 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import com.bugfender.sdk.Bugfender
+import com.datadog.android.Datadog
+import com.datadog.android.core.configuration.Configuration
+import com.datadog.android.log.Logger
+import com.datadog.android.log.Logs
+import com.datadog.android.log.LogsConfiguration
+import com.datadog.android.privacy.TrackingConsent
+import com.datadog.android.rum.RumConfiguration
+import com.datadog.android.trace.DatadogTracing
 import com.instructure.canvasapi2.utils.MasqueradeHelper
 import com.instructure.loginapi.login.tasks.LogoutTask
 import com.instructure.pandautils.analytics.pageview.PageViewUploadWorker
@@ -47,9 +56,14 @@ import com.twou.offline.util.BaseOfflineUtils.Companion.isOnline
 import com.twou.offline.util.OfflineLoggerType
 import com.twou.offline.util.OfflineLogs
 import dagger.hilt.android.HiltAndroidApp
-import sdk.pendo.io.Pendo
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import com.datadog.android.trace.GlobalDatadogTracer
+import com.datadog.android.trace.Trace
+import com.datadog.android.trace.TraceConfiguration
+import com.datadog.android.trace.event.SpanEventMapper
+import com.datadog.android.trace.model.SpanEvent
+import com.datadog.android.rum.Rum
 
 @HiltAndroidApp
 class AppManager : BaseAppManager() {
@@ -68,6 +82,7 @@ class AppManager : BaseAppManager() {
 
     @Inject
     lateinit var workManager: WorkManager
+    lateinit var logger: Logger
 
     override fun onCreate() {
         super.onCreate()
@@ -197,8 +212,70 @@ class AppManager : BaseAppManager() {
 
         schedulePandataUpload()
         initPendo()
+        setupDataDog()
     }
 
+    private fun setupDataDog() {
+        val configuration = Configuration.Builder(
+            clientToken = BuildConfig.DATADOG_CLIENT_TOKEN,
+            env = if (BuildConfig.BUILD_TYPE == "release") "production" else "staging",
+            service = "degrees-mobile"
+        ).build()
+
+        Datadog.initialize(this, configuration, trackingConsent = TrackingConsent.GRANTED)
+
+        Trace.equals(
+            TraceConfiguration.Builder().setEventMapper(object : SpanEventMapper {
+                override fun map(event: SpanEvent): SpanEvent {
+                    val originalUrl = event.resource
+                    event.resource = redactSensitiveData(originalUrl)
+                    return event
+                }
+            })
+                .build()
+        )
+
+        GlobalDatadogTracer.registerIfAbsent(
+            DatadogTracing.newTracerBuilder()
+                .build()
+        )
+
+        Datadog.setVerbosity(Log.INFO)
+
+        val logsConfig = LogsConfiguration.Builder().build()
+        Logs.enable(logsConfig)
+
+        logger = Logger.Builder()
+            .setNetworkInfoEnabled(true)
+            .setLogcatLogsEnabled(true)
+            .setName("GetSmarterAndroid")
+            .build()
+
+        val rumConfig = RumConfiguration.Builder(BuildConfig.DATADOG_APPLICATION_ID)
+            .setResourceEventMapper { event ->
+                val originalUrl = event.resource.url
+                event.resource.url = redactSensitiveData(originalUrl)
+                event
+            }
+            .setErrorEventMapper { event ->
+                event.error.message = redactSensitiveData(event.error.message)
+                event.error.resource?.url = redactSensitiveData(event.error.resource?.url.orEmpty())
+                event
+            }
+            .trackUserInteractions()
+            .trackAnonymousUser(true)
+            .trackLongTasks()
+            .trackBackgroundEvents(true)
+            .trackNonFatalAnrs(true)
+            .build()
+        Rum.enable(rumConfig)
+    }
+    private fun redactSensitiveData(message: String) = message.replace(
+        Regex(
+            "(username|password|wstoken|token)=[^&]*",
+            RegexOption.IGNORE_CASE
+        ), "$1=****"
+    )
     private fun initPendo() {
 //        val options = Pendo.PendoOptions.Builder().setJetpackComposeBeta(true).build()
 //        Pendo.setup(this, BuildConfig.PENDO_TOKEN, options, null)

@@ -38,6 +38,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.work.WorkInfo.State
 import androidx.work.WorkManager
 import androidx.work.WorkQuery
+import com.datadog.android.Datadog
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.instructure.canvasapi2.managers.CourseNicknameManager
 import com.instructure.canvasapi2.managers.UserManager
@@ -568,6 +569,7 @@ class DashboardFragment : ParentFragment() {
     private fun initFirebase() {
         val user = ApiPrefs.user ?: return
         FirebaseAnalytics.identifyUser(user.id)
+        Datadog.setUserInfo(user.id.toString(), null, null)
     }
 
     companion object {

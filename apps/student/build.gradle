@@ -46,7 +46,8 @@ android {
         testInstrumentationRunnerArguments disableAnalytics: 'true'
         buildConfigField "boolean", "IS_TESTING", "false"
         buildConfigField "String", "BUGFENDER_KEY", "\"${Keys.BUGFENDER_KEY}\""
-
+        buildConfigField "String", "DATADOG_CLIENT_TOKEN", "\"${Keys.DATADOG_CLIENT_TOKEN}\""
+        buildConfigField "String", "DATADOG_APPLICATION_ID", "\"${Keys.DATADOG_APPLICATION_ID}\""
 
         /* Add private data */
         PrivateData.merge(project, "student")
@@ -359,6 +360,12 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-lambda:2.71.0"
     implementation "com.amazonaws:aws-android-sdk-sns:2.71.0"
     implementation("com.bugfender.sdk:android:3.0.17")
+
+    //DATADOG
+    implementation("com.datadoghq:dd-sdk-android-rum:3.5.0")
+    implementation("com.datadoghq:dd-sdk-android-logs:3.5.0")
+    implementation("com.datadoghq:dd-sdk-android-okhttp:3.5.0")
+    implementation("com.datadoghq:dd-sdk-android-trace:3.5.0")
 }
 
 // Comment out this line if the reporting logic starts going wonky.

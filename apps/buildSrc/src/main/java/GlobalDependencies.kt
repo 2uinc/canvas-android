@@ -41,6 +41,7 @@ object Versions {
     const val DATASTORE = "1.1.1"
     const val LOTTIE = "6.5.2"
     const val ENCRYPTED_SHARED_PREFERENCES = "1.0.0"
+    const val DATADOG = "1.22.0"
 }
 
 object Libs {
@@ -200,4 +201,6 @@ object Plugins {
     const val GOOGLE_SERVICES = "com.google.gms:google-services:${Versions.GOOGLE_SERVICES}"
     const val JACOCO_ANDROID = "com.dicedmelon.gradle:jacoco-android:${Versions.JACOCO_ANDROID}"
     const val HILT = "com.google.dagger:hilt-android-gradle-plugin:${Versions.HILT}"
+
+    const val DATADOG = "com.datadoghq:dd-sdk-android-gradle-plugin:${Versions.DATADOG}"
 }
