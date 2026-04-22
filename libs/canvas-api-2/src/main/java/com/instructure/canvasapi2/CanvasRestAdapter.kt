@@ -17,6 +17,8 @@
 package com.instructure.canvasapi2
 
 import android.net.http.HttpResponseCache
+import com.datadog.android.okhttp.DatadogEventListener
+import com.datadog.android.okhttp.DatadogInterceptor
 import com.google.gson.GsonBuilder
 import com.instructure.canvasapi2.builders.RestParams
 import com.instructure.canvasapi2.calladapter.DataResultCallAdapterFactory
@@ -65,6 +67,8 @@ protected constructor(var statusCallback: StatusCallback<*>?, private val authUs
         OkHttpClient.Builder()
             .addNetworkInterceptor(PactRequestInterceptor(authUser))
             .addNetworkInterceptor(ResponseInterceptor())
+            .addInterceptor(DatadogInterceptor.Builder(listOf("*.com")).build())
+            .eventListenerFactory(DatadogEventListener.Factory())
             .readTimeout(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)
             .authenticator(canvasAuthenticator)
             .dispatcher(mDispatcher)
@@ -169,6 +173,8 @@ protected constructor(var statusCallback: StatusCallback<*>?, private val authUs
                 OkHttpClient.Builder()
                     .addInterceptor(loggingInterceptor)
                     .addInterceptor(RollCallInterceptor())
+                    .addInterceptor(DatadogInterceptor.Builder(listOf("*.com")).build())
+                    .eventListenerFactory(DatadogEventListener.Factory())
                     .authenticator(canvasAuthenticator)
                     .readTimeout(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)
                     .dispatcher(mDispatcher)
@@ -310,6 +316,8 @@ protected constructor(var statusCallback: StatusCallback<*>?, private val authUs
                         .addInterceptor(loggingInterceptor)
                         .addInterceptor(RequestInterceptor())
                         .addNetworkInterceptor(ResponseInterceptor())
+                        .addInterceptor(DatadogInterceptor.Builder(listOf("*.com")).build())
+                        .eventListenerFactory(DatadogEventListener.Factory())
                         .readTimeout(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)
                         .dispatcher(mDispatcher)
                         .authenticator(canvasAuthenticator)

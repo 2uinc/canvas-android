@@ -48,7 +48,8 @@ dependencies {
     implementation Libs.APOLLO_RUNTIME
 
     /* Datadog */
-    implementation 'com.datadoghq:dd-sdk-android-okhttp:3.5.0'
+    implementation 'com.datadoghq:dd-sdk-android-okhttp:3.8.0'
+    implementation("com.datadoghq:dd-sdk-android-trace:3.8.0")
 
     /* Test Dependencies */
     testImplementation Libs.JUNIT

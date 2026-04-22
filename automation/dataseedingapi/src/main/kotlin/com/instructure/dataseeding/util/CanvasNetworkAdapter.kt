@@ -19,6 +19,7 @@ package com.instructure.dataseeding.util
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.network.okHttpClient
+import com.datadog.android.okhttp.DatadogEventListener
 import com.datadog.android.okhttp.DatadogInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -56,7 +57,8 @@ object CanvasNetworkAdapter {
     ): OkHttpClient.Builder {
         val builder = OkHttpClient.Builder()
             .retryOnConnectionFailure(retryOnConnectionFailure)
-            .addInterceptor(DatadogInterceptor())
+            .addInterceptor(DatadogInterceptor.Builder(listOf("*.com")).build())
+            .eventListenerFactory(DatadogEventListener.Factory())
             .addInterceptor(getLoggingInterceptor())
             .readTimeout(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
 

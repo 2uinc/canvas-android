@@ -362,10 +362,10 @@ dependencies {
     implementation("com.bugfender.sdk:android:3.0.17")
 
     //DATADOG
-    implementation("com.datadoghq:dd-sdk-android-rum:3.5.0")
-    implementation("com.datadoghq:dd-sdk-android-logs:3.5.0")
-    implementation("com.datadoghq:dd-sdk-android-okhttp:3.5.0")
-    implementation("com.datadoghq:dd-sdk-android-trace:3.5.0")
+    implementation("com.datadoghq:dd-sdk-android-rum:3.8.0")
+    implementation("com.datadoghq:dd-sdk-android-logs:3.8.0")
+    implementation("com.datadoghq:dd-sdk-android-okhttp:3.8.0")
+    implementation("com.datadoghq:dd-sdk-android-trace:3.8.0")
 }
 
 // Comment out this line if the reporting logic starts going wonky.
