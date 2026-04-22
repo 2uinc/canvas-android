@@ -248,7 +248,7 @@ class AppManager : BaseAppManager() {
         logger = Logger.Builder()
             .setNetworkInfoEnabled(true)
             .setLogcatLogsEnabled(true)
-            .setName("GetSmarterAndroid")
+            .setName("degrees-android")
             .build()
 
         val rumConfig = RumConfiguration.Builder(BuildConfig.DATADOG_APPLICATION_ID)
