@@ -220,7 +220,7 @@ abstract class BaseLoginFindSchoolActivity : BaseCanvasActivity() {
 
         //if the user enters nothing, try to connect to canvas.instructure.com
         if (url!!.trim { it <= ' ' }.isEmpty()) {
-            url = "canvas.instructure.com"
+            url = "sso.canvaslms.com"
         }
 
         //remove invalid characters at the end of the domain
