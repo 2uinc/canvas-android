@@ -46,7 +46,8 @@ object MobileVerifyAPI {
                         .cacheControl(CacheControl.FORCE_NETWORK)
                         .build()
                     chain.proceed(request)
-                }.build()
+                }
+                .build()
 
             val mobileVerifyBetaEnabled = RemoteConfigUtils.getString(
                     RemoteConfigParam.MOBILE_VERIFY_BETA_ENABLED)?.equals("true", ignoreCase = true)
@@ -56,7 +57,7 @@ object MobileVerifyAPI {
             val baseUrl = if (mobileVerifyBetaEnabled && domain?.contains(".beta.") == true) {
                 "https://canvas.beta.instructure.com/api/v1/"
             } else {
-                "https://canvas.instructure.com/api/v1/"
+                "https://sso.canvaslms.com/api/v1/"
             }
 
             return Retrofit.Builder()
