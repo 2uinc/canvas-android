@@ -18,6 +18,7 @@
 package com.instructure.student.util
 
 import android.content.Intent
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Constraints
