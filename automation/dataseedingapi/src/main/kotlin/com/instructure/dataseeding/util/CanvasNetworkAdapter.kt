@@ -19,6 +19,8 @@ package com.instructure.dataseeding.util
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.network.okHttpClient
+import com.datadog.android.okhttp.DatadogEventListener
+import com.datadog.android.okhttp.DatadogInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -48,38 +50,46 @@ object CanvasNetworkAdapter {
         return loggingInterceptor
     }
 
-    private val adminOkHttpClient: OkHttpClient by lazy {
-        val authInterceptor = AuthRequestInterceptor(adminToken)
+    private fun createClientBuilder(
+        token: String? = null,
+        retryOnConnectionFailure: Boolean,
+        includeRestRetry: Boolean,
+    ): OkHttpClient.Builder {
+        val builder = OkHttpClient.Builder()
+            .retryOnConnectionFailure(retryOnConnectionFailure)
+            .addInterceptor(DatadogInterceptor.Builder(listOf("*.com")).build())
+            .eventListenerFactory(DatadogEventListener.Factory())
+            .addInterceptor(getLoggingInterceptor())
+            .readTimeout(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
 
-        OkHttpClient.Builder()
-                .retryOnConnectionFailure(true)
-                .addInterceptor(authInterceptor)
-                .addInterceptor(getLoggingInterceptor())
-                .addInterceptor(RestRetryInterceptor)
-                .readTimeout(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
-                .build()
+        token?.let { builder.addInterceptor(AuthRequestInterceptor(it)) }
+        if (includeRestRetry) builder.addInterceptor(RestRetryInterceptor)
+
+        return builder
+    }
+
+    private val adminOkHttpClient: OkHttpClient by lazy {
+        createClientBuilder(
+            token = adminToken,
+            retryOnConnectionFailure = true,
+            includeRestRetry = true,
+        ).build()
     }
 
     private fun okHttpClientWithToken(token: String): OkHttpClient {
-        val authInterceptor = AuthRequestInterceptor(token)
-
-        return OkHttpClient.Builder()
-                .retryOnConnectionFailure(true)
-                .addInterceptor(authInterceptor)
-                .addInterceptor(getLoggingInterceptor())
-                .addInterceptor(RestRetryInterceptor)
-                .readTimeout(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
-                .build()
+        return createClientBuilder(
+            token = token,
+            retryOnConnectionFailure = true,
+            includeRestRetry = true,
+        ).build()
     }
 
     private fun okHttpClientForApollo(token: String): OkHttpClient {
-        val authInterceptor = AuthRequestInterceptor(token)
-
-        return OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
-            .addInterceptor(getLoggingInterceptor())
-            .readTimeout(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
-            .build()
+        return createClientBuilder(
+            token = token,
+            retryOnConnectionFailure = false,
+            includeRestRetry = false,
+        ).build()
     }
 
     fun getApolloClient(token: String): ApolloClient {
@@ -90,12 +100,10 @@ object CanvasNetworkAdapter {
     }
 
     private val noAuthOkHttpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .retryOnConnectionFailure(true)
-            .addInterceptor(getLoggingInterceptor())
-            .addInterceptor(RestRetryInterceptor)
-            .readTimeout(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
-            .build()
+        createClientBuilder(
+            retryOnConnectionFailure = true,
+            includeRestRetry = true,
+        ).build()
     }
 
     val adminRetrofit: Retrofit by lazy {

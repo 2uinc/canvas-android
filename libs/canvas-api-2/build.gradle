@@ -112,6 +112,10 @@ dependencies {
     implementation Libs.OKHTTP_URL_CONNECTION
     implementation Libs.OKIO
 
+    /* Datadog */
+    implementation 'com.datadoghq:dd-sdk-android-okhttp:3.8.0'
+    implementation("com.datadoghq:dd-sdk-android-trace:3.8.0")
+
     /* GraphQL */
     /* NOTE: Newer versions of OkHttp affect the encoding of square brackets in @Query names. We're excluding the
     * okhttp module here to avoid updating to a newer version until we're ready to handle the change. */
